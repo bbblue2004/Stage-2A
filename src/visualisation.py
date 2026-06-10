@@ -25,7 +25,12 @@ import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-from generate_data import OperatorParams, get_example_operators, get_example_traffic
+from generate_data import (
+    OperatorParams,
+    get_example_operators,
+    get_example_traffic,
+    get_realistic_example_traffic,
+)
 from utility import single_operator_utility
 from main import (
     simulate_one_hour_oracle,
@@ -94,6 +99,40 @@ def _run_simulations(safety_margin: float = 0.15):
             )
 
     return ops, traffic, coalition, oracle, online, comparison, standalone_ts
+
+
+# ── Realistic 24h traffic profiles ───────────────────────────────────────────
+
+def fig_realistic_traffic_profiles(
+    operators: list[int] | None = None,
+    out_dir: str | None = None,
+    show: bool = False,
+) -> None:
+    if out_dir is None:
+        out_dir = os.path.join(os.path.dirname(__file__), "..", "figures")
+
+    traffic = get_realistic_example_traffic()
+    ops = get_example_operators()
+    coalition = operators if operators is not None else list(range(len(ops)))
+    t_hours = np.arange(len(traffic[0])) * 24.0 / len(traffic[0])
+
+    fig, ax = plt.subplots(figsize=(12, 4.2))
+    for i in coalition:
+        ax.plot(t_hours, traffic[i], color=PALETTE[i], lw=1.8, label=ops[i].name)
+        ax.axhline(ops[i].capacity_epsilon, color=PALETTE[i], ls="--", lw=0.8, alpha=0.5)
+
+    ax.set_xlabel("Time (h)")
+    ax.set_ylabel("Traffic  $T_i(t)$")
+    ax.set_title("Per-Operator Traffic Profiles (24h)")
+    ax.set_xlim(0, 24)
+    ax.legend(loc="upper right")
+    fig.tight_layout()
+
+    os.makedirs(out_dir, exist_ok=True)
+    fig.savefig(os.path.join(out_dir, "fig_realistic_traffic_profiles.png"))
+    if show:
+        plt.show()
+    plt.close(fig)
 
 
 # ── Figure 1: Traffic Profiles ───────────────────────────────────────────────
@@ -625,39 +664,9 @@ def main():
         safety_margin=0.15
     )
 
-    print("Generating Figure 1: Traffic Profiles...")
-    fig_traffic_profiles(ops, traffic, coalition, out_dir)
-
-    print("Generating Figure 2: Guardian Timeline...")
-    fig_guardian_timeline(ops, coalition, oracle, online, out_dir)
-
-    print("Generating Figure 3: Coalition Value...")
-    fig_coalition_value(oracle, online, standalone_ts, coalition, out_dir)
-
-    print("Generating Figure 4: Payoff Rules Comparison...")
-    fig_payoff_rules(oracle, coalition, standalone_ts, out_dir)
-
-    print("Generating Figure 5: Prediction Quality...")
-    fig_prediction_quality(online, traffic, coalition, out_dir)
-
-    print("Generating Figure 6: Payoff Streams...")
-    fig_payoff_streams(oracle, online, standalone_ts, coalition, out_dir)
-
-    print("Generating Figure 7: Safety Margin Sensitivity...")
-    fig_safety_margin_sweep(ops, traffic, coalition, out_dir)
-
-    print("Generating Figure 8: Summary Dashboard...")
-    fig_summary_dashboard(ops, traffic, coalition, oracle, online,
-                          comparison, standalone_ts, out_dir)
-
-    if make_gif:
-        print("Generating Animated GIF (this may take a minute)...")
-        gif_path = animated_simulation(ops, traffic, coalition, oracle, online,
-                                       standalone_ts, out_dir)
-        print(f"  -> {gif_path}")
-
-    print(f"\nAll figures saved to: {os.path.abspath(out_dir)}/")
+    print("Generating Figure : Realistic Traffic Profiles...")
+    fig_realistic_traffic_profiles(ops, traffic, coalition, out_dir)
 
 
 if __name__ == "__main__":
-    main()
+    # main()

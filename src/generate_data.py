@@ -34,6 +34,23 @@ def get_example_operators() -> list[OperatorParams]:
     ]
 
 
+### A more realistic simulation, with real data.
+
+def get_realistic_example_operators() -> list[OperatorParams]:
+    """
+    Returns a list of 4 example operators with predefined parameters.
+
+    Returns:
+        List of 4 OperatorParams representing different mobile operators.
+    """
+    return [
+        OperatorParams(name="Operator1", capacity_epsilon=100.0, c=1.0, beta=0.3, K=-10.0),
+        OperatorParams(name="Operator2", capacity_epsilon=80.0, c=1.0, beta=0.35, K=-12.0),
+        OperatorParams(name="Operator3", capacity_epsilon=60.0, c=1.1, beta=0.25, K=-9.0),
+        OperatorParams(name="Operator4", capacity_epsilon=70.0, c=0.95, beta=0.28, K=-11.0),
+    ]
+
+
 def get_example_traffic(num_steps: int = 60) -> dict[int, list[float]]:
     """
     Returns example traffic profiles for operators over a one-hour horizon.
@@ -79,6 +96,35 @@ def get_example_traffic(num_steps: int = 60) -> dict[int, list[float]]:
         # Operator 4: Steady growth throughout the hour
         # Range: ~10 to ~45
         traffic[3].append(10.0 + 35.0 * t_norm + 5.0 * math.sin(2 * math.pi * t_norm))
+
+    return traffic
+
+
+def get_realistic_example_traffic(
+    num_steps: int = 1440,
+    noise_std: float = 0.08,
+    seed: int | None = 42,
+) -> dict[int, list[float]]:
+    import math
+    import random
+
+    if seed is not None:
+        random.seed(seed)
+
+    ti_moy = [45.0, 35.0, 25.0, 27.0]
+    traffic: dict[int, list[float]] = {0: [], 1: [], 2: [], 3: []}
+
+    for t in range(num_steps):
+        t_hour = t * 24.0 / num_steps
+        psi = max(
+            0.1,
+            1
+            - 0.7 * math.cos(math.pi * (t_hour - 4) / 12)
+            + 0.4 * math.sin(math.pi * (t_hour - 12) / 6),
+        )
+        for i in range(4):
+            noise = 1.0 + random.gauss(0, noise_std)
+            traffic[i].append(max(0.0, ti_moy[i] * psi * noise))
 
     return traffic
 
