@@ -21,7 +21,7 @@ from typing import Any, Callable, Optional
 from math import factorial, sqrt
 
 from utility import single_operator_utility
-from generate_data import OperatorParams, get_example_operators, get_example_traffic
+from generate_data import OperatorParams, load_scenario
 from optimiser import coalition_value_star
 from profit import shapley_values, payoff_rule1, payoff_rule2, payoff_rule3
 from predict import predict_traffic
@@ -360,29 +360,27 @@ def compare_oracle_vs_online(
 
 # Example usage
 if __name__ == "__main__":
-    # Get example data
-    ops = get_example_operators()
-    traffic_data = get_example_traffic()
+    scenario = load_scenario("realistic")
+    ops = scenario.operators
+    traffic_data = scenario.traffic
+    coalition = scenario.coalition
     num_operators = len(ops)
-
-    # Create a list of all operator indices (0 to num_operators-1)
-    # Used to specify the operators participating in the RAN sharing coalition.
-    # For example, if num_operators is 4, then coalition = [0, 1, 2, 3]
-    coalition = list(range(num_operators))
+    num_steps = scenario.num_steps
 
     print("=" * 60)
-    print("RAN Sharing Cooperative Game Simulation")
+    print(f"RAN Sharing Cooperative Game Simulation — scenario: {scenario.name}, {scenario.horizon_label()}")
     print("=" * 60)
 
-    # Display operator parameters
     print("\nOperator Parameters:")
     for i, op in enumerate(ops):
         print(f"  {op.name}: ε={op.capacity_epsilon}, c={op.c}, "
               f"β={op.beta}, K={op.K}")
 
-    print("\nTraffic at t=0, t=30, t=59:")
-    for i, t_list in traffic_data.items():
-        print(f"  Operator {i}: T(0)={t_list[0]:.2f}, T(30)={t_list[30]:.2f}, T(59)={t_list[59]:.2f}")
+    sample_ts = scenario.sample_steps(7)
+    print(f"\nTraffic at {', '.join(scenario.step_label(t) for t in sample_ts)}:")
+    for i in coalition:
+        vals = ", ".join(f"T({t})={traffic_data[i][t]:.2f}" for t in sample_ts)
+        print(f"  Operator {i}: {vals}")
 
     # Run both simulation modes
     print("\n" + "=" * 60)
@@ -429,7 +427,7 @@ if __name__ == "__main__":
     print(f"{'t':>3} | {'Oracle Guardians':<18} | {'Online Guardians':<18} | {'Match':<5} | {'Oracle v*':>10} | {'Online v*':>10}")
     print("-" * 80)
 
-    for t in [0, 10, 20, 30, 40, 50, 59]:
+    for t in sample_ts:
         oracle_g = oracle_result['guardians'][t]
         online_g = online_result['guardians'][t]
         match = "✓" if set(oracle_g) == set(online_g) else "✗"
@@ -446,7 +444,8 @@ if __name__ == "__main__":
         print(f"{'Op'+str(i)+' Pred':>10} {'Actual':>10} {'Error':>8} | ", end="")
     print()
 
-    for t in [5, 15, 30, 45]:
+    pred_sample_ts = [t for t in scenario.sample_steps(5) if t > 0]
+    for t in pred_sample_ts:
         print(f"{t:>3} | ", end="")
         for i in range(num_operators):
             pred = online_result['predicted_traffic'][t][i]
@@ -455,11 +454,11 @@ if __name__ == "__main__":
             print(f"{pred:>10.2f} {actual:>10.2f} {error:>+8.2f} | ", end="")
         print()
 
-    # Compute non-cooperative standalone profits (each operator alone, all 60 steps)
+    # Compute non-cooperative standalone profits (each operator alone)
     standalone_profits: dict[int, float] = {}
     for i in coalition:
         total = 0.0
-        for t in range(len(traffic_data[0])):
+        for t in range(num_steps):
             T_i = traffic_data[i][t]
             rho_i = min(1.0, T_i / ops[i].capacity_epsilon)
             total += single_operator_utility(ops[i].c, T_i, ops[i].beta, rho_i, ops[i].K)
@@ -468,7 +467,7 @@ if __name__ == "__main__":
 
     # Show per-operator total profit
     print("\n" + "=" * 60)
-    print("Per-Operator Total Profit (summed over 60 time steps)")
+    print(f"Per-Operator Total Profit (summed over {num_steps} steps, {scenario.horizon_label()})")
     print("=" * 60)
 
     print("\n--- Non-Cooperative (each operator alone) ---")

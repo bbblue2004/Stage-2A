@@ -25,12 +25,7 @@ import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-from generate_data import (
-    OperatorParams,
-    get_example_operators,
-    get_example_traffic,
-    get_realistic_example_traffic,
-)
+from generate_data import OperatorParams, Scenario, load_scenario
 from utility import single_operator_utility
 from main import (
     simulate_one_hour_oracle,
@@ -68,18 +63,43 @@ plt.rcParams.update({
 })
 
 OP_LABELS: list[str] = []  # filled at runtime
+SCENARIO: Scenario | None = None
+
+
+def _time_axis(scenario: Scenario) -> np.ndarray:
+    minutes = np.arange(scenario.num_steps) * scenario.step_minutes
+    if scenario.horizon_hours > 1:
+        return minutes / 60.0
+    return minutes
+
+
+def _time_xlabel(scenario: Scenario) -> str:
+    return "Time (h)" if scenario.horizon_hours > 1 else "Time (min)"
+
+
+def _cap_combos(ops: list[OperatorParams]) -> dict[str, float]:
+    c = [op.capacity_epsilon for op in ops]
+    return {
+        f"Op1+Op3 ({c[0] + c[2]:.0f})": c[0] + c[2],
+        f"Op1+Op2 ({c[0] + c[1]:.0f})": c[0] + c[1],
+        f"Op1+Op3+Op4 ({c[0] + c[2] + c[3]:.0f})": c[0] + c[2] + c[3],
+    }
+
+
+def _set_runtime_context(scenario: Scenario) -> None:
+    global OP_LABELS, SCENARIO
+    SCENARIO = scenario
+    OP_LABELS = [op.name for op in scenario.operators]
 
 
 # ── Helper: run both simulations and compute standalone ──────────────────────
 
-def _run_simulations(safety_margin: float = 0.15):
-    ops = get_example_operators()
-    traffic = get_example_traffic()
-    coalition = list(range(len(ops)))
-    num_steps = len(traffic[0])
-
-    global OP_LABELS
-    OP_LABELS = [op.name for op in ops]
+def _run_simulations(scenario: Scenario, safety_margin: float = 0.15):
+    _set_runtime_context(scenario)
+    ops = scenario.operators
+    traffic = scenario.traffic
+    coalition = scenario.coalition
+    num_steps = scenario.num_steps
 
     oracle = simulate_one_hour_oracle(ops, traffic, coalition)
     online = simulate_one_hour_online(ops, traffic, coalition,
@@ -87,7 +107,6 @@ def _run_simulations(safety_margin: float = 0.15):
                                       safety_margin=safety_margin)
     comparison = compare_oracle_vs_online(oracle, online)
 
-    # standalone utility per operator per time step
     standalone_ts: dict[int, list[float]] = {}
     for i in coalition:
         standalone_ts[i] = []
@@ -98,84 +117,52 @@ def _run_simulations(safety_margin: float = 0.15):
                 single_operator_utility(ops[i].c, T_i, ops[i].beta, rho_i, ops[i].K)
             )
 
-    return ops, traffic, coalition, oracle, online, comparison, standalone_ts
-
-
-# ── Realistic 24h traffic profiles ───────────────────────────────────────────
-
-def fig_realistic_traffic_profiles(
-    operators: list[int] | None = None,
-    out_dir: str | None = None,
-    show: bool = False,
-) -> None:
-    if out_dir is None:
-        out_dir = os.path.join(os.path.dirname(__file__), "..", "figures")
-
-    traffic = get_realistic_example_traffic()
-    ops = get_example_operators()
-    coalition = operators if operators is not None else list(range(len(ops)))
-    t_hours = np.arange(len(traffic[0])) * 24.0 / len(traffic[0])
-
-    fig, ax = plt.subplots(figsize=(12, 4.2))
-    for i in coalition:
-        ax.plot(t_hours, traffic[i], color=PALETTE[i], lw=1.8, label=ops[i].name)
-        ax.axhline(ops[i].capacity_epsilon, color=PALETTE[i], ls="--", lw=0.8, alpha=0.5)
-
-    ax.set_xlabel("Time (h)")
-    ax.set_ylabel("Traffic  $T_i(t)$")
-    ax.set_title("Per-Operator Traffic Profiles (24h)")
-    ax.set_xlim(0, 24)
-    ax.legend(loc="upper right")
-    fig.tight_layout()
-
-    os.makedirs(out_dir, exist_ok=True)
-    fig.savefig(os.path.join(out_dir, "fig_realistic_traffic_profiles.png"))
-    if show:
-        plt.show()
-    plt.close(fig)
+    return scenario, oracle, online, comparison, standalone_ts
 
 
 # ── Figure 1: Traffic Profiles ───────────────────────────────────────────────
 
-def fig_traffic_profiles(ops, traffic, coalition, out_dir):
+def fig_traffic_profiles(scenario: Scenario, out_dir: str, filename: str = "fig1_traffic_profiles.png"):
     """Per-operator traffic and aggregate, with capacity references."""
-    num_steps = len(traffic[0])
-    t = np.arange(num_steps)
+    _set_runtime_context(scenario)
+    ops = scenario.operators
+    traffic = scenario.traffic
+    coalition = scenario.coalition
+    t = _time_axis(scenario)
+    xlab = _time_xlabel(scenario)
+    horizon = scenario.horizon_label()
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.2))
 
-    # Left: individual traffic
     for i in coalition:
         ax1.plot(t, traffic[i], color=PALETTE[i], lw=1.8, label=OP_LABELS[i])
         ax1.axhline(ops[i].capacity_epsilon, color=PALETTE[i], ls="--", lw=0.8, alpha=0.5)
-    ax1.set_xlabel("Time (min)")
+    ax1.set_xlabel(xlab)
     ax1.set_ylabel("Traffic  $T_i(t)$")
-    ax1.set_title("(a) Per-Operator Traffic Profiles")
+    ax1.set_title(f"(a) Per-Operator Traffic Profiles ({horizon})")
     ax1.legend(loc="upper left")
 
-    # Right: aggregate traffic vs capacity combos
-    agg = [sum(traffic[i][tt] for i in coalition) for tt in range(num_steps)]
+    agg = [sum(traffic[i][tt] for i in coalition) for tt in range(scenario.num_steps)]
     ax2.fill_between(t, agg, alpha=0.15, color="#475569")
     ax2.plot(t, agg, color="#475569", lw=2, label="Total traffic")
 
-    cap_combos = {
-        "Op1+Op3 (160)": ops[0].capacity_epsilon + ops[2].capacity_epsilon,
-        "Op1+Op2 (180)": ops[0].capacity_epsilon + ops[1].capacity_epsilon,
-        "Op1+Op3+Op4 (230)": ops[0].capacity_epsilon + ops[2].capacity_epsilon + ops[3].capacity_epsilon,
-    }
     dash_styles = [(4, 2), (6, 2, 2, 2), (2, 2)]
-    for idx, (lab, cap) in enumerate(cap_combos.items()):
+    for idx, (lab, cap) in enumerate(_cap_combos(ops).items()):
         ax2.axhline(cap, ls="--", dashes=dash_styles[idx], lw=1, alpha=0.7,
                      color=PALETTE[idx], label=lab)
 
-    ax2.set_xlabel("Time (min)")
+    ax2.set_xlabel(xlab)
     ax2.set_ylabel("Traffic")
-    ax2.set_title("(b) Aggregate Traffic vs Guardian Capacities")
+    ax2.set_title(f"(b) Aggregate Traffic vs Guardian Capacities ({horizon})")
     ax2.legend(loc="upper left", fontsize=7.5)
 
     fig.tight_layout(w_pad=3)
-    fig.savefig(os.path.join(out_dir, "fig1_traffic_profiles.png"))
+    fig.savefig(os.path.join(out_dir, filename))
     plt.close(fig)
+
+
+def fig_realistic_traffic_profiles(scenario: Scenario, out_dir: str):
+    fig_traffic_profiles(scenario, out_dir, filename="fig_realistic_traffic_profiles.png")
 
 
 # ── Figure 2: Guardian Timeline ──────────────────────────────────────────────
@@ -209,7 +196,7 @@ def fig_guardian_timeline(ops, coalition, oracle, online, out_dir):
         for spine in ax.spines.values():
             spine.set_visible(False)
 
-    ax2.set_xlabel("Time (min)")
+    ax2.set_xlabel(_time_xlabel(SCENARIO))
 
     # Shared legend
     legend_elements = [
@@ -229,7 +216,7 @@ def fig_guardian_timeline(ops, coalition, oracle, online, out_dir):
 def fig_coalition_value(oracle, online, standalone_ts, coalition, out_dir):
     """v* over time: oracle vs online vs sum-of-standalone."""
     num_steps = oracle["time_steps"]
-    t = np.arange(num_steps)
+    t = _time_axis(SCENARIO)
 
     standalone_agg = [sum(standalone_ts[i][tt] for i in coalition) for tt in range(num_steps)]
 
@@ -249,7 +236,7 @@ def fig_coalition_value(oracle, online, standalone_ts, coalition, out_dir):
         ax.scatter(fail_t, fail_v, marker="x", s=50, color=ONLINE_COLOR, zorder=5,
                    label="Capacity failure")
 
-    ax.set_xlabel("Time (min)")
+    ax.set_xlabel(_time_xlabel(SCENARIO))
     ax.set_ylabel("Coalition value")
     ax.set_title("Coalition Value $v^*(s)$: Oracle vs Online vs Non-Cooperative")
     ax.legend(loc="lower right")
@@ -282,7 +269,7 @@ def fig_payoff_rules(oracle, coalition, standalone_ts, out_dir):
 
     ax.set_xticks(x)
     ax.set_xticklabels(OP_LABELS[:n])
-    ax.set_ylabel("Total profit (60 min)")
+    ax.set_ylabel(f"Total profit ({SCENARIO.horizon_label()})")
     ax.set_title("Per-Operator Profit: Standalone vs Three Gain-Sharing Rules (Oracle)")
     ax.legend(loc="upper right", ncol=2, fontsize=8)
 
@@ -304,7 +291,7 @@ def fig_prediction_quality(online, traffic, coalition, out_dir):
     """Predicted vs actual traffic per operator, with error ribbon."""
     num_steps = online["time_steps"]
     n = len(coalition)
-    t = np.arange(num_steps)
+    t = _time_axis(SCENARIO)
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 7), sharex=True)
     axes = axes.flatten()
@@ -322,7 +309,7 @@ def fig_prediction_quality(online, traffic, coalition, out_dir):
         rmse = math.sqrt(sum(e ** 2 for e in errors) / len(errors))
         ax.set_title(f"{OP_LABELS[idx]}  (RMSE = {rmse:.2f})", fontsize=10)
         if idx >= 2:
-            ax.set_xlabel("Time (min)")
+            ax.set_xlabel(_time_xlabel(SCENARIO))
         ax.set_ylabel("Traffic")
         ax.legend(loc="upper left", fontsize=7)
 
@@ -336,8 +323,7 @@ def fig_prediction_quality(online, traffic, coalition, out_dir):
 
 def fig_payoff_streams(oracle, online, standalone_ts, coalition, out_dir):
     """Stacked area of per-operator payoff (Rule 1) for oracle, online, standalone."""
-    num_steps = oracle["time_steps"]
-    t = np.arange(num_steps)
+    t = _time_axis(SCENARIO)
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5), sharey=True)
 
@@ -350,7 +336,7 @@ def fig_payoff_streams(oracle, online, standalone_ts, coalition, out_dir):
     for ax, (title, data) in zip(axes, datasets):
         arrays = [np.array(data[i]) for i in coalition]
         ax.stackplot(t, *arrays, colors=PALETTE[:len(coalition)], alpha=0.75)
-        ax.set_xlabel("Time (min)")
+        ax.set_xlabel(_time_xlabel(SCENARIO))
         ax.set_title(title, fontsize=10)
 
     axes[0].set_ylabel("Instantaneous payoff")
@@ -422,7 +408,8 @@ def fig_summary_dashboard(ops, traffic, coalition, oracle, online,
     """A single-page dashboard summarising the whole project."""
     num_steps = oracle["time_steps"]
     n = len(coalition)
-    t = np.arange(num_steps)
+    t = _time_axis(SCENARIO)
+    xlab = _time_xlabel(SCENARIO)
 
     fig = plt.figure(figsize=(16, 10))
     gs = gridspec.GridSpec(3, 3, hspace=0.45, wspace=0.35,
@@ -433,7 +420,7 @@ def fig_summary_dashboard(ops, traffic, coalition, oracle, online,
     for i in coalition:
         ax_a.plot(t, traffic[i], color=PALETTE[i], lw=1.4, label=OP_LABELS[i])
     ax_a.set_title("(A) Traffic Profiles")
-    ax_a.set_xlabel("t (min)")
+    ax_a.set_xlabel(xlab)
     ax_a.set_ylabel("$T_i(t)$")
     ax_a.legend(fontsize=7, loc="upper left")
 
@@ -445,7 +432,7 @@ def fig_summary_dashboard(ops, traffic, coalition, oracle, online,
     total_cap = sum(op.capacity_epsilon for op in ops)
     ax_b.axhline(total_cap, ls="--", color="#94a3b8", lw=1, label=f"Total cap ({total_cap:.0f})")
     ax_b.set_title("(B) Aggregate Traffic")
-    ax_b.set_xlabel("t (min)")
+    ax_b.set_xlabel(xlab)
     ax_b.legend(fontsize=7)
 
     # ── Panel C: Guardian heatmap (oracle) ─
@@ -458,7 +445,7 @@ def fig_summary_dashboard(ops, traffic, coalition, oracle, online,
                 interpolation="nearest", extent=[-0.5, num_steps - 0.5, n - 0.5, -0.5])
     ax_c.set_yticks(range(n))
     ax_c.set_yticklabels([f"Op{i+1}" for i in range(n)], fontsize=8)
-    ax_c.set_xlabel("t (min)")
+    ax_c.set_xlabel(xlab)
     ax_c.set_title("(C) Guardian Schedule (Oracle)")
     for spine in ax_c.spines.values():
         spine.set_visible(False)
@@ -471,7 +458,7 @@ def fig_summary_dashboard(ops, traffic, coalition, oracle, online,
     ax_d.plot(t, online["v_star"], color=ONLINE_COLOR, lw=1.5, ls="--", label="Online")
     ax_d.plot(t, standalone_agg, color=STANDALONE_COLOR, lw=1.2, ls=":", label="Standalone")
     ax_d.set_title("(D) Coalition Value $v^*(s)$ Over Time")
-    ax_d.set_xlabel("t (min)")
+    ax_d.set_xlabel(xlab)
     ax_d.set_ylabel("$v^*(s)$")
     ax_d.legend(fontsize=7, ncol=3)
 
@@ -590,7 +577,7 @@ def animated_simulation(ops, traffic, coalition, oracle, online,
         ax_traffic.set_xlim(0, num_steps - 1)
         ax_traffic.set_ylim(0, t_max)
         ax_traffic.set_title("Traffic $T_i(t)$")
-        ax_traffic.set_xlabel("t (min)")
+        ax_traffic.set_xlabel(_time_xlabel(SCENARIO))
         if t_now == 0:
             ax_traffic.legend(fontsize=7, loc="upper left")
 
@@ -605,7 +592,7 @@ def animated_simulation(ops, traffic, coalition, oracle, online,
         ax_guard.set_yticks(range(n))
         ax_guard.set_yticklabels([f"Op{i+1}" for i in range(n)], fontsize=8)
         ax_guard.set_title("Guardian Schedule (Oracle)")
-        ax_guard.set_xlabel("t (min)")
+        ax_guard.set_xlabel(_time_xlabel(SCENARIO))
         for spine in ax_guard.spines.values():
             spine.set_visible(False)
 
@@ -622,7 +609,7 @@ def animated_simulation(ops, traffic, coalition, oracle, online,
         ax_value.set_xlim(0, num_steps - 1)
         ax_value.set_ylim(v_min, v_max)
         ax_value.set_title("Coalition Value $v^*(s)$")
-        ax_value.set_xlabel("t (min)")
+        ax_value.set_xlabel(_time_xlabel(SCENARIO))
         if t_now == 0:
             ax_value.legend(fontsize=7, loc="lower right")
 
@@ -636,11 +623,11 @@ def animated_simulation(ops, traffic, coalition, oracle, online,
         ax_profit.set_xlim(0, num_steps - 1)
         ax_profit.set_ylim(0, p_max)
         ax_profit.set_title("Cumulative Profit (Oracle Rule 1)")
-        ax_profit.set_xlabel("t (min)")
+        ax_profit.set_xlabel(_time_xlabel(SCENARIO))
         if t_now == 0:
             ax_profit.legend(fontsize=7, loc="upper left")
 
-        time_text.set_text(f"RAN Sharing Simulation  —  t = {t_now} min")
+        time_text.set_text(f"RAN Sharing Simulation  —  {SCENARIO.step_label(t_now)}")
         return []
 
     anim = FuncAnimation(fig, update, frames=num_steps, init_func=init,
@@ -655,18 +642,22 @@ def animated_simulation(ops, traffic, coalition, oracle, online,
 
 def main():
     make_gif = "--gif" in sys.argv
+    scenario_name = "example" if "--example" in sys.argv else "realistic"
 
     out_dir = os.path.join(os.path.dirname(__file__), "..", "figures")
     os.makedirs(out_dir, exist_ok=True)
 
-    print("Running simulations...")
-    ops, traffic, coalition, oracle, online, comparison, standalone_ts = _run_simulations(
-        safety_margin=0.15
-    )
+    scenario = load_scenario(scenario_name)
+    _set_runtime_context(scenario)
 
-    print("Generating Figure : Realistic Traffic Profiles...")
-    fig_realistic_traffic_profiles(ops, traffic, coalition, out_dir)
+    print(f"Generating traffic profiles ({scenario.name}, {scenario.horizon_label()})...")
+    filename = (
+        "fig_realistic_traffic_profiles.png"
+        if scenario.name == "realistic"
+        else "fig1_traffic_profiles.png"
+    )
+    fig_traffic_profiles(scenario, out_dir, filename=filename)
 
 
 if __name__ == "__main__":
-    # main()
+    main()
