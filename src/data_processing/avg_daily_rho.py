@@ -6,6 +6,11 @@ import matplotlib.pyplot as plt
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 csv_path = PROJECT_ROOT / "data" / "raw" / "radio_sites.csv"
+OUTPUT_DIR = PROJECT_ROOT / "figures" / "data_figures"
+
+def _make_output_path(filename: str) -> Path:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    return OUTPUT_DIR / filename
 
 
 def parse_datetime(value):
@@ -143,10 +148,10 @@ def plot_rho(hours, rho, selected_days):
     ax.set_title(f'Fonction ρ horaire moyenne sur les jours {selected_days[0]} à {selected_days[-1]}')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    output_path = Path('dl_volume_pdcp_daily_rho.png')
+    output_path = _make_output_path('avg_daily_rho.png')
     plt.savefig(output_path, dpi=150)
     print(f'Graph saved to {output_path.resolve()}')
-    plt.show()
+    # plt.show()
 
 
 if __name__ == '__main__':
