@@ -25,9 +25,9 @@ import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-from generate_data import OperatorParams, Scenario, load_scenario
-from utility import single_operator_utility
-from main import (
+from src.core.generate_data import OperatorParams, Scenario, load_scenario
+from src.core.utility import single_operator_utility
+from src.main import (
     simulate_one_hour_oracle,
     simulate_one_hour_online,
     compare_oracle_vs_online,

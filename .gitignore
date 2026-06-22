@@ -7,5 +7,5 @@ dist/
 build/
 .venv/
 venv/
-.cursor/
 .DS_Store
+data/raw/radio_sites.csv

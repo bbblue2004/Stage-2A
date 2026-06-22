@@ -20,11 +20,11 @@ from itertools import permutations, combinations
 from typing import Any, Callable, Optional
 from math import factorial, sqrt
 
-from utility import single_operator_utility
-from generate_data import OperatorParams, load_scenario
-from optimiser import coalition_value_star
-from profit import shapley_values, payoff_rule1, payoff_rule2, payoff_rule3
-from predict import predict_traffic
+from src.core.utility import single_operator_utility
+from src.core.generate_data import OperatorParams, load_scenario
+from src.core.optimiser import coalition_value_star
+from src.core.profit import shapley_values, payoff_rule1, payoff_rule2, payoff_rule3
+from src.core.predict import predict_traffic
 
 
 def simulate_one_hour_oracle(
@@ -213,8 +213,8 @@ def simulate_one_hour_online(
 
         # But compute actual value using REAL traffic with chosen guardians
         # This represents what actually happens when we apply the decision
-        from optimiser import coalition_utility
-        from allocate import allocate_uniform_until_saturation
+        from src.core.optimiser import coalition_utility
+        from src.core.allocate import allocate_uniform_until_saturation
 
         # Check if guardians can handle actual traffic
         total_actual_traffic = sum(actual_at_t[i] for i in coalition)

@@ -1,9 +1,9 @@
 from typing import Callable, Optional
 from math import factorial
 from itertools import permutations, combinations
-from generate_data import OperatorParams
-from optimiser import coalition_value_star, coalition_utility
-from utility import single_operator_utility
+from src.core.generate_data import OperatorParams
+from src.core.optimiser import coalition_value_star, coalition_utility
+from src.core.utility import single_operator_utility
 
 
 def shapley_values(

@@ -1,5 +1,5 @@
-from generate_data import OperatorParams
-from allocate import allocate_uniform_until_saturation
+from src.core.generate_data import OperatorParams
+from src.core.allocate import allocate_uniform_until_saturation
 from itertools import combinations
 
 
