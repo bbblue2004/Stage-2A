@@ -14,11 +14,7 @@ def get_energy_traffic_rho_for_id(id_value):
     series = data[id_value]
     traffic = series['traffic']
     energy = series['power']
-    if traffic:
-        max_traffic = max(traffic)
-        rho = [t / max_traffic for t in traffic] if max_traffic > 0 else [0.0 for _ in traffic]
-    else:
-        rho = []
+    rho = data_loader.compute_rho_from_traffic(traffic)
     return energy, traffic, rho
 
 
@@ -27,7 +23,6 @@ def plot_power_vs_normalized_traffic(ids, data, output_path=None):
     fig, ax = plt.subplots(figsize=(10, 7))
 
     colors = plt.rcParams['axes.prop_cycle'].by_key().get('color', ['C0', 'C1', 'C2', 'C3', 'C4'])
-    max_power = 0
 
     for index, nidt in enumerate(ids):
         traffic_values = data[nidt]['traffic']
@@ -35,9 +30,7 @@ def plot_power_vs_normalized_traffic(ids, data, output_path=None):
         if not traffic_values or not power_values:
             continue
 
-        max_power = max(max_power, max(power_values))
-        max_traffic = max(traffic_values)
-        normalized_traffic = [t / max_traffic for t in traffic_values]
+        normalized_traffic = data_loader.compute_rho_from_traffic(traffic_values)
 
         color = colors[index % len(colors)]
         ax.scatter(

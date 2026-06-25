@@ -10,56 +10,38 @@ from . import data_loader
 
 def compute_hourly_rho(rows, date_col, id_col, value_col, selected_days):
     """Compute average hourly normalized traffic (rho) for selected days."""
+    selected_days_set = set(selected_days)
+    samples = []
     max_by_id = {}
+    column_map = {
+        'datetime': date_col,
+        'antenna_id': id_col,
+        'traffic': value_col,
+    }
+
     for row in rows:
-        raw = (row.get(date_col) or '').strip()
-        if not raw:
+        parsed = data_loader.parse_row_values(row, column_map)
+        if not parsed:
             continue
-        try:
-            dt = data_loader.parse_datetime(raw)
-        except ValueError:
-            continue
-        if dt.date() not in selected_days:
+
+        dt = parsed['datetime']
+        if dt.date() not in selected_days_set:
             continue
         if not data_loader.is_weekday(dt):
             continue
-        site_id = (row.get(id_col) or '').strip()
-        if not site_id:
-            continue
-        try:
-            value = float((row.get(value_col) or '').replace(',', '.'))
-        except ValueError:
-            continue
+
+        site_id = parsed['antenna_id']
+        value = parsed['traffic']
+        samples.append((site_id, dt.hour, value))
         max_by_id[site_id] = max(max_by_id.get(site_id, 0.0), value)
 
-    if not max_by_id:
+    if not samples:
         raise SystemExit('No valid ID values found for selected days')
 
     totals = defaultdict(list)
-    for row in rows:
-        raw = (row.get(date_col) or '').strip()
-        if not raw:
-            continue
-        try:
-            dt = data_loader.parse_datetime(raw)
-        except ValueError:
-            continue
-        if dt.date() not in selected_days:
-            continue
-        if not data_loader.is_weekday(dt):
-            continue
-        site_id = (row.get(id_col) or '').strip()
-        if not site_id or site_id not in max_by_id:
-            continue
-        try:
-            value = float((row.get(value_col) or '').replace(',', '.'))
-        except ValueError:
-            continue
-        max_value_for_id = max_by_id[site_id]
-        if max_value_for_id <= 0:
-            continue
-        normalized_value = value / max_value_for_id
-        totals[dt.hour].append(normalized_value)
+    for site_id, hour, value in samples:
+        normalized_value = data_loader.normalize_traffic(value, max_by_id[site_id])
+        totals[hour].append(normalized_value)
 
     avg_by_hour = {}
     for hour in range(24):

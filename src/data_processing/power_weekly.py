@@ -2,23 +2,15 @@
 Plot power consumption time series by hour for one or more antennas.
 Uses data_loader for CSV reading and processing.
 """
-from collections import defaultdict
-from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 from . import data_loader
 
 
-def extract_antenna_power_data(antenna_id):
-    """Extract hourly power consumption data for a specific antenna ID."""
-    rows_by_hour = data_loader.extract_antenna_power_data(antenna_id)
-    return rows_by_hour
-
-
 def plot_single_antenna(antenna_id='00000001U6'):
     """Plot power consumption for a single antenna."""
-    rows_by_hour = extract_antenna_power_data(antenna_id)
+    rows_by_hour = data_loader.extract_antenna_power_data(antenna_id)
 
     if not rows_by_hour:
         print(f'No rows found for antenna = {antenna_id}')
@@ -78,24 +70,6 @@ def plot_multiple_antennas(num_antennas=5):
     output_path = data_loader.make_output_path('power_multiple_antennas.png')
     plt.savefig(output_path)
     print(f'Graph saved to {output_path.resolve()}')
-
-
-if __name__ == '__main__':
-    import sys
-    
-    if len(sys.argv) > 1:
-        plot_multiple_antennas(int(sys.argv[1]))
-    else:
-        plot_single_antenna('00000001U6')
-
-    print(f'Plotting data for IDs: {distinct_ids}')
-
-    fig, ax = plt.subplots(figsize=(14, 7))
-
-    for filter_id in distinct_ids:
-        rows_by_hour = extract_data_for_id(csv_path, filter_id, heure_col, sys_nidt_col, power_col)
-        if not rows_by_hour:
-            print(f'No data found for {filter_id}')
 
 
 if __name__ == '__main__':

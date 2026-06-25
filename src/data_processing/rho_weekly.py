@@ -28,11 +28,7 @@ def plot_traffic_time_series(ids, data, output_path=None):
             ylabel = 'Traffic volume (GB)'
             title_suffix = ''
         else:
-            max_value = max(traffic_values)
-            if max_value > 0:
-                plot_values = [value / max_value for value in traffic_values]
-            else:
-                plot_values = traffic_values
+            plot_values = data_loader.compute_rho_from_traffic(traffic_values)
             ylabel = 'Normalized traffic (0 to 1)'
             title_suffix = ' (normalized)'
 

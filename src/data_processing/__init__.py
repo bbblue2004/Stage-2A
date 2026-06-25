@@ -35,7 +35,6 @@ from .data_loader import (
 from .antenna_metrics import compute_antenna_metrics
 from .avg_daily_rho import compute_hourly_rho
 from .power_vs_rho import get_energy_traffic_rho_for_id
-from .power_weekly import extract_antenna_power_data as get_antenna_power_data
 from .rho_weekly import plot_traffic_time_series
 
 __all__ = [

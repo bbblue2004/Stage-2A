@@ -7,8 +7,6 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CSV_PATH = PROJECT_ROOT / "data" / "raw" / "radio_sites.csv"
 OUTPUT_DIR = PROJECT_ROOT / "figures" / "data_figures"
@@ -71,6 +69,77 @@ def is_weekday(dt):
     return dt.weekday() < 5
 
 
+def row_text(row, column_name):
+    """Return stripped cell text from a CSV row."""
+    return (row.get(column_name) or '').strip()
+
+
+def parse_float_value(text):
+    """Parse a numeric CSV cell, accepting comma decimals."""
+    return float(text.replace(',', '.'))
+
+
+def parse_row_values(row, column_map):
+    """
+    Parse selected fields from one CSV row.
+
+    column_map: logical field name -> CSV column name.
+    Supported logical names:
+    - datetime: parsed with parse_datetime
+    - traffic, power, value: parsed as float
+    - other names: kept as stripped strings
+
+    Returns a dict of parsed values, or None if any field is missing/invalid.
+    """
+    texts = {}
+    for logical_name, csv_column in column_map.items():
+        if not csv_column:
+            return None
+        text = row_text(row, csv_column)
+        if not text:
+            return None
+        texts[logical_name] = text
+
+    try:
+        parsed = {}
+        for logical_name, text in texts.items():
+            if logical_name == 'datetime':
+                parsed['datetime'] = parse_datetime(text)
+            elif logical_name in {'traffic', 'power', 'value'}:
+                parsed[logical_name] = parse_float_value(text)
+            else:
+                parsed[logical_name] = text
+        return parsed
+    except ValueError:
+        return None
+
+
+def parse_radio_row(row, columns, include):
+    """Parse one radio_sites row using detected column names."""
+    column_map = {}
+    for field in include:
+        if field == 'datetime':
+            column_map['datetime'] = columns['heure']
+        else:
+            column_map[field] = columns[field]
+    return parse_row_values(row, column_map)
+
+
+def iter_csv_rows(csv_path=CSV_PATH):
+    """Yield rows from radio_sites.csv."""
+    with open(csv_path, newline='', encoding='utf-8', errors='replace') as csvfile:
+        reader = csv.DictReader(csvfile, delimiter=';')
+        yield from reader
+
+
+def prepare_columns(csv_path=CSV_PATH, required=None):
+    """Detect and optionally validate standard CSV columns."""
+    columns = detect_columns(get_fieldnames(csv_path))
+    if required is not None:
+        validate_columns(columns, required)
+    return columns
+
+
 # ============================================================================
 # CSV Reading and Field Detection
 # ============================================================================
@@ -84,9 +153,9 @@ def get_fieldnames(csv_path=CSV_PATH):
 
 def read_csv_data(csv_path=CSV_PATH):
     """Read all data from CSV into memory."""
-    with open(csv_path, newline='', encoding='utf-8', errors='replace') as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=';')
-        return list(reader), reader.fieldnames or []
+    rows = list(iter_csv_rows(csv_path))
+    fieldnames = get_fieldnames(csv_path)
+    return rows, fieldnames
 
 
 def detect_columns(fieldnames):
@@ -117,32 +186,18 @@ def extract_antenna_time_series(antenna_id, csv_path=CSV_PATH):
     """
     Return (datetime, traffic, power) tuples for a given antenna.
     """
-    fieldnames = get_fieldnames(csv_path)
-    columns = detect_columns(fieldnames)
-    validate_columns(columns, ['heure', 'antenna_id', 'traffic', 'power'])
+    columns = prepare_columns(
+        csv_path,
+        required=['heure', 'antenna_id', 'traffic', 'power'],
+    )
+    include = ('antenna_id', 'datetime', 'traffic', 'power')
 
     rows = []
-    with open(csv_path, newline='', encoding='utf-8', errors='replace') as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=';')
-        for row in reader:
-            nidt = (row.get(columns['antenna_id']) or '').strip()
-            if nidt != antenna_id:
-                continue
-
-            heure_value = (row.get(columns['heure']) or '').strip()
-            traffic_value = (row.get(columns['traffic']) or '').strip()
-            power_value = (row.get(columns['power']) or '').strip()
-            if not heure_value or not traffic_value or not power_value:
-                continue
-
-            try:
-                dt = parse_datetime(heure_value)
-                traffic = float(traffic_value.replace(',', '.'))
-                power = float(power_value.replace(',', '.'))
-            except ValueError:
-                continue
-
-            rows.append((dt, traffic, power))
+    for row in iter_csv_rows(csv_path):
+        parsed = parse_radio_row(row, columns, include)
+        if not parsed or parsed['antenna_id'] != antenna_id:
+            continue
+        rows.append((parsed['datetime'], parsed['traffic'], parsed['power']))
 
     if not rows:
         raise SystemExit(f'No valid rows found for antenna {antenna_id}')
@@ -157,24 +212,22 @@ def extract_ids_data(ids=None, n=1, include_power=False, csv_path=CSV_PATH):
     If ids is None, extracts data for first n distinct IDs.
     Returns (list of IDs, data dict).
     """
-    fieldnames = get_fieldnames(csv_path)
-    columns = detect_columns(fieldnames)
-    
     required = ['heure', 'antenna_id', 'traffic']
     if include_power:
         required.append('power')
-    validate_columns(columns, required)
+    columns = prepare_columns(csv_path, required=required)
 
     if ids is None:
         ids = []
-        with open(csv_path, newline='', encoding='utf-8', errors='replace') as csvfile:
-            reader = csv.DictReader(csvfile, delimiter=';')
-            for row in reader:
-                nidt = (row.get(columns['antenna_id']) or '').strip()
-                if nidt and nidt not in ids:
-                    ids.append(nidt)
-                if len(ids) >= n:
-                    break
+        for row in iter_csv_rows(csv_path):
+            parsed = parse_radio_row(row, columns, ('antenna_id',))
+            if not parsed:
+                continue
+            nidt = parsed['antenna_id']
+            if nidt not in ids:
+                ids.append(nidt)
+            if len(ids) >= n:
+                break
 
     if not ids:
         raise SystemExit('No IDs selected for processing')
@@ -186,37 +239,23 @@ def extract_ids_data(ids=None, n=1, include_power=False, csv_path=CSV_PATH):
     else:
         data = {nidt: {'traffic': [], 'datetime': []} for nidt in ids}
 
-    with open(csv_path, newline='', encoding='utf-8', errors='replace') as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=';')
-        for row in reader:
-            nidt = (row.get(columns['antenna_id']) or '').strip()
-            if nidt not in data:
-                continue
+    include = ['antenna_id', 'datetime', 'traffic']
+    if include_power:
+        include.append('power')
 
-            heure_value = (row.get(columns['heure']) or '').strip()
-            traffic_str = (row.get(columns['traffic']) or '').strip()
+    for row in iter_csv_rows(csv_path):
+        parsed = parse_radio_row(row, columns, include)
+        if not parsed:
+            continue
 
-            if not heure_value or not traffic_str:
-                continue
+        nidt = parsed['antenna_id']
+        if nidt not in data:
+            continue
 
-            try:
-                dt = parse_datetime(heure_value)
-                traffic = float(traffic_str.replace(',', '.'))
-            except ValueError:
-                continue
-
-            data[nidt]['datetime'].append(dt)
-            data[nidt]['traffic'].append(traffic)
-
-            if include_power:
-                power_str = (row.get(columns['power']) or '').strip()
-                if not power_str:
-                    continue
-                try:
-                    power = float(power_str.replace(',', '.'))
-                    data[nidt]['power'].append(power)
-                except ValueError:
-                    continue
+        data[nidt]['datetime'].append(parsed['datetime'])
+        data[nidt]['traffic'].append(parsed['traffic'])
+        if include_power:
+            data[nidt]['power'].append(parsed['power'])
 
     # Remove IDs with no valid data
     for nidt in list(data):
@@ -232,31 +271,14 @@ def extract_ids_data(ids=None, n=1, include_power=False, csv_path=CSV_PATH):
 
 def extract_antenna_power_data(antenna_id, csv_path=CSV_PATH):
     """Extract hourly power consumption data for a specific antenna ID."""
-    fieldnames = get_fieldnames(csv_path)
-    columns = detect_columns(fieldnames)
-    validate_columns(columns, ['heure', 'antenna_id', 'power'])
-
+    columns = prepare_columns(csv_path, required=['heure', 'antenna_id', 'power'])
     rows_by_hour = defaultdict(list)
 
-    with open(csv_path, newline='', encoding='utf-8', errors='replace') as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=';')
-        for row in reader:
-            nidt = (row.get(columns['antenna_id']) or '').strip()
-            if nidt != antenna_id:
-                continue
-
-            heure_value = (row.get(columns['heure']) or '').strip()
-            power_value = (row.get(columns['power']) or '').strip()
-            if not heure_value or not power_value:
-                continue
-
-            try:
-                dt = parse_datetime(heure_value)
-                power = float(power_value.replace(',', '.'))
-            except ValueError:
-                continue
-
-            rows_by_hour[hour_key(dt)].append(power)
+    for row in iter_csv_rows(csv_path):
+        parsed = parse_radio_row(row, columns, ('antenna_id', 'datetime', 'power'))
+        if not parsed or parsed['antenna_id'] != antenna_id:
+            continue
+        rows_by_hour[hour_key(parsed['datetime'])].append(parsed['power'])
 
     if not rows_by_hour:
         raise SystemExit(f'No valid power data found for antenna {antenna_id}')
@@ -268,16 +290,20 @@ def extract_antenna_power_data(antenna_id, csv_path=CSV_PATH):
 # Data Processing Functions
 # ============================================================================
 
+def normalize_traffic(value, max_traffic):
+    """Normalize one traffic value to rho in [0, 1] using a known maximum."""
+    if max_traffic <= 0:
+        return 0.0
+    return float(value) / max_traffic
+
+
 def compute_rho_from_traffic(traffic_values):
     """Return normalized rho values (0-1) for a traffic series."""
     if not traffic_values:
         return []
 
     max_traffic = max(traffic_values)
-    if max_traffic <= 0:
-        return [0.0 for _ in traffic_values]
-
-    return [float(value) / max_traffic for value in traffic_values]
+    return [normalize_traffic(value, max_traffic) for value in traffic_values]
 
 
 def select_weekdays(rows, date_col, day_start=20, day_end=24, max_days=5):
@@ -285,13 +311,10 @@ def select_weekdays(rows, date_col, day_start=20, day_end=24, max_days=5):
     days = []
     seen = set()
     for row in rows:
-        raw = (row.get(date_col) or '').strip()
-        if not raw:
+        parsed = parse_row_values(row, {'datetime': date_col})
+        if not parsed:
             continue
-        try:
-            dt = parse_datetime(raw)
-        except ValueError:
-            continue
+        dt = parsed['datetime']
         if not (day_start <= dt.day <= day_end):
             continue
         if not is_weekday(dt):
@@ -307,7 +330,12 @@ def select_weekdays(rows, date_col, day_start=20, day_end=24, max_days=5):
 
 def count_distinct_ids(rows, id_col):
     """Count distinct antenna IDs in data."""
-    return len({(row.get(id_col) or '').strip() for row in rows if (row.get(id_col) or '').strip()})
+    ids = set()
+    for row in rows:
+        parsed = parse_row_values(row, {'antenna_id': id_col})
+        if parsed:
+            ids.add(parsed['antenna_id'])
+    return len(ids)
 
 
 def aggregate_by_hour(series_list, datetime_key=None):
