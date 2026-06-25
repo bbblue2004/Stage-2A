@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from src.data_processing.antenna_metrics import compute_antenna_metrics
 
 DEFAULT_STEP_MINUTES = 15
 
@@ -61,17 +62,19 @@ class Scenario:
 
 def get_example_operators() -> list[OperatorParams]:
     return [
-        OperatorParams(name="Operator1", capacity_epsilon=100.0, c=1.0, beta=0.3, K=-10.0),
-        OperatorParams(name="Operator2", capacity_epsilon=80.0, c=1.0, beta=0.35, K=-12.0),
-        OperatorParams(name="Operator3", capacity_epsilon=60.0, c=1.1, beta=0.25, K=-9.0),
-        OperatorParams(name="Operator4", capacity_epsilon=70.0, c=0.95, beta=0.28, K=-11.0),
+        OperatorParams(name="Operator1", capacity_epsilon=1600, c=0.041, beta=4.20, K=-55),
+        OperatorParams(name="Operator2", capacity_epsilon=1400, c=0.036, beta=3.80, K=-42),
+        OperatorParams(name="Operator3", capacity_epsilon=1400, c=0.042, beta=3.80, K=-42),
+        OperatorParams(name="Operator4", capacity_epsilon=1550, c=0.031, beta=4.50, K=-52),
     ]
 
 
-def get_realistic_example_operators() -> list[OperatorParams]:
+def get_realistic_example_operators(beta, k, epsilon) -> list[OperatorParams]:
     """
-    The Operators should represent approximately Orange, SFR, Bouygues and Free (in order).
+    The Operators should represent approximately a radio site of Orange, SFR, Bouygues and Free (in order).
     """
+    
+
     return [
         OperatorParams(name="Operator1", capacity_epsilon=1600, c=0.041, beta=4.20, K=-55),
         OperatorParams(name="Operator2", capacity_epsilon=1400, c=0.036, beta=3.80, K=-42),

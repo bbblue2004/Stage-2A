@@ -25,6 +25,7 @@ from src.core.generate_data import OperatorParams, load_scenario
 from src.core.optimiser import coalition_value_star
 from src.core.profit import shapley_values, payoff_rule1, payoff_rule2, payoff_rule3
 from src.core.predict import predict_traffic
+from src.data_processing.antenna_metrics import compute_antenna_metrics
 
 
 def simulate_one_hour_oracle(
@@ -358,8 +359,7 @@ def compare_oracle_vs_online(
     }
 
 
-# Example usage
-if __name__ == "__main__":
+def main():
     scenario = load_scenario("realistic")
     ops = scenario.operators
     traffic_data = scenario.traffic
@@ -507,3 +507,15 @@ if __name__ == "__main__":
     total_r2 = sum(sum(online_result['payoffs_rule2'][i]) for i in coalition)
     total_r3 = sum(sum(online_result['payoffs_rule3'][i]) for i in coalition)
     print(f"{'Total':<12} | {total_r1:>12.2f} | {total_r2:>12.2f} | {total_r3:>12.2f} | {total_r1 - standalone_total:>+12.2f}")
+
+
+
+# Example usage
+if __name__ == "__main__":
+    antenna_id = '00000002U8'
+    traffic, beta, k, epsilon = compute_antenna_metrics(antenna_id)
+    print(f'antenna_id = {antenna_id}')
+    print(f'traffic = {traffic}')
+    print(f'beta = {beta}')
+    print(f'K = {k}')
+    print(f'epsilon = {epsilon}')

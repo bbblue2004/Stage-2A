@@ -1,87 +1,27 @@
-import csv
+"""
+Calculate and plot average daily rho (normalized traffic) by hour.
+Uses data_loader for CSV reading and processing.
+"""
 from collections import defaultdict
-from datetime import datetime
-from pathlib import Path
 import matplotlib.pyplot as plt
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-csv_path = PROJECT_ROOT / "data" / "raw" / "radio_sites.csv"
-OUTPUT_DIR = PROJECT_ROOT / "figures" / "data_figures"
-
-def _make_output_path(filename: str) -> Path:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    return OUTPUT_DIR / filename
-
-
-def parse_datetime(value):
-    value = value.strip()
-    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H', '%Y-%m-%d %H:%M', '%Y/%m/%d %H:%M:%S', '%d/%m/%Y %H:%M:%S'):
-        try:
-            return datetime.strptime(value, fmt)
-        except ValueError:
-            continue
-    raise ValueError(f'Unsupported date format: {value!r}')
-
-
-def find_column(fieldnames, keywords):
-    for keyword in keywords:
-        for name in fieldnames:
-            if keyword.lower() in name.lower():
-                return name
-    return None
-
-
-def is_weekday(dt):
-    return dt.weekday() < 5
-
-
-def read_data(csv_path):
-    with open(csv_path, newline='', encoding='utf-8', errors='replace') as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=';')
-        return list(reader), reader.fieldnames or []
-
-
-def count_distinct_ids(rows, id_col):
-    return len({(row.get(id_col) or '').strip() for row in rows if (row.get(id_col) or '').strip()})
-
-
-def select_days(rows, date_col, day_start=20, day_end=24, max_days=5):
-    days = []
-    seen = set()
-    for row in rows:
-        raw = (row.get(date_col) or '').strip()
-        if not raw:
-            continue
-        try:
-            dt = parse_datetime(raw)
-        except ValueError:
-            continue
-        if not (day_start <= dt.day <= day_end):
-            continue
-        if not is_weekday(dt):
-            continue
-        day = dt.date()
-        if day not in seen:
-            seen.add(day)
-            days.append(day)
-            if len(days) >= max_days:
-                break
-    return days
+from . import data_loader
 
 
 def compute_hourly_rho(rows, date_col, id_col, value_col, selected_days):
+    """Compute average hourly normalized traffic (rho) for selected days."""
     max_by_id = {}
     for row in rows:
         raw = (row.get(date_col) or '').strip()
         if not raw:
             continue
         try:
-            dt = parse_datetime(raw)
+            dt = data_loader.parse_datetime(raw)
         except ValueError:
             continue
         if dt.date() not in selected_days:
             continue
-        if not is_weekday(dt):
+        if not data_loader.is_weekday(dt):
             continue
         site_id = (row.get(id_col) or '').strip()
         if not site_id:
@@ -101,12 +41,12 @@ def compute_hourly_rho(rows, date_col, id_col, value_col, selected_days):
         if not raw:
             continue
         try:
-            dt = parse_datetime(raw)
+            dt = data_loader.parse_datetime(raw)
         except ValueError:
             continue
         if dt.date() not in selected_days:
             continue
-        if not is_weekday(dt):
+        if not data_loader.is_weekday(dt):
             continue
         site_id = (row.get(id_col) or '').strip()
         if not site_id or site_id not in max_by_id:
@@ -138,6 +78,7 @@ def compute_hourly_rho(rows, date_col, id_col, value_col, selected_days):
 
 
 def plot_rho(hours, rho, selected_days):
+    """Plot average hourly rho."""
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(hours, rho, marker='o', linestyle='-', linewidth=2, color='blue')
     ax.set_xlim(0, 23)
@@ -148,25 +89,25 @@ def plot_rho(hours, rho, selected_days):
     ax.set_title(f'Fonction ρ horaire moyenne sur les jours {selected_days[0]} à {selected_days[-1]}')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    output_path = _make_output_path('avg_daily_rho.png')
+    output_path = data_loader.make_output_path('avg_daily_rho.png')
     plt.savefig(output_path, dpi=150)
     print(f'Graph saved to {output_path.resolve()}')
-    # plt.show()
 
 
 if __name__ == '__main__':
-    rows, fieldnames = read_data(csv_path)
-    date_col = find_column(fieldnames, ['HEURE', 'DATE', 'HEURE(PSDATE)'])
-    id_col = find_column(fieldnames, ['SYS.NIDT', 'nidt'])
-    value_col = find_column(fieldnames, ['dl_volume', 'pdcp', 'gbytes'])
+    rows, fieldnames = data_loader.read_csv_data(data_loader.CSV_PATH)
+    columns = data_loader.detect_columns(fieldnames)
+    date_col = columns['heure']
+    id_col = columns['antenna_id']
+    value_col = columns['traffic']
 
     if not date_col or not id_col or not value_col:
         raise SystemExit(f'Missing required columns. Found columns: {fieldnames}')
 
-    distinct_ids = count_distinct_ids(rows, id_col)
+    distinct_ids = data_loader.count_distinct_ids(rows, id_col)
     print(f'Distinct IDs count: {distinct_ids}')
 
-    selected_days = select_days(rows, date_col, day_start=20, day_end=24, max_days=5)
+    selected_days = data_loader.select_weekdays(rows, date_col, day_start=20, day_end=24, max_days=5)
     if not selected_days:
         raise SystemExit('No valid selected days found in the 20-24 range')
 
