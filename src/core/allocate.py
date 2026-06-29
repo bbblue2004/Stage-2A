@@ -67,3 +67,57 @@ def allocate_uniform_until_saturation(
             break
 
     return allocation
+
+
+def allocate_greedy(
+    guardians: list[int],
+    capacities: dict[int, float],
+    betas: dict[int, float],
+    total_traffic: float
+) -> dict[int, float]:
+    """
+    Allocates traffic to guardians using the greedy rule.
+
+    For fixed coalition s and guardian set l_s, guardians are filled in ascending
+    order of beta_epsilon = beta_i / epsilon_i (marginal variable cost per unit
+    of traffic). Each guardian is saturated before moving to the next.
+
+    Args:
+        guardians: List of guardian operator indices
+        capacities: Dictionary mapping operator index to capacity (epsilon_i)
+        betas: Dictionary mapping operator index to variable cost coefficient (beta_i)
+        total_traffic: Total traffic to allocate
+
+    Returns:
+        Dictionary mapping guardian index to allocated traffic.
+
+    Raises:
+        ValueError: If total capacity is insufficient for the traffic.
+    """
+    if not guardians:
+        if total_traffic > 0:
+            raise ValueError("No guardians available to handle traffic")
+        return {}
+
+    guardian_caps = [(g, capacities[g]) for g in guardians]
+    total_capacity = sum(cap for _, cap in guardian_caps)
+
+    if total_capacity < total_traffic - 1e-9:
+        raise ValueError(
+            f"Insufficient capacity: {total_capacity:.2f} < {total_traffic:.2f}"
+        )
+
+    # Sort by beta/epsilon ascending (cheapest marginal cost first)
+    guardian_caps.sort(key=lambda x: betas[x[0]] / x[1])
+
+    allocation: dict[int, float] = {}
+    remaining_traffic = total_traffic
+
+    for g, cap in guardian_caps:
+        allocated = min(cap, remaining_traffic)
+        allocation[g] = allocated
+        remaining_traffic -= allocated
+        if remaining_traffic <= 1e-9:
+            break
+
+    return allocation

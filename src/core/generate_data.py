@@ -69,11 +69,18 @@ def get_example_operators() -> list[OperatorParams]:
     ]
 
 
-def get_realistic_example_operators(beta, k, epsilon) -> list[OperatorParams]:
+def get_realistic_example_operators(
+    beta: float | None = None,
+    k: float | None = None,
+    epsilon: float | None = None,
+) -> list[OperatorParams]:
     """
     The Operators should represent approximately a radio site of Orange, SFR, Bouygues and Free (in order).
+
+    Optional antenna metrics (beta, k, epsilon) are accepted for future calibration; when omitted,
+    the hard-coded reference parameters below are used.
     """
-    
+    _ = (beta, k, epsilon)    # for now, these values are hardcoded
 
     return [
         OperatorParams(name="Operator1", capacity_epsilon=1600, c=0.041, beta=4.20, K=-55),
@@ -149,7 +156,11 @@ def get_realistic_example_traffic(
     return traffic
 
 
-def load_scenario(name: str, step_minutes: int = DEFAULT_STEP_MINUTES) -> Scenario:
+def load_scenario(
+    name: str,
+    step_minutes: int = DEFAULT_STEP_MINUTES,
+    antenna_id: str | None = None,
+) -> Scenario:
     if name == "example":
         operators = get_example_operators()
         traffic = get_example_traffic(step_minutes=step_minutes)
@@ -161,7 +172,11 @@ def load_scenario(name: str, step_minutes: int = DEFAULT_STEP_MINUTES) -> Scenar
             step_minutes=step_minutes,
         )
     if name == "realistic":
-        operators = get_realistic_example_operators()
+        if antenna_id is not None:
+            _, beta, k, epsilon = compute_antenna_metrics(antenna_id)
+            operators = get_realistic_example_operators(beta, k, epsilon)
+        else:
+            operators = get_realistic_example_operators()
         traffic = get_realistic_example_traffic(operators, step_minutes=step_minutes)
         return Scenario(
             name="realistic",

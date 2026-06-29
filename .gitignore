@@ -8,4 +8,4 @@ build/
 .venv/
 venv/
 .DS_Store
-data/raw/radio_sites.csv
+data/
