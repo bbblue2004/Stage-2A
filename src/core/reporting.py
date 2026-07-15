@@ -1,199 +1,140 @@
+"""Console report with progressive output."""
+
+from __future__ import annotations
+
 from typing import Any
 
-from src.core.generate_data import OperatorParams, Scenario
-from src.core.simulation import (
-    compare_oracle_vs_online,
-    simulate_one_hour_online,
-    simulate_one_hour_oracle,
-)
-from src.core.utility import single_operator_utility
+from src.core.generate_data import Scenario
+from src.core.simulation import evaluate_day
 
 
-def run_simulation_report(
-    scenario: Scenario,
-    safety_margin: float = 0.15,
-    window_size: int = 5,
-) -> dict[str, Any]:
-    ops = scenario.operators
-    traffic_data = scenario.traffic
+def _emit(msg: str = "") -> None:
+    print(msg, flush=True)
+
+
+def _print_header(scenario: Scenario) -> None:
+    source = "radio_sites.csv" if scenario.data_source == "csv" else "hard-coded fallback"
+
+    _emit("=" * 78)
+    _emit("RAN sharing - cooperative game evaluation")
+    _emit("=" * 78)
+    _emit(f"Site (operator 1) : {scenario.antenna_id}")
+    _emit(f"Traffic source    : {source}")
+    if scenario.data_source == "csv":
+        _emit("Cost coeffs (beta, K): derived from CSV power-vs-rho regression")
+    else:
+        _emit("Cost coeffs (beta, K): synthetic fallback")
+    _emit(f"Horizon           : {scenario.horizon_label()} (hourly resolution)")
+    _emit("Allocation        : least-core once at end (rules 1-3 disabled)")
+    _emit()
+
+    _emit(f"{'Op':<4} {'epsilon':>8} {'c':>6} {'beta':>6} {'K':>6}")
+    _emit("-" * 36)
+    for i, op in enumerate(scenario.operators):
+        _emit(
+            f"{i + 1:<4} {op.capacity_epsilon:>8.1f} {op.c:>6.2f} "
+            f"{op.beta:>6.2f} {op.K:>6.2f}"
+        )
+    _emit()
+
+
+def _print_hourly_header() -> None:
+    _emit("Hourly load, surplus, LC gain share and guardians (^ = config change)")
+    _emit("-" * 78)
+    _emit(
+        f"{'Hour':>4} | {'rho':>6} | {'Surplus':>8} | {'Gain LC':>8} | "
+        f"{'Chg':>3} | Gardiens"
+    )
+    _emit("-" * 78)
+
+
+def _print_hour_row(row: dict[str, Any]) -> None:
+    chg = "^" if row["guardians_changed"] else ""
+    _emit(
+        f"{row['hour']:02d}:00 | {row['rho_mean']:>6.3f} | "
+        f"{row['surplus']:>+8.2f} | {row['lc_gain']:>+8.2f} | "
+        f"{chg:>3} | {row['guardians_label']}"
+    )
+
+
+def run_report(scenario: Scenario) -> dict[str, Any]:
+    """Print progressively and return evaluation results."""
+    _print_header(scenario)
+
+    def on_progress(current: int, total: int) -> None:
+        _emit(f">> hour {current}/{total} computed")
+
+    def on_phase(msg: str) -> None:
+        _emit()
+        _emit(f">> {msg}")
+
+    peak: dict[str, Any] | None = None
+
+    def on_hour(row: dict[str, Any]) -> None:
+        nonlocal peak
+        if peak is None or row["surplus"] > peak["surplus"]:
+            peak = row
+        _print_hour_row(row)
+
+    _emit(">> Computing hourly v* and guardians...")
+    result = evaluate_day(
+        scenario,
+        on_hour=None,
+        on_phase=on_phase,
+        on_progress=on_progress,
+    )
+
+    _print_hourly_header()
+    for row in result["hourly"]:
+        on_hour(row)
+
+    _emit("-" * 78)
+    if peak:
+        _emit(
+            f"Peak surplus at {peak['hour']:02d}:00 (+{peak['surplus']:.2f}); "
+            f"gardiens {peak['guardians_label']}"
+        )
+    _emit(
+        f"Guardian configuration changes: {result['guardian_changes']} "
+        f"(over {len(result['hourly']) - 1} possible transitions)"
+    )
+    _emit(f"Total LC gain (daily): {result['total_lc_gain']:+.2f}")
+    _emit()
+
+    summary = result["least_core_summary"]
+    if summary["feasible"]:
+        _emit(
+            f"Least-core LP: feasible optimal solution found "
+            f"(status: {summary['status']}, epsilon = {summary['epsilon']:.4f})."
+        )
+    else:
+        _emit(
+            f"Least-core LP: no optimal solution (status: {summary['status']}). "
+            "The core may be empty; no theoretical guarantee of feasibility."
+        )
+    _emit()
+
     coalition = scenario.coalition
-    num_operators = len(ops)
-    num_steps = scenario.num_steps
+    payoffs = result["payoffs"]
+    standalone = payoffs["standalone"]
 
-    print("=" * 60)
-    print(
-        f"RAN Sharing Cooperative Game Simulation - scenario: {scenario.name}, "
-        f"{scenario.horizon_label()}"
-    )
-    print("=" * 60)
-
-    print("\nOperator Parameters:")
-    for op in ops:
-        print(
-            f"  {op.name}: epsilon={op.capacity_epsilon}, c={op.c}, "
-            f"beta={op.beta}, K={op.K}"
+    _emit("Daily summary per operator")
+    _emit("-" * 60)
+    _emit(f"{'Op':<4} {'Standalone':>12} {'Least core':>12} {'Gain LC':>10}")
+    _emit("-" * 60)
+    for i in coalition:
+        gain_lc = payoffs["least_core"][i] - standalone[i]
+        _emit(
+            f"{i + 1:<4} {standalone[i]:>12.2f} "
+            f"{payoffs['least_core'][i]:>12.2f} {gain_lc:>+10.2f}"
         )
-
-    sample_ts = scenario.sample_steps(7)
-    print(f"\nTraffic at {', '.join(scenario.step_label(t) for t in sample_ts)}:")
-    for i in coalition:
-        vals = ", ".join(f"T({t})={traffic_data[i][t]:.2f}" for t in sample_ts)
-        print(f"  Operator {i}: {vals}")
-
-    print("\n" + "=" * 60)
-    print("Running Oracle Mode (god's eye view)...")
-    print("=" * 60)
-    oracle_result = simulate_one_hour_oracle(ops, traffic_data, coalition)
-
-    print("\n" + "=" * 60)
-    print(
-        f"Running Online Mode (prediction-based, {safety_margin:.0%} safety margin)..."
+    _emit("-" * 60)
+    total_surplus = sum(r["surplus"] for r in result["hourly"])
+    _emit(
+        f"{'Tot':<4} {sum(standalone.values()):>12.2f} "
+        f"{sum(payoffs['least_core'].values()):>12.2f} "
+        f"{result['total_lc_gain']:>+10.2f}"
     )
-    print("=" * 60)
-    online_result = simulate_one_hour_online(
-        ops, traffic_data, coalition, window_size=window_size, safety_margin=safety_margin
-    )
+    _emit(f"Sum of hourly surpluses: {total_surplus:+.2f}")
 
-    print("\n" + "=" * 60)
-    print("Comparison: Oracle vs Online")
-    print("=" * 60)
-    comparison = compare_oracle_vs_online(oracle_result, online_result)
-
-    print(f"\n  Safety Margin:           {safety_margin:.0%}")
-    print(f"  Guardian Agreement Rate: {comparison['guardian_agreement']:.1%}")
-    print(f"  Oracle Total Value:      {comparison['oracle_total_value']:.2f}")
-    print(f"  Online Total Value:      {comparison['online_total_value']:.2f}")
-    print(
-        f"  Value Loss:              {comparison['value_loss_total']:.2f} "
-        f"({comparison['value_loss_percent']:.2f}%)"
-    )
-    print(f"  Prediction RMSE:         {comparison['prediction_rmse']:.4f}")
-    print(
-        f"  Capacity Failures:       {comparison['capacity_failure_count']} time steps"
-    )
-
-    if comparison["capacity_failures"]:
-        print("\n" + "-" * 60)
-        print("Capacity Failures (prediction underestimated traffic)")
-        print("-" * 60)
-        for failure in comparison["capacity_failures"]:
-            print(
-                f"  t={failure['t']:2d}: needed {failure['needed']:.2f}, "
-                f"available {failure['available']:.2f}, "
-                f"shortfall {failure['shortfall']:.2f}"
-            )
-
-    print("\n" + "-" * 60)
-    print("Detailed Comparison (selected time steps)")
-    print("-" * 60)
-    print(
-        f"{'t':>3} | {'Oracle Guardians':<18} | {'Online Guardians':<18} | "
-        f"{'Match':<5} | {'Oracle v*':>10} | {'Online v*':>10}"
-    )
-    print("-" * 80)
-    for t in sample_ts:
-        oracle_g = oracle_result["guardians"][t]
-        online_g = online_result["guardians"][t]
-        match = "Y" if set(oracle_g) == set(online_g) else "N"
-        oracle_v = oracle_result["v_star"][t]
-        online_v = online_result["v_star"][t]
-        print(
-            f"{t:>3} | {str(oracle_g):<18} | {str(online_g):<18} | "
-            f"{match:^5} | {oracle_v:>10.2f} | {online_v:>10.2f}"
-        )
-
-    print("\n" + "-" * 60)
-    print("Prediction Errors (selected time steps)")
-    print("-" * 60)
-    print(f"{'t':>3} | ", end="")
-    for i in range(num_operators):
-        print(f"{'Op' + str(i) + ' Pred':>10} {'Actual':>10} {'Error':>8} | ", end="")
-    print()
-
-    pred_sample_ts = [t for t in scenario.sample_steps(5) if t > 0]
-    for t in pred_sample_ts:
-        print(f"{t:>3} | ", end="")
-        for i in range(num_operators):
-            pred = online_result["predicted_traffic"][t][i]
-            actual = online_result["actual_traffic"][t][i]
-            error = online_result["prediction_errors"][i][t]
-            print(f"{pred:>10.2f} {actual:>10.2f} {error:>+8.2f} | ", end="")
-        print()
-
-    standalone_profits = _compute_standalone_profits(ops, coalition, traffic_data, num_steps)
-    standalone_total = sum(standalone_profits.values())
-
-    print("\n" + "=" * 60)
-    print(
-        f"Per-Operator Total Profit (summed over {num_steps} steps, "
-        f"{scenario.horizon_label()})"
-    )
-    print("=" * 60)
-
-    print("\n--- Non-Cooperative (each operator alone) ---")
-    print(f"{'Operator':<12} | {'Standalone':>12}")
-    print("-" * 28)
-    for i in coalition:
-        print(f"{ops[i].name:<12} | {standalone_profits[i]:>12.2f}")
-    print("-" * 28)
-    print(f"{'Total':<12} | {standalone_total:>12.2f}")
-
-    _print_mode_profit_table("Oracle Mode", coalition, ops, oracle_result, standalone_profits)
-    _print_mode_profit_table("Online Mode", coalition, ops, online_result, standalone_profits)
-
-    return {
-        "oracle_result": oracle_result,
-        "online_result": online_result,
-        "comparison": comparison,
-        "standalone_profits": standalone_profits,
-    }
-
-
-def _compute_standalone_profits(
-    ops: list[OperatorParams],
-    coalition: list[int],
-    traffic_data: dict[int, list[float]],
-    num_steps: int,
-) -> dict[int, float]:
-    standalone_profits: dict[int, float] = {}
-    for i in coalition:
-        total = 0.0
-        for t in range(num_steps):
-            t_i = traffic_data[i][t]
-            rho_i = min(1.0, t_i / ops[i].capacity_epsilon)
-            total += single_operator_utility(ops[i].c, t_i, ops[i].beta, rho_i, ops[i].K)
-        standalone_profits[i] = total
-    return standalone_profits
-
-
-def _print_mode_profit_table(
-    mode_name: str,
-    coalition: list[int],
-    ops: list[OperatorParams],
-    result: dict[str, Any],
-    standalone_profits: dict[int, float],
-) -> None:
-    print(f"\n--- {mode_name} ---")
-    print(
-        f"{'Operator':<12} | {'Rule 1':>12} | {'Rule 2':>12} | {'Rule 3':>12} | "
-        f"{'vs Alone':>12}"
-    )
-    print("-" * 70)
-    for i in coalition:
-        r1 = sum(result["payoffs_rule1"][i])
-        r2 = sum(result["payoffs_rule2"][i])
-        r3 = sum(result["payoffs_rule3"][i])
-        gain = r1 - standalone_profits[i]
-        print(
-            f"{ops[i].name:<12} | {r1:>12.2f} | {r2:>12.2f} | "
-            f"{r3:>12.2f} | {gain:>+12.2f}"
-        )
-    print("-" * 70)
-    total_r1 = sum(sum(result["payoffs_rule1"][i]) for i in coalition)
-    total_r2 = sum(sum(result["payoffs_rule2"][i]) for i in coalition)
-    total_r3 = sum(sum(result["payoffs_rule3"][i]) for i in coalition)
-    standalone_total = sum(standalone_profits.values())
-    print(
-        f"{'Total':<12} | {total_r1:>12.2f} | {total_r2:>12.2f} | {total_r3:>12.2f} | "
-        f"{total_r1 - standalone_total:>+12.2f}"
-    )
+    return result

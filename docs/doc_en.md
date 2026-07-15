@@ -55,7 +55,7 @@ First consider **each operator acting alone** and define its profit.
 - For a single operator \(A_i\):
 
 $$
-v(A_i) = \underbrace{c_i T_i}_{\text{revenue from selling traffic}} - \underbrace{\beta_i \rho_i}_{\text{energy-related cost}} + \underbrace{K_i}_{\text{various fixed costs (negative)}}
+v(A_i) = \underbrace{c_i T_i}_{\text{revenue from selling traffic}} - \underbrace{\beta_i \rho_i}_{\text{energy-related cost}} - \underbrace{K_i}_{\text{various fixed costs (positive)}}
 $$
 
 The paper’s wording is essentially:
@@ -64,7 +64,7 @@ The paper’s wording is essentially:
 - Costs include:
   - Equipment depreciation (invest in capacity \(\varepsilon_i\), amortized over time: a function \(u(\varepsilon_i)\))
   - Energy cost (electricity)
-  - Maintenance cost (can be included in a constant \(K_i < 0\))
+  - Maintenance cost (can be included in a constant \(K_i > 0\))
 
 ### 2.2 Energy model \(\rho_i\) and power consumption
 
@@ -124,7 +124,7 @@ The paper gives:
 
 $$
 v(s, l_s)
-= \sum_{a \in s} c_a T_a - \sum_{a \in l_s} \beta_a \tilde{\rho}_a(l_s) + \sum_{a \in l_s} K_a
+= \sum_{a \in s} c_a T_a - \sum_{a \in l_s} \beta_a \tilde{\rho}_a(l_s) - \sum_{a \in l_s} K_a
 $$
 
 Explanation:
@@ -136,8 +136,8 @@ Explanation:
    guardians bear the actual load \(\tilde{\rho}_a\), hence they pay electricity/variable costs.
    - For a non-guardian \(a\), \(\tilde{\rho}_a = 0\) because its equipment is off.
 
-3. \(\sum_{a \in l_s} K_a\):
-   guardians also bear their fixed costs (negative).
+3. \(- \sum_{a \in l_s} K_a\):
+   guardians also bear their fixed costs.
 
 > Intuition:
 > **Profit = coalition revenue − guardians’ costs.**
@@ -314,7 +314,7 @@ Explanation:
 1. The coalition’s total “variable cost + fixed cost” borne by guardians is:
 
 \[
-\sum_{a \in l_s} \beta_a \tilde{\rho}_a(l_s) - \sum_{a \in l_s} K_a
+\sum_{a \in l_s} \beta_a \tilde{\rho}_a(l_s) + \sum_{a \in l_s} K_a
 \]
 
 2. Split this total cost equally among all coalition members (including non-guardians):
@@ -323,7 +323,7 @@ Each member should pay:
 
 \[
 D_s =
-\frac{\sum_{a \in l_s} \beta_a \tilde{\rho}_a(l_s) - \sum_{a \in l_s} K_a}{|s|}
+\frac{\sum_{a \in l_s} \beta_a \tilde{\rho}_a(l_s) + \sum_{a \in l_s} K_a}{|s|}
 \]
 
 3. For a specific operator \(A_i\):
@@ -331,7 +331,7 @@ D_s =
    - If it is a guardian, the cost it “would” pay is:
 
 \[
-D_i = \beta_i \tilde{\rho}_i(l_s) - K_i
+D_i = \beta_i \tilde{\rho}_i(l_s) + K_i
 \]
 
    - If it is a non-guardian, \(D_i = 0\) (because its equipment is off).

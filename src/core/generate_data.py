@@ -1,21 +1,69 @@
+"""Scenario construction: real CSV profile or hard-coded fallback."""
+
+from __future__ import annotations
+
 from dataclasses import dataclass
-from src.data_processing.antenna_metrics import compute_antenna_metrics
+import random
+
+from src.data_processing.antenna_metrics import (
+    DEFAULT_ELECTRICITY_PRICE_PER_KWH,
+    load_antenna_profiles,
+    power_coefficients_to_cost,
+    power_regression_from_profiles,
+)
+from src.data_processing.data_loader import CSV_PATH, DEFAULT_ANTENNA_ID
 
 DEFAULT_STEP_MINUTES = 15
+PEAK_LOAD_FRACTION = 0.75
+NUM_OPERATORS = 4
+HORIZON_HOURS = 24.0
+
+# Operator 1 profile (00000001U6): mean hourly traffic over 5 weekdays from radio_sites.csv.
+FALLBACK_HOURLY_TRAFFIC_OP1: tuple[float, ...] = (
+    4.06641215,
+    3.274636975,
+    2.0579057,
+    1.478149,
+    2.0657789,
+    3.375421625,
+    9.85657315,
+    20.336020725,
+    28.1049119,
+    19.024882,
+    17.522629625,
+    18.123957125,
+    19.859230275,
+    21.8214572,
+    21.7062173,
+    23.212052575,
+    22.436093525,
+    24.43311375,
+    21.2326654,
+    14.339161375,
+    13.2097858,
+    15.0341149,
+    10.7569192,
+    9.929167025,
+)
+
+OPERATOR_NAMES = ("Operator1", "Operator2", "Operator3", "Operator4")
+REVENUE_COEFFS = (0.8, 0.85, 0.75, 0.8)
+FALLBACK_BETA_COEFFS = (0.2, 0.15, 0.18, 0.25)
+FALLBACK_K_COEFFS = (0.5, 0.4, 0.3, 0.4)
+
+
+def step_duration_hours(step_minutes: int) -> float:
+    return step_minutes / 60.0
+
+
+def steps_per_hour(step_minutes: int) -> int:
+    if 60 % step_minutes != 0:
+        raise ValueError(f"step_minutes={step_minutes} does not divide 60 evenly")
+    return 60 // step_minutes
 
 
 @dataclass
 class OperatorParams:
-    """
-    Parameters for a single mobile network operator.
-
-    Attributes:
-        name: Identifier for the operator
-        capacity_epsilon: Maximum traffic capacity (ε_i)
-        c: Revenue per unit of traffic
-        beta: Variable cost coefficient related to load (β_i)
-        K: Fixed costs (typically negative)
-    """
     name: str
     capacity_epsilon: float
     c: float
@@ -25,12 +73,12 @@ class OperatorParams:
 
 @dataclass
 class Scenario:
-    """Coherent bundle of operators, traffic series, and time-horizon metadata."""
-    name: str
     operators: list[OperatorParams]
     traffic: dict[int, list[float]]
-    horizon_hours: float
     step_minutes: int
+    antenna_id: str
+    data_source: str  # "csv" or "fallback"
+    horizon_hours: float = HORIZON_HOURS
 
     @property
     def num_steps(self) -> int:
@@ -40,190 +88,169 @@ class Scenario:
     def coalition(self) -> list[int]:
         return list(range(len(self.operators)))
 
-    def sample_steps(self, count: int = 7) -> list[int]:
-        if self.num_steps <= 1 or count <= 1:
-            return [0]
-        return sorted({
-            int(round(i * (self.num_steps - 1) / (count - 1)))
-            for i in range(count)
-        })
-
     def horizon_label(self) -> str:
-        if self.horizon_hours > 1:
-            return f"{int(self.horizon_hours)}h ({self.step_minutes}min steps)"
-        return f"{int(self.horizon_hours * 60)} min ({self.step_minutes}min steps)"
+        return f"{int(self.horizon_hours)}h ({self.step_minutes}min steps)"
 
     def step_label(self, t: int) -> str:
-        minutes = t * self.step_minutes
-        if self.horizon_hours > 1:
-            return f"t={minutes / 60.0:.1f}h (step {t})"
-        return f"t={minutes} min (step {t})"
+        return f"{t * self.step_minutes / 60.0:.2f}h (step {t})"
+
+    def hour_index(self, step: int) -> int:
+        return step // steps_per_hour(self.step_minutes)
+
+    def hourly_step_range(self, hour_index: int) -> range:
+        sph = steps_per_hour(self.step_minutes)
+        start = hour_index * sph
+        return range(start, min(start + sph, self.num_steps))
+
+    def hourly_traffic_means(self, hour_index: int) -> dict[int, float]:
+        step_range = list(self.hourly_step_range(hour_index))
+        if not step_range:
+            return {i: 0.0 for i in range(len(self.operators))}
+        return {
+            i: sum(self.traffic[i][t] for t in step_range) / len(step_range)
+            for i in range(len(self.operators))
+        }
 
 
-def get_example_operators() -> list[OperatorParams]:
-    return [
-        OperatorParams(name="Operator1", capacity_epsilon=1600, c=0.041, beta=4.20, K=-55),
-        OperatorParams(name="Operator2", capacity_epsilon=1400, c=0.036, beta=3.80, K=-42),
-        OperatorParams(name="Operator3", capacity_epsilon=1400, c=0.042, beta=3.80, K=-42),
-        OperatorParams(name="Operator4", capacity_epsilon=1550, c=0.031, beta=4.50, K=-52),
-    ]
+def capacity_epsilon_from_peak(
+    max_hourly_traffic: float,
+    peak_fraction: float = PEAK_LOAD_FRACTION,
+) -> float:
+    if max_hourly_traffic <= 0:
+        raise ValueError("max_hourly_traffic must be positive")
+    return max_hourly_traffic / peak_fraction
 
 
-def get_realistic_example_operators(
-    beta: float | None = None,
-    k: float | None = None,
-    epsilon: float | None = None,
-) -> list[OperatorParams]:
-    """
-    The Operators should represent approximately a radio site of Orange, SFR, Bouygues and Free (in order).
-
-    Optional antenna metrics (beta, k, epsilon) are accepted for future calibration; when omitted,
-    the hard-coded reference parameters below are used.
-    """
-    _ = (beta, k, epsilon)    # for now, these values are hardcoded
-
-    return [
-        OperatorParams(name="Operator1", capacity_epsilon=1600, c=0.041, beta=4.20, K=-55),
-        OperatorParams(name="Operator2", capacity_epsilon=1400, c=0.036, beta=3.80, K=-42),
-        OperatorParams(name="Operator3", capacity_epsilon=1400, c=0.042, beta=3.80, K=-42),
-        OperatorParams(name="Operator4", capacity_epsilon=1550, c=0.031, beta=4.50, K=-52),
-    ]
-
-
-def get_example_traffic(
-    num_steps: int | None = None,
-    horizon_hours: float = 1.0,
+def expand_hourly_profile_to_steps(
+    hourly_profile: list[float],
     step_minutes: int = DEFAULT_STEP_MINUTES,
-) -> dict[int, list[float]]:
-    import math
+    horizon_hours: float = HORIZON_HOURS,
+) -> list[float]:
+    sph = steps_per_hour(step_minutes)
+    num_steps = int(horizon_hours * 60 / step_minutes)
+    if len(hourly_profile) != 24:
+        raise ValueError(f"Expected 24 hourly values, got {len(hourly_profile)}")
 
-    if num_steps is None:
-        num_steps = int(horizon_hours * 60 / step_minutes)
-
-    traffic: dict[int, list[float]] = {0: [], 1: [], 2: [], 3: []}
-
-    for t in range(num_steps):
-        t_norm = t / num_steps if num_steps > 1 else 0.0
-        wave = 0.6 + 0.8 * math.sin(math.pi * t_norm) ** 2
-        traffic[0].append(20.0 + 50.0 * wave)
-
-        early_wave = 0.5 + 0.9 * math.sin(math.pi * (t_norm + 0.1)) ** 2
-        traffic[1].append(15.0 + 40.0 * early_wave)
-
-        counter_wave = 1.0 - 0.6 * math.sin(math.pi * t_norm) ** 2
-        traffic[2].append(10.0 + 30.0 * counter_wave)
-
-        traffic[3].append(10.0 + 35.0 * t_norm + 5.0 * math.sin(2 * math.pi * t_norm))
-
-    return traffic
+    series: list[float] = []
+    for step in range(num_steps):
+        series.append(hourly_profile[step // sph])
+    return series
 
 
-def get_realistic_example_traffic(
-    operators: list[OperatorParams],
-    num_steps: int | None = None,
-    horizon_hours: float = 24.0,
-    step_minutes: int = DEFAULT_STEP_MINUTES,
-    mean_load_factor: float = 0.3,
-    noise_std: float = 0.08,
-    seed: int | None = 42,
-) -> dict[int, list[float]]:
-    import math
-    import random
-
-    if num_steps is None:
-        num_steps = int(horizon_hours * 60 / step_minutes)
-
-    if seed is not None:
-        random.seed(seed)
-
-    n = len(operators)
-    ti_moy = [mean_load_factor * op.capacity_epsilon for op in operators]
-    traffic: dict[int, list[float]] = {i: [] for i in range(n)}
-
-    for t in range(num_steps):
-        t_hour = t * step_minutes / 60.0
-        psi = max(
-            0.1,
-            1
-            - 0.7 * math.cos(math.pi * (t_hour - 4) / 12)
-            + 0.4 * math.sin(math.pi * (t_hour - 12) / 6),
+def derive_operator_hourly_profiles(
+    base_hourly: list[float],
+    num_operators: int = NUM_OPERATORS,
+    scale_range: tuple[float, float] = (0.8, 1.0),
+    noise_std: float = 0.02,
+    seed: int = 42,
+) -> list[list[float]]:
+    """Operator 0 keeps base_hourly; others are scaled copies with Gaussian noise."""
+    rng = random.Random(seed)
+    profiles = [list(base_hourly)]
+    for _ in range(1, num_operators):
+        scale = rng.uniform(*scale_range)
+        profiles.append(
+            [
+                max(0.0, value * scale * (1.0 + rng.gauss(0, noise_std)))
+                for value in base_hourly
+            ]
         )
-        for i in range(n):
-            noise = 1.0 + random.gauss(0, noise_std)
-            raw = ti_moy[i] * psi * noise
-            traffic[i].append(min(max(0.0, raw), operators[i].capacity_epsilon))
+    return profiles
 
-    return traffic
+
+def derive_operator_cost_coeffs(
+    beta_op1: float,
+    k_op1: float,
+    num_operators: int = NUM_OPERATORS,
+    spread: float = 0.1,
+    seed: int = 42,
+) -> list[tuple[float, float]]:
+    """Operator 1 keeps CSV-derived costs; others get close random perturbations."""
+    rng = random.Random(seed + 1)
+    coeffs = [(beta_op1, k_op1)]
+    for _ in range(1, num_operators):
+        beta_scale = rng.uniform(1.0 - spread, 1.0 + spread)
+        k_scale = rng.uniform(1.0 - spread, 1.0 + spread)
+        coeffs.append((beta_op1 * beta_scale, k_op1 * k_scale))
+    return coeffs
+
+
+def build_operators_and_traffic(
+    base_hourly: list[float],
+    cost_coeffs: list[tuple[float, float]],
+    step_minutes: int = DEFAULT_STEP_MINUTES,
+    seed: int = 42,
+) -> tuple[list[OperatorParams], dict[int, list[float]]]:
+    hourly_profiles = derive_operator_hourly_profiles(base_hourly, seed=seed)
+    operators: list[OperatorParams] = []
+    traffic: dict[int, list[float]] = {}
+
+    for i, hourly in enumerate(hourly_profiles):
+        beta, k = cost_coeffs[i]
+        operators.append(
+            OperatorParams(
+                name=OPERATOR_NAMES[i],
+                capacity_epsilon=capacity_epsilon_from_peak(max(hourly)),
+                c=REVENUE_COEFFS[i],
+                beta=beta,
+                K=k,
+            )
+        )
+        traffic[i] = expand_hourly_profile_to_steps(hourly, step_minutes)
+
+    return operators, traffic
+
+
+def _load_scenario_inputs(
+    antenna_id: str | None,
+    price_per_kwh: float,
+    seed: int,
+) -> tuple[list[float], str, str, list[tuple[float, float]]]:
+    """Load traffic profile and per-operator (beta, K) from CSV or fallback."""
+    if CSV_PATH.is_file():
+        try:
+            site_id = antenna_id or DEFAULT_ANTENNA_ID
+            profile, power = load_antenna_profiles(site_id)
+            beta_tilde, k_tilde = power_regression_from_profiles(profile, power)
+            beta_op1, k_op1 = power_coefficients_to_cost(
+                beta_tilde, k_tilde, price_per_kwh=price_per_kwh
+            )
+            cost_coeffs = derive_operator_cost_coeffs(beta_op1, k_op1, seed=seed)
+            return profile, site_id, "csv", cost_coeffs
+        except (ValueError, SystemExit, OSError):
+            pass
+
+    site_id = antenna_id or DEFAULT_ANTENNA_ID
+    cost_coeffs = list(zip(FALLBACK_BETA_COEFFS, FALLBACK_K_COEFFS))
+    return list(FALLBACK_HOURLY_TRAFFIC_OP1), site_id, "fallback", cost_coeffs
 
 
 def load_scenario(
-    name: str,
     step_minutes: int = DEFAULT_STEP_MINUTES,
     antenna_id: str | None = None,
+    seed: int = 42,
+    price_per_kwh: float = DEFAULT_ELECTRICITY_PRICE_PER_KWH,
 ) -> Scenario:
-    if name == "example":
-        operators = get_example_operators()
-        traffic = get_example_traffic(step_minutes=step_minutes)
-        return Scenario(
-            name="example",
-            operators=operators,
-            traffic=traffic,
-            horizon_hours=1.0,
-            step_minutes=step_minutes,
-        )
-    if name == "realistic":
-        if antenna_id is not None:
-            _, beta, k, epsilon = compute_antenna_metrics(antenna_id)
-            operators = get_realistic_example_operators(beta, k, epsilon)
-        else:
-            operators = get_realistic_example_operators()
-        traffic = get_realistic_example_traffic(operators, step_minutes=step_minutes)
-        return Scenario(
-            name="realistic",
-            operators=operators,
-            traffic=traffic,
-            horizon_hours=24.0,
-            step_minutes=step_minutes,
-        )
-    raise ValueError(f"Unknown scenario: {name!r}. Use 'example' or 'realistic'.")
+    """
+    Build a 24 h weekday-type scenario for 4 operators.
 
+    Operator 1 traffic: mean hourly load over the first 5 weekdays in
+    ``radio_sites.csv`` when available, otherwise ``FALLBACK_HOURLY_TRAFFIC_OP1``.
 
-def _plot_traffic_comparison(out_path: str | None = None) -> None:
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    example = load_scenario("example")
-    realistic = load_scenario("realistic")
-    palette = ["#2563eb", "#dc2626", "#16a34a", "#f59e0b"]
-
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharey=True)
-    axes = axes.flatten()
-
-    for i, ax in enumerate(axes):
-        ex_traffic = example.traffic[i]
-        rl_traffic = realistic.traffic[i]
-        t_example_h = np.arange(len(ex_traffic)) * example.step_minutes / 60.0
-        t_realistic_h = np.arange(len(rl_traffic)) * realistic.step_minutes / 60.0
-
-        ax.plot(t_example_h, ex_traffic, color=palette[i], lw=1.8, ls="--", label="example (1h)")
-        ax.plot(t_realistic_h, rl_traffic, color=palette[i], lw=1.2, alpha=0.85, label="realistic (24h)")
-        ax.set_title(f"Operator {i + 1}")
-        ax.set_xlabel("Time (h)")
-        ax.set_ylabel("Traffic")
-        ax.legend(fontsize=8)
-
-    fig.suptitle("Example vs Realistic Traffic (absolute values)", fontweight="bold")
-    fig.tight_layout()
-
-    if out_path is not None:
-        fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.show()
-    plt.close(fig)
-
-
-if __name__ == '__main__':
-    import os
-
-    out_dir = os.path.join(os.path.dirname(__file__), "..", "figures")
-    os.makedirs(out_dir, exist_ok=True)
-    _plot_traffic_comparison(os.path.join(out_dir, "traffic_comparison.png"))
+    beta and K: from power-vs-rho regression on CSV data when available
+    (converted to hourly cost via price_per_kwh), otherwise hard-coded fallbacks.
+    Operators 2-4: traffic and costs are close perturbations of operator 1.
+    """
+    base_hourly, site_id, data_source, cost_coeffs = _load_scenario_inputs(
+        antenna_id, price_per_kwh, seed
+    )
+    operators, traffic = build_operators_and_traffic(
+        base_hourly, cost_coeffs, step_minutes=step_minutes, seed=seed
+    )
+    return Scenario(
+        operators=operators,
+        traffic=traffic,
+        step_minutes=step_minutes,
+        antenna_id=site_id,
+        data_source=data_source,
+    )

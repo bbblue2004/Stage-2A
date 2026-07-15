@@ -1,67 +1,110 @@
+"""Antenna metrics derived from radio_sites.csv."""
+
+from __future__ import annotations
+
 from collections import defaultdict
 
 import numpy as np
 
 from . import data_loader
 
+DEFAULT_WEEKDAYS = 5
+DEFAULT_ELECTRICITY_PRICE_PER_KWH = 0.15
 
-def compute_antenna_metrics(antenna_id):
-    """Compute hourly traffic, beta, K and epsilon for the requested antenna."""
+
+def _weekday_days(daily_groups: dict, max_days: int = DEFAULT_WEEKDAYS) -> list[tuple]:
+    days = []
+    for day in sorted(daily_groups):
+        values = daily_groups[day]
+        if values and data_loader.is_weekday(values[0][0]):
+            days.append((day, values))
+        if len(days) >= max_days:
+            break
+    return days
+
+
+def load_antenna_profiles(
+    antenna_id: str,
+    max_weekdays: int = DEFAULT_WEEKDAYS,
+) -> tuple[list[float], list[float]]:
+    """Read CSV once; return (hourly_traffic, hourly_power) with 24 values each."""
     rows = data_loader.extract_antenna_time_series(antenna_id)
-
-    daily_groups = defaultdict(list)
+    daily_groups: dict = defaultdict(list)
     for dt, traffic, power in rows:
         daily_groups[dt.date()].append((dt, traffic, power))
 
-    if not daily_groups:
-        raise SystemExit(f'No daily data available for antenna {antenna_id}')
+    weekday_days = _weekday_days(daily_groups, max_weekdays)
+    if not weekday_days:
+        raise ValueError(f"No weekday data for antenna {antenna_id!r}")
 
-    ordered_days = sorted(daily_groups.items())
-    first_five_days = ordered_days[:5]
+    traffic_samples: dict[int, list[float]] = defaultdict(list)
+    power_samples: dict[int, list[float]] = defaultdict(list)
 
-    hourly_traffic_by_hour = defaultdict(list)
-    hourly_power_by_hour = defaultdict(list)
-
-    for _, values in first_five_days:
-        day_traffic_by_hour = defaultdict(list)
-        day_power_by_hour = defaultdict(list)
+    for _, values in weekday_days:
+        traffic_by_hour: dict[int, list[float]] = defaultdict(list)
+        power_by_hour: dict[int, list[float]] = defaultdict(list)
         for dt, traffic, power in values:
-            day_traffic_by_hour[dt.hour].append(traffic)
-            day_power_by_hour[dt.hour].append(power)
+            traffic_by_hour[dt.hour].append(traffic)
+            power_by_hour[dt.hour].append(power)
+        for hour, samples in traffic_by_hour.items():
+            traffic_samples[hour].append(float(np.mean(samples)))
+        for hour, samples in power_by_hour.items():
+            power_samples[hour].append(float(np.mean(samples)))
 
-        for hour in day_traffic_by_hour:
-            hourly_traffic_by_hour[hour].append(float(np.mean(day_traffic_by_hour[hour])))
-            hourly_power_by_hour[hour].append(float(np.mean(day_power_by_hour[hour])))
+    traffic_profile = [
+        float(np.mean(traffic_samples[h])) if traffic_samples.get(h) else 0.0
+        for h in range(24)
+    ]
+    power_profile = [
+        float(np.mean(power_samples[h])) if power_samples.get(h) else 0.0
+        for h in range(24)
+    ]
+    return traffic_profile, power_profile
 
-    if not hourly_traffic_by_hour:
-        raise SystemExit(f'No hourly data available for antenna {antenna_id}')
 
-    sorted_hours = sorted(hourly_traffic_by_hour)
-    traffic_per_hour = [float(np.mean(hourly_traffic_by_hour[hour])) for hour in sorted_hours]
-    power_per_hour = [float(np.mean(hourly_power_by_hour[hour])) for hour in sorted_hours]
+def compute_hourly_traffic_profile(
+    antenna_id: str,
+    max_weekdays: int = DEFAULT_WEEKDAYS,
+) -> list[float]:
+    return load_antenna_profiles(antenna_id, max_weekdays)[0]
 
-    rho = data_loader.compute_rho_from_traffic(traffic_per_hour)
-    epsilon = float(max(traffic_per_hour))
 
+def power_regression_from_profiles(
+    traffic_profile: list[float],
+    power_profile: list[float],
+) -> tuple[float, float]:
+    """Return (beta_tilde, K_tilde) from hourly traffic and power profiles."""
+    rho = data_loader.compute_rho_from_traffic(traffic_profile)
     if len(rho) < 2:
-        beta = 0.0
-        k = float(np.mean(power_per_hour))
-    else:
-        beta, k = np.polyfit(rho, power_per_hour, 1)
-
-    return traffic_per_hour, float(beta), float(k), epsilon
+        return 0.0, float(np.mean(power_profile)) if power_profile else 0.0
+    beta_tilde, k_tilde = np.polyfit(rho, power_profile, 1)
+    return float(beta_tilde), float(k_tilde)
 
 
-if __name__ == '__main__':
-    import argparse
+def compute_power_regression_coefficients(
+    antenna_id: str,
+    max_weekdays: int = DEFAULT_WEEKDAYS,
+) -> tuple[float, float]:
+    traffic, power = load_antenna_profiles(antenna_id, max_weekdays)
+    return power_regression_from_profiles(traffic, power)
 
-    parser = argparse.ArgumentParser(description='Compute antenna metrics for one ID.')
-    parser.add_argument('antenna_id', help='SYS.NIDT antenna identifier')
-    args = parser.parse_args()
 
-    traffic, beta, k, epsilon = compute_antenna_metrics(args.antenna_id)
-    print(f'antenna_id={args.antenna_id}')
-    print(f'traffic={traffic}')
-    print(f'beta={beta}')
-    print(f'K={k}')
-    print(f'epsilon={epsilon}')
+def power_coefficients_to_cost(
+    beta_tilde: float,
+    k_tilde: float,
+    duration_hours: float = 1.0,
+    price_per_kwh: float = DEFAULT_ELECTRICITY_PRICE_PER_KWH,
+) -> tuple[float, float]:
+    scale = duration_hours * price_per_kwh / 1000.0
+    return beta_tilde * scale, k_tilde * scale
+
+
+def compute_antenna_metrics(
+    antenna_id: str,
+    max_weekdays: int = DEFAULT_WEEKDAYS,
+    price_per_kwh: float = DEFAULT_ELECTRICITY_PRICE_PER_KWH,
+) -> tuple[list[float], float, float, float]:
+    traffic, power = load_antenna_profiles(antenna_id, max_weekdays)
+    beta_tilde, k_tilde = power_regression_from_profiles(traffic, power)
+    beta, k = power_coefficients_to_cost(beta_tilde, k_tilde, price_per_kwh=price_per_kwh)
+    return traffic, beta, k, float(max(traffic))

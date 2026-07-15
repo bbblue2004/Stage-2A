@@ -1,8 +1,12 @@
-from typing import Callable, Optional
+from dataclasses import dataclass
+from itertools import combinations, permutations
 from math import factorial
-from itertools import permutations, combinations
+from typing import Callable, Optional
+
+import pulp
+
 from src.core.generate_data import OperatorParams
-from src.core.optimiser import coalition_value_star, coalition_utility
+from src.core.optimiser import coalition_value_star, coalition_utility, iter_nonempty_coalitions
 from src.core.utility import single_operator_utility
 
 
@@ -65,7 +69,8 @@ def payoff_rule1(
     traffic_at_t: dict[int, float],
     actual_v_star: Optional[float] = None,
     actual_guardians: Optional[list[int]] = None,
-    actual_allocation: Optional[dict[int, float]] = None
+    actual_allocation: Optional[dict[int, float]] = None,
+    duration_hours: float = 1.0,
 ) -> dict[int, float]:
     """
     Gain-sharing rule 1: Equalized costs plus Shapley-based revenues.
@@ -100,7 +105,7 @@ def payoff_rule1(
         allocation = actual_allocation
     else:
         v_star_coalition, guardians, allocation = coalition_value_star(
-            coalition, operators, traffic_at_t
+            coalition, operators, traffic_at_t, duration_hours=duration_hours
         )
 
     if abs(v_star_coalition) < 1e-9:
@@ -112,8 +117,10 @@ def payoff_rule1(
     for g in guardians:
         allocated_traffic = allocation.get(g, 0.0)
         rho_g = min(1.0, allocated_traffic / operators[g].capacity_epsilon)
-        # D_i = beta_i * rho_i - K_i (note: K is negative, so -K is positive)
-        guardian_costs[g] = operators[g].beta * rho_g - operators[g].K
+        # D_i = beta_i * rho_i + K_i
+        guardian_costs[g] = (
+            operators[g].beta * rho_g + operators[g].K
+        ) * duration_hours
 
     # Average cost share
     total_cost = sum(guardian_costs.values())
@@ -145,7 +152,9 @@ def payoff_rule2(
     operators: list[OperatorParams],
     traffic_at_t: dict[int, float],
     actual_v_star: Optional[float] = None,
-    actual_guardians: Optional[list[int]] = None
+    actual_guardians: Optional[list[int]] = None,
+    v_star: Optional[Callable[[list[int]], float]] = None,
+    duration_hours: float = 1.0,
 ) -> dict[int, float]:
     """
     Gain-sharing rule 2: Guard vs non-guard interpolated Shapley.
@@ -173,7 +182,11 @@ def payoff_rule2(
     def v_star_standard(s: list[int]) -> float:
         if not s:
             return 0.0
-        val, _, _ = coalition_value_star(s, operators, traffic_at_t)
+        if v_star is not None:
+            return v_star(s)
+        val, _, _ = coalition_value_star(
+            s, operators, traffic_at_t, duration_hours=duration_hours
+        )
         return val
 
     # Use actual v_star if provided, otherwise compute optimal
@@ -189,24 +202,24 @@ def payoff_rule2(
     psi: dict[int, float] = {}
 
     for player in coalition:
-        # Define v_star_without_guard_i: player i cannot be in guardian set
+        guard_memo: dict[tuple[tuple[int, ...], int], float] = {}
+
         def v_star_without_guard(s: list[int], excluded: int = player) -> float:
             if not s:
                 return 0.0
 
-            total_traffic = sum(traffic_at_t[i] for i in s)
+            key = (tuple(sorted(s)), excluded)
+            if key in guard_memo:
+                return guard_memo[key]
 
-            best_value = float('-inf')
+            total_traffic = sum(traffic_at_t[i] for i in s)
+            best_value = float("-inf")
             candidates = [i for i in s if i != excluded]
 
             if not candidates:
-                # No valid guardians, compute individual value if excluded is alone
-                if len(s) == 1 and s[0] == excluded:
-                    # Single player who can't be guardian - return 0 or individual value
-                    return 0.0
-                return float('-inf')
+                guard_memo[key] = 0.0
+                return 0.0
 
-            # Enumerate all non-empty subsets of candidates (excluding 'excluded')
             for r in range(1, len(candidates) + 1):
                 for guardian_combo in combinations(candidates, r):
                     guardians = list(guardian_combo)
@@ -215,11 +228,16 @@ def payoff_rule2(
                     if total_capacity < total_traffic - 1e-9:
                         continue
 
-                    value = coalition_utility(s, guardians, operators, traffic_at_t)
+                    value = coalition_utility(
+                        s, guardians, operators, traffic_at_t,
+                        duration_hours=duration_hours,
+                    )
                     if value > best_value:
                         best_value = value
 
-            return best_value if best_value > float('-inf') else 0.0
+            result = best_value if best_value > float("-inf") else 0.0
+            guard_memo[key] = result
+            return result
 
         psi[player] = shapley_values(coalition, v_star_without_guard).get(player, 0.0)
 
@@ -254,7 +272,8 @@ def payoff_rule3(
     coalition: list[int],
     operators: list[OperatorParams],
     traffic_at_t: dict[int, float],
-    actual_v_star: Optional[float] = None
+    actual_v_star: Optional[float] = None,
+    duration_hours: float = 1.0,
 ) -> dict[int, float]:
     """
     Gain-sharing rule 3: Proportional to standalone utility.
@@ -282,7 +301,8 @@ def payoff_rule3(
         T_i = traffic_at_t[i]
         rho_i = min(1.0, T_i / operators[i].capacity_epsilon)
         standalone[i] = single_operator_utility(
-            operators[i].c, T_i, operators[i].beta, rho_i, operators[i].K
+            operators[i].c, T_i, operators[i].beta, rho_i, operators[i].K,
+            duration_hours=duration_hours,
         )
 
     # Total standalone utility
@@ -292,7 +312,9 @@ def payoff_rule3(
     if actual_v_star is not None:
         v_star_coalition = actual_v_star
     else:
-        v_star_coalition, _, _ = coalition_value_star(coalition, operators, traffic_at_t)
+        v_star_coalition, _, _ = coalition_value_star(
+            coalition, operators, traffic_at_t, duration_hours=duration_hours
+        )
 
     if abs(V_total) < 1e-9:
         # Avoid division by zero - equal split
@@ -304,3 +326,98 @@ def payoff_rule3(
         payoffs[i] = standalone[i] * v_star_coalition / V_total
 
     return payoffs
+
+
+# ---------------------------------------------------------------------------
+# Cooperative core allocation (max-epsilon LP, "least core" / nucleole approach)
+# ---------------------------------------------------------------------------
+
+
+def iter_coalition_tuples(players: list[int]) -> list[tuple[int, ...]]:
+    """All non-empty subsets of players as sorted tuples."""
+    return [
+        tuple(sorted(coalition))
+        for coalition in iter_nonempty_coalitions(len(players))
+    ]
+
+
+def build_v_star_map(
+    operators: list[OperatorParams],
+    traffic_at_t: dict[int, float],
+    players: Optional[list[int]] = None,
+    duration_hours: float = 1.0,
+) -> dict[tuple[int, ...], float]:
+    """
+    Compute v*(S) for every non-empty coalition S.
+
+    Uses coalition_value_star (greedy allocation, optimal guardian set).
+    """
+    if players is None:
+        players = list(range(len(operators)))
+
+    v_star_map: dict[tuple[int, ...], float] = {}
+    for coalition in iter_nonempty_coalitions(len(players)):
+        v_star, _, _ = coalition_value_star(
+            coalition, operators, traffic_at_t, duration_hours=duration_hours
+        )
+        v_star_map[tuple(sorted(coalition))] = v_star
+    return v_star_map
+
+
+@dataclass
+class LeastCoreResult:
+    """Payoff vector from the max-epsilon core linear program."""
+
+    payoffs: dict[int, float]
+    epsilon: float
+    status: str
+
+
+def least_core_allocation(
+    players: list[int],
+    v_star_map: dict[tuple[int, ...], float],
+) -> LeastCoreResult:
+    """
+    Allocate gains via a linear program that maximises coalition stability margin.
+
+    maximise epsilon
+    subject to:
+        sum_i x_i = v*(N)                           (efficiency)
+        sum_{i in S} x_i >= v*(S) + epsilon           for all S subset N, S != N
+
+    No coalition S should prefer seceding: its members' total payoff must be at
+    least v*(S). Epsilon is the uniform margin added above those coalition values.
+
+    Args:
+        players: Grand-coalition member indices
+        v_star_map: Coalition values keyed by sorted tuples of player indices
+
+    Returns:
+        LeastCoreResult with per-player payoffs, epsilon, and solver status.
+    """
+    grand_coalition = tuple(sorted(players))
+    grand_value = v_star_map[grand_coalition]
+
+    model = pulp.LpProblem("LeastCore_RAN_Sharing", pulp.LpMaximize)
+    x = pulp.LpVariable.dicts("gain", players, cat=pulp.LpContinuous)
+    epsilon_var = pulp.LpVariable("epsilon", cat=pulp.LpContinuous)
+
+    model += epsilon_var, "Maximise_stability_margin"
+    model += pulp.lpSum(x[i] for i in players) == grand_value, "Efficiency"
+
+    for coalition in iter_coalition_tuples(players):
+        if coalition == grand_coalition:
+            continue
+        coalition_value = v_star_map[coalition]
+        model += (
+            pulp.lpSum(x[i] for i in coalition) >= coalition_value + epsilon_var,
+            f"Stability_{''.join(str(i) for i in coalition)}",
+        )
+
+    model.solve(pulp.PULP_CBC_CMD(msg=False))
+
+    status = pulp.LpStatus[model.status]
+    payoffs = {i: float(pulp.value(x[i]) or 0.0) for i in players}
+    epsilon = float(pulp.value(epsilon_var) or 0.0)
+
+    return LeastCoreResult(payoffs=payoffs, epsilon=epsilon, status=status)
