@@ -382,8 +382,8 @@ def least_core_allocation(
 
     maximise epsilon
     subject to:
-        sum_i x_i = v*(N)                           (efficiency)
-        sum_{i in S} x_i >= v*(S) + epsilon           for all S subset N, S != N
+        sum_i x_i = v*(A)                           (efficiency)
+        sum_{i in S} x_i >= v*(S) + epsilon           for all S subset A, S != A
 
     No coalition S should prefer seceding: its members' total payoff must be at
     least v*(S). Epsilon is the uniform margin added above those coalition values.
