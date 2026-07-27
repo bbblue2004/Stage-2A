@@ -1,0 +1,82 @@
+% \documentclass[conference]{IEEEtran}
+\documentclass{article}
+% 
+% Packages nécessaires pour le support des caractères spéciaux et des mathématiques
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts, amsthm}
+\usepackage{dsfont}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage[margin=3cm]{geometry} % Définit une marge uniforme de 3cm tout autour
+\setlength{\parindent}{0pt}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Définition}[section]
+
+\theoremstyle{remark}
+\newtheorem{remarque}[definition]{Remarque}
+
+\theoremstyle{remark}
+\newtheorem{exemple}[definition]{Exemple}
+
+\theoremstyle{plain}
+\newtheorem{theorem}[definition]{Théorème}
+
+\theoremstyle{definition}
+\newtheorem{proposition}[definition]{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{corollaire}[definition]{Corollaire}
+
+\theoremstyle{definition}
+\newtheorem{lemme}[definition]{Lemme}
+
+\begin{document}
+
+% Titre de l'article
+\title{TITLE}
+
+% Auteurs
+\author{
+Axel Hovasse\\
+Département\\
+Institution
+}
+
+\maketitle
+
+% Résumé
+\begin{abstract}
+
+\end{abstract}
+
+% Mots-clés
+% \begin{IEEEkeywords}
+
+% \end{IEEEkeywords}
+
+\input{sections/01 Introduction}
+
+\input{sections/02 Related Work}
+
+\input{sections/03 System Model}
+
+\input{sections/04 Optimisation opérationnelle d'une coalition}
+
+\input{sections/05 Game-theoretic analysis}
+
+\input{sections/06 Performance Evaluation}
+
+\input{sections/07 Conclusion & Perspectives}
+
+
+
+% Bibliographie
+\begin{thebibliography}{00}
+\bibitem{ref1} A. Auteur, ``Titre de l'article,'' \textit{Nom de la revue}, vol. x, no. x, pp. xxx-xxx, Année.
+\end{thebibliography}
+
+\end{document}

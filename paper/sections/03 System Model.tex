@@ -1,0 +1,273 @@
+\section{Modèle du système et formulation du problème}
+
+Cette section formalise le fonctionnement coopératif d'opérateurs présents sur un même site radio pendant une période de faible trafic. Au sein de chaque coalition, certains opérateurs, appelés \emph{gardiens}, maintiennent leurs équipements actifs afin d'acheminer l'intégralité du trafic de la coalition, tandis que les équipements des autres membres sont placés en veille. Le modèle détermine conjointement la configuration de gardiens et la répartition du trafic qui minimisent le coût opérationnel de la coalition.
+
+
+\subsection{Cadre et hypothèses}
+
+Nous considérons un ensemble d'opérateurs de réseaux mobiles
+\(N=\{1,\dots,n\}\), présents sur un même site radio et desservant une
+même zone géographique. Chaque opérateur \(i\in N\) dispose d'un
+équipement radio agrégé qui peut être maintenu actif ou placé en veille.
+La décision est prise pour une période de faible trafic fixée, appelée
+par la suite \emph{période de décision}.
+
+\begin{enumerate}
+    \item \textbf{Site unique et recouvrement de couverture.}
+    Les équipements considérés couvrent la même zone. Tout sous-ensemble
+    non vide d'équipements actifs est donc supposé assurer la couverture
+    du site. L'extinction d'un équipement ne modifie ni la couverture
+    utile ni les interférences environnantes. La faisabilité d'une
+    configuration de gardiens dépend donc uniquement de la capacité
+    effective agrégée de leurs équipements à acheminer le trafic.
+
+    \item \textbf{Fongibilité du trafic et capacités effectives.}
+    Le trafic des membres d'une coalition peut être acheminé
+    indifféremment par chacun de ses opérateurs actifs. Les mécanismes
+    techniques nécessaires à ce transfert sont supposés disponibles.
+    La capacité d'un équipement est une capacité effective, intégrant
+    les marges nécessaires au respect des exigences de service. Elle est
+    indépendante de l'identité des clients servis et des autres
+    équipements actifs. Les capacités sont ainsi additives et toute la
+    demande doit être satisfaite.
+
+    \item \textbf{Décision statique en information complète.}
+    Les demandes, les capacités et les paramètres de coût sont constants
+    et connus pendant la période de décision. Les périodes successives
+    sont optimisées indépendamment : le modèle ne comporte ni incertitude
+    intrapériode ni variable d'état décrivant l'historique d'utilisation
+    des équipements.
+
+    \item \textbf{États opérationnels binaires.}
+    Chaque équipement est soit actif et susceptible d'acheminer du
+    trafic, soit en veille et n'en achemine aucun. Les délais et coûts de
+    transition entre ces états sont négligés, ce qui correspond à une
+    période de décision suffisamment longue devant les temps de
+    commutation. Seuls les coûts opérationnels évitables sont modélisés ;
+    les coûts structurels supportés indépendamment de l'état de
+    l'équipement sont exclus.
+
+    \item \textbf{Coût opérationnel affine en taux de charge.}
+    Lorsqu'un équipement est actif, son coût opérationnel évitable est
+    la somme d'une composante fixe et d'une composante proportionnelle à
+    son taux de charge. Cette approximation affine représente le coût de
+    fonctionnement incompressible d'un équipement actif et
+    l'accroissement de coût associé au trafic. Elle constitue une
+    approximation de premier ordre adaptée au régime de faible trafic
+    étudié.
+
+    \item \textbf{Neutralité des revenus et utilité transférable.}
+    Toute solution opérationnelle admissible sert la même demande totale. Les
+    revenus tirés des abonnés sont donc supposés indépendants de
+    l'équipement qui achemine physiquement leur trafic et n'interviennent
+    pas dans la comparaison des solutions opérationnelles. Les économies
+    opérationnelles peuvent être redistribuées sans friction entre les
+    membres d'une coalition au moyen de transferts monétaires.
+\end{enumerate}
+
+La décision opérationnelle comporte ainsi deux niveaux : le choix des
+équipements actifs et la répartition du trafic entre eux. Les
+paramètres associés sont introduits ci-dessous.
+
+\subsection{Opérateurs et fonctionnement autonome}
+
+Toutes les grandeurs de trafic désignent des volumes cumulés sur la
+période de décision et sont exprimées en gigaoctets (\(\mathrm{Go}\)).
+Toutes les grandeurs monétaires désignent des coûts cumulés sur cette
+période et sont exprimées en euros.
+
+\begin{definition}[Paramètres individuels et coût opérationnel autonome]
+Pour tout opérateur \(i\in N\), les paramètres primitifs du modèle sont :
+\begin{itemize}
+    \item \textbf{Demande \(d_i > 0\).}
+    Quantité de trafic engendrée par les clients de l'opérateur \(i\)
+    pendant la période de décision, exprimée en gigaoctets.
+
+    \item \textbf{Capacité effective \(q_i>0\).}
+    Quantité maximale de trafic que l'équipement actif de l'opérateur
+    \(i\) peut acheminer pendant cette période, également exprimée en
+    gigaoctets.
+
+    \item \textbf{Coût fixe de fonctionnement en état actif \(F_i>0\).}
+    Coût opérationnel évitable supporté dès que l'équipement de
+    l'opérateur \(i\) est actif, indépendamment du trafic acheminé. Il
+    regroupe notamment la consommation électrique incompressible en
+    fonctionnement et les coûts d'exploitation évitables lorsque
+    l'équipement est placé en veille. Les
+    coûts structurels non évitables, tels que le loyer du site, en sont
+    exclus. Le paramètre \(F_i\) est exprimé en euros.
+
+    \item \textbf{Surcoût variable à pleine charge \(\beta_i>0\).}
+    Surcoût opérationnel imputable à l'utilisation de l'équipement
+    lorsque son taux de charge vaut un. Il agrège la consommation additionnelle
+    liée au trafic et, lorsqu'ils sont valorisés, les coûts moyens de
+    maintenance ou de dépréciation dépendant de l'usage. Le paramètre
+    \(\beta_i\) est exprimé en euros ; il ne constitue pas un coût
+    variable unitaire par gigaoctet.
+\end{itemize}
+
+\paragraph{Réduction au coût différentiel.}
+La fonction de coût retenue peut être obtenue à partir d'une représentation
+comptable plus complète. Notons \(C_i^{\mathrm{inv}}\) l'ensemble des coûts
+supportés par l'opérateur \(i\) indépendamment de l'état de son équipement.
+Pour un taux de charge \(\rho\in[0,1]\), les coûts complets dans les états
+de veille et actif s'écrivent respectivement
+\[
+    \widehat C_i^{\mathrm{veille}}=C_i^{\mathrm{inv}},
+    \qquad
+    \widehat C_i^{\mathrm{actif}}(\rho)
+    =C_i^{\mathrm{inv}}+F_i+\beta_i\rho.
+\]
+Si \(R_i\) désigne le revenu total de l'opérateur sur la période, la
+positivité de \(d_i\) permet de poser \(c_i:=R_i/d_i\), exprimé en
+euros par gigaoctet, de sorte que
+\(R_i=c_i d_i\), sans imposer d'hypothèse particulière sur la structure
+tarifaire. En fonctionnement autonome, le coût comptable complet est
+\(\widehat C_i^0:=\widehat C_i^{\mathrm{actif}}(d_i/q_i)\), et le profit
+comptable vaut donc
+\[
+    v_i^0
+    =c_i d_i-\widehat C_i^0.
+\]
+Toute solution admissible servant les mêmes demandes, les revenus
+\(\sum_{i\in S}c_i d_i\) et les coûts invariants
+\(\sum_{i\in S}C_i^{\mathrm{inv}}\) sont identiques pour toutes les
+solutions d'une coalition donnée. Ils s'éliminent donc de leur comparaison.
+Maximiser le profit collectif revient ainsi exactement à minimiser les
+seuls coûts différentiels \(F_i+\beta_i\rho\), qui constituent la fonction
+de coût opérationnel retenue dans la suite.
+
+Le fonctionnement autonome est supposé réalisable :
+\[
+    d_i\leqslant q_i,\qquad \forall i\in N.
+\]
+
+Les grandeurs dérivées associées à l'opérateur \(i\) sont les suivantes :
+\begin{itemize}
+    \item \textbf{Taux de charge autonome \(\rho_i^0\).}
+    \[
+        \rho_i^0:=\frac{d_i}{q_i}\in(0,1].
+    \]
+    Cette grandeur sans dimension mesure la fraction de la capacité
+    utilisée lorsque l'opérateur sert seul sa demande.
+
+    \item \textbf{Coût variable unitaire \(\gamma_i\).}
+    \[
+        \gamma_i:=\frac{\beta_i}{q_i}.
+    \]
+    Il représente l'accroissement du coût opérationnel pour un gigaoctet
+    supplémentaire de trafic. Il est exprimé en
+    \(\text{€}/\mathrm{Go}\). Ainsi, pour un trafic \(t_i\), le coût variable
+    \(\beta_i(t_i/q_i)\) s'écrit également \(\gamma_i t_i\).
+
+    \item \textbf{Coût opérationnel autonome \(C_i^0\).}
+    \[
+        C_i^0:=F_i+\beta_i\rho_i^0
+        =F_i+\gamma_i d_i.
+    \]
+    Il s'agit du coût évitable supporté par l'opérateur \(i\) lorsqu'il
+    maintient son équipement actif et achemine sa propre demande.
+\end{itemize}
+\end{definition}
+
+
+
+\subsection{Coalitions, configurations de gardiens et répartitions admissibles}
+
+
+\begin{definition}[Coalition]
+Une \textbf{coalition} est un sous-ensemble non vide \(S\subseteq N\).
+Elle représente un groupe d'opérateurs coopérant sur le site.
+On note \(2^N:=\{S\mid S\subseteq N\}\) l'ensemble des sous-ensembles de
+\(N\), et \(\mathcal S:=2^N\setminus\{\varnothing\}\) l'ensemble des
+coalitions. Ainsi, \(|\mathcal S|=2^n-1\).
+\end{definition}
+
+Pour tout $A \subseteq N$, la \textbf{demande de trafic totale} de $A$ est notée :
+\begin{equation}
+    d(A) := \sum_{i \in A} d_i
+\end{equation}
+et sa \textbf{capacité effective agrégée} est définie par :
+\begin{equation}
+    q(A) := \sum_{i \in A} q_i
+\end{equation}
+
+\begin{definition}[Configuration de gardiens]
+Dans une coalition $S \in \mathcal S$, un ensemble d'\textbf{opérateurs gardiens} est un sous-ensemble non vide $G\subseteq S$ dont les équipements restent actifs et acheminent la totalité de la demande de trafic $d(S)$.
+
+Le couple $(S,G)$ est appelé \textbf{configuration de gardiens}. Il est dit \textbf{faisable} si la capacité effective agrégée des équipements des gardiens est suffisante pour acheminer le trafic de la coalition, soit $d(S) \leqslant q(G)$.
+Pour tout $S \in \mathcal S$, on note $\mathcal G(S)$ l'ensemble des $G\subseteq S$ non vides tels que la configuration de gardiens $(S, G)$ est faisable :
+\begin{equation}
+    \mathcal G(S) = \left\{ \varnothing \not = G \subseteq S \;\middle|\; d(S) \leqslant q(G) \right\}
+\end{equation}
+
+On note $\mathcal{E} = \left\{ (S, G) \;\middle|\; S \in \mathcal S \text{ et } G \in \mathcal G(S) \right\}$ l'ensemble de toutes les configurations de gardiens faisables.
+
+L'hypothèse \(d_i\leqslant q_i\) pour tout \(i\in N\) implique
+\(d(S)\leqslant q(S)\). Ainsi, \(S\in\mathcal G(S)\), de sorte que
+\(\mathcal G(S)\) est non vide pour toute coalition \(S\), et donc que
+\(\mathcal E\) est non vide.
+
+\end{definition}
+
+
+\begin{definition}[Vecteur de répartition du trafic admissible]
+Soit $(S, G)\in \mathcal E$. Un \textit{vecteur de répartition du trafic} est un vecteur global $\mathbf{t} = ( t_1,  t_2, \dots,  t_{n}) \in \mathbb{R}_+^{n}$, où la composante $ t_i$ désigne le volume de trafic, exprimé en gigaoctets, acheminé par l'équipement de l'opérateur $i$. Ce vecteur est dit \textit{admissible} pour $(S, G)$ si et seulement s'il satisfait les trois conditions suivantes :
+\begin{enumerate}
+    \item \textit{Inactivité hors de l'ensemble des gardiens :} $\forall i \in N, \quad i \notin G \implies  t_i = 0$
+    \item \textit{Conservation du volume total de trafic :} $\sum_{i \in G}  t_i = d(S)$
+    \item \textit{Respect des capacités effectives :} $\forall i \in G, \quad  t_i \leqslant q_i$
+\end{enumerate}
+L'ensemble  de tous les vecteurs de répartition admissibles pour $(S, G)$ est noté $\mathcal{T}(S, G) \subseteq \mathbb{R}_+^{n}$.
+\end{definition}
+
+Pour toute répartition \(\mathbf t\in\mathcal T(S,G)\), le
+\textbf{taux de charge} de l'équipement de l'opérateur \(i\) est
+\[
+    \rho_i(\mathbf t):=\frac{t_i}{q_i}\in[0,1].
+\]
+En particulier, \(\rho_i(\mathbf t)=0\) pour \(i\notin G\), tandis que
+\(\rho_i(\mathbf t)=1\) caractérise un équipement saturé.
+
+    
+\subsection{Coût opérationnel et solution optimale}
+
+
+\begin{definition}[Coût d'une solution opérationnelle admissible]
+Soit $(S, G)\in\mathcal E$ et $\mathbf{t}\in\mathcal{T}(S, G)$. Le triplet $(S,G,\mathbf t)$ est appelé \textbf{solution opérationnelle admissible}. Son \textbf{coût opérationnel total} est défini par :
+\begin{equation}
+C(S,G , \mathbf{t})
+=\sum_{i\in G}\left(F_i+\beta_i\rho_i(\mathbf t)\right)
+=\underbrace{\sum_{i\in G}F_i}_{\text{coûts fixes}}
++\underbrace{\sum_{i\in G}\gamma_i t_i}_{\text{coûts variables}}
+\end{equation}
+
+
+\end{definition}
+
+Il s'agit bien d'une extension du coût autonome au cas coopératif : si $S = \{i\}$, on a nécessairement $G = \{i\}$ et $\mathbf{t} = (d_i \mathds{1}_{j=i})_{j\in N}$, donc $C(\{i\}, \{i\}, (d_i \mathds{1}_{j=i})_{j\in N}) = F_i + \gamma_id_i = C_i^0$.
+
+
+\begin{definition}[Coût minimal d'une coalition]
+Soit $S\in \mathcal S$. On définit le coût minimal de $S$ par :
+
+\begin{equation}
+C^{*}(S)=\min_{G \in\mathcal{G}(S)}\min_{\mathbf{t}\in\mathcal T(S, G)}C(S, G, \mathbf{t})
+\end{equation}
+
+c'est-à-dire le plus faible coût opérationnel que la coalition $S$ puisse atteindre en choisissant une configuration de gardiens faisable et une répartition du trafic admissible.
+\end{definition}
+
+Pour tout \(G\in\mathcal G(S)\), l'ensemble \(\mathcal T(S,G)\) est un
+polytope non vide et compact ; comme \(C(S,G,\cdot)\) est continue et
+\(\mathcal G(S)\) est fini, les deux minima intervenant dans la définition
+de \(C^*(S)\) sont atteints.
+
+
+\begin{remarque}
+\label{rem:eq}
+Pour tout opérateur $i\in N$, l'unique ensemble de gardiens admissible pour la coalition singleton $\{i\}$ est $\{i\}$, et l'unique répartition admissible satisfait $t_i=d_i$. Par conséquent,
+\begin{equation}
+C^*(\{i\})=F_i+\gamma_i d_i=C_i^0.
+\end{equation}
+\end{remarque}
