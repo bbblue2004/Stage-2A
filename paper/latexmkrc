@@ -1,0 +1,6 @@
+# Keep every LaTeX build artifact outside the source tree.
+$aux_dir = 'build';
+$out_dir = 'build';
+
+# Build the PDF with pdflatex.
+$pdf_mode = 1;

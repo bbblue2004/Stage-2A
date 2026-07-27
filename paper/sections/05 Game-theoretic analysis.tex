@@ -30,8 +30,11 @@ La fonction de coût minimal $C^*$ est sous-additive.
 Soient $S, Q \subseteq N$ disjoints. Si \(S=\varnothing\) ou
 \(Q=\varnothing\), l'inégalité résulte immédiatement de la convention
 \(C^*(\varnothing)=0\). Supposons désormais \(S\) et \(Q\) non vides.
-D'après la proposition \ref{pro:opt}, le coût minimal est atteint en combinant le meilleur choix de gardiens avec la répartition gloutonne du trafic. 
-Il existe donc des configurations de gardiens optimales $G_{S}^{*}\subseteq S$ et $G_{Q}^{*}\subseteq Q$ telles que :
+L'existence d'une solution optimale pour chaque coalition a été établie
+dans les parties précédentes et, d'après la Proposition~\ref{pro:opt}, la
+répartition gloutonne est optimale pour tout ensemble de gardiens fixé.
+Il existe donc des configurations de gardiens optimales
+$G_{S}^{*}\subseteq S$ et $G_{Q}^{*}\subseteq Q$ telles que :
 \begin{equation}
     C^*(S) = C(S, G_{S}^{*}, {\mathbf t}^{(S)}) \quad \text{et} \quad C^*(Q) = C(Q, G_{Q}^{*}, {\mathbf t}^{(Q)})
 \end{equation}
@@ -76,23 +79,21 @@ C^*(S \cup Q) \leqslant C(S \cup Q, G_{S \cup Q}, {\mathbf t}) = C^*(S) + C^*(Q)
 Ce qui termine la preuve.
 \end{proof}
 
-\begin{remarque}[Interprétation économique]
+\begin{remarque}[Portée et interprétation économique]
 La sous-additivité de \(C^*\) garantit que la réunion de deux coalitions
 disjointes n'augmente pas leur coût opérationnel total. En particulier,
 pour tout \(S\in\mathcal S\) et tout \(i\in N\setminus S\),
 \[
     C^*(S\cup\{i\})\leqslant C^*(S)+C^*(\{i\}).
 \]
-Cette propriété établit une rationalité collective de la coopération, mais
-ne garantit ni une économie stricte ni l'existence d'une répartition des
-économies qui soit individuellement acceptable pour tous les opérateurs.
+Cette propriété établit l'intérêt collectif de la coopération au sens
+large, mais ne garantit ni un gain collectif strict ni l'existence d'une
+répartition des économies qui soit individuellement acceptable pour tous
+les opérateurs. La preuve repose sur l'additivité des capacités et des
+coûts : les configurations optimales de $S$ et $Q$ peuvent être réunies
+sans modifier les charges de leurs gardiens. Une condition suffisante pour
+obtenir un gain collectif strict est étudiée ci-dessous.
 \end{remarque}
-
-\begin{remarque}
-La preuve repose essentiellement sur le fait que l'on peut construire une configuration faisable pour $S\cup Q$ à partir de configurations optimales pour $S$ et $Q$ sans modifier les charges des gardiens existants.
-\end{remarque}
-
-Bien que le Théorème \ref{thm:sousadd} démontre la sous-additivité au sens large, cela garantit uniquement que la coopération n'augmente jamais les coûts totaux. Cela ne prouve pas qu'il existe toujours une incitation financière stricte à fusionner des coalitions. Pour comprendre l'intérêt économique réel du RAN sharing opportuniste, il est donc essentiel de déterminer sous quels régimes de trafic les économies réalisées deviennent strictement positives ($C^*(S \cup Q) < C^*(S) + C^*(Q)$). C'est l'objet de l'analyse des scénarios spécifiques ci-dessous.
 
 \begin{corollaire}[Comparaison avec le fonctionnement autonome]
 \label{cor}
@@ -115,28 +116,44 @@ Or, d'après la remarque \ref{rem:eq}, $C^*(\{i\})=C_i^0$ pour tout $i\in N$, d'
 \noindent Soient \(S,Q\in\mathcal S\) deux coalitions disjointes. On se
 place ici dans un régime de très faible trafic vérifiant
 $$\sum_{i\in S\cup Q} d_i \leqslant \min_{i\in S\cup Q} q_i$$ 
-c'est-à-dire que l'ensemble du trafic global peut être intégralement accueilli par n'importe quel opérateur du site pris individuellement.
+c'est-à-dire que la demande agrégée peut être intégralement acheminée par
+n'importe quel opérateur du site pris individuellement.
 
-La nuit, le trafic chute généralement en dessous de $20\%$ de la capacité maximale. Comme il n'y a que 4 opérateurs en France, cette hypothèse est tout à fait réaliste. On estime par ailleurs que les capacités matérielles des antennes ($q_i$) sont du même ordre de grandeur entre opérateurs, ce qui rend cette majoration par le minimum des capacités raisonnable.
-
-
+Cette hypothèse constitue une condition suffisante volontairement forte.
+Sa pertinence empirique dépend à la fois du niveau de trafic agrégé, de
+l'hétérogénéité des capacités effectives et de la définition retenue pour
+le taux de charge. Elle sera donc examinée dans la partie consacrée à
+l'évaluation numérique, plutôt que supposée vérifiée de manière générale.
 
 \begin{proposition}[Stricte sous-additivité en régime de très faible trafic]
-Sous l'hypothèse précédente,
-\[
-    C^*(S\cup Q)<C^*(S)+C^*(Q).
-\]
+\label{prop:sousadd_stricte_faible_trafic}
+Sous l'hypothèse précédente, soient $G_S^*$ et $G_Q^*$ des ensembles de
+gardiens optimaux pour $S$ et $Q$, et soit
+$$
+\alpha\in\operatorname*{arg\,min}_{g\in G_S^*\cup G_Q^*}\gamma_g.
+$$
+Alors
+$$
+C^*(S)+C^*(Q)-C^*(S\cup Q)
+\geqslant
+\sum_{i\in(G_S^*\cup G_Q^*)\setminus\{\alpha\}}F_i
+>0.
+$$
+En particulier, $C^*(S\cup Q)<C^*(S)+C^*(Q)$.
 \end{proposition}
 
 
 \begin{proof}
-Soient \(S,Q\in\mathcal S\) les deux coalitions disjointes considérées. On reprend les notations du Théorème \ref{thm:sousadd} :
+Reprenons les notations de la proposition et posons :
 $$C^*(S) = C(S, G_{S}^{*}, {\mathbf t}^{(S)}) \quad \text{et} \quad C^*(Q) = C(Q, G_{Q}^{*}, {\mathbf t}^{(Q)})$$
+où ${\mathbf t}^{(S)}:=\mathbf t^g(S,G_S^*)$ et
+${\mathbf t}^{(Q)}:=\mathbf t^g(Q,G_Q^*)$.
 
-Notons $\alpha$ un opérateur parmi l'union des gardiens de $S$ et $Q$ qui possède le coût marginal $\gamma$ le plus faible :
-$$\alpha \in \mathrm{argmin} \left\{ \gamma_g \;\middle|\; g \in G_S^* \cup G_{Q}^*\right\}$$
-
-Par hypothèse de faible trafic, $d(S \cup Q)\leqslant q_\alpha$, ce qui implique que la configuration à un unique gardien $(S \cup Q, \{\alpha\})$ est faisable. Cet unique gardien contient nécessairement l'intégralité de la demande de trafic $d(S \cup Q)$, et on note ${\mathbf t} := \left( (d(S) + d(Q)) \mathds{1}_{i=\alpha} \right)_{i\in N}$.
+Par hypothèse de faible trafic, $d(S \cup Q)\leqslant q_\alpha$, ce qui
+implique que la configuration à un unique gardien
+$(S \cup Q,\{\alpha\})$ est faisable. Cet unique gardien achemine
+nécessairement l'intégralité de la demande $d(S\cup Q)$, et on note
+${\mathbf t}:=\left((d(S)+d(Q))\mathds{1}_{i=\alpha}\right)_{i\in N}$.
 
 
 Posons 
@@ -155,30 +172,62 @@ En utilisant $d(S) = \sum_{i \in G_S^*} {t}_i^{(S)}$ et $d(Q) = \sum_{i \in G_{Q
 \end{equation}
 
 
-D'une part, par définition de $\alpha$, on a $\gamma_i - \gamma_\alpha \geqslant 0$ pour tout $i \in G_S^* \cup G_{Q}^*$, garantissant que les deux premières sommes sont positives ou nulles. 
+D'une part, puisque $\alpha$ possède le plus faible coût variable unitaire
+parmi les gardiens de $G_S^*\cup G_Q^*$, on a
+$\gamma_i-\gamma_\alpha\geqslant0$ pour tout
+$i\in G_S^*\cup G_Q^*$. Les deux premières sommes sont donc positives ou
+nulles.
 
 D'autre part, $S\cap Q = \varnothing$ donc $G_S^*\cap G_{Q}^* = \varnothing$ également. Puisque $|G_S^*| \geqslant 1$ et $|G_{Q}^*| \geqslant 1$,  $G_S^*\cup G_{Q}^*$ contient au moins deux éléments, donc $(G_S^* \cup G_{Q}^*) \setminus \{\alpha\}$ contient au moins un opérateur $i$ de coût fixe $F_i > 0$.
 
-On en conclut que $\Delta > 0$, ce qui implique par minimalité de $C^*$:
-$$C^*(S) + C^*(Q) > C(S \cup Q, \{\alpha\},{\mathbf t}) \geqslant C^*(S \cup Q) $$
+On en conclut que
+$$
+\Delta
+\geqslant
+\sum_{i\in(G_S^*\cup G_Q^*)\setminus\{\alpha\}}F_i
+>0.
+$$
+Par minimalité de $C^*(S\cup Q)$,
+$$
+C^*(S)+C^*(Q)-C^*(S\cup Q)
+\geqslant
+C^*(S)+C^*(Q)-C(S\cup Q,\{\alpha\},{\mathbf t})
+=\Delta,
+$$
+ce qui établit la borne annoncée.
 
 \end{proof}
 
 
-Ce résultat confirme qu'en période de très faible trafic, l'union des coalitions permet d'économiser au moins un coût fixe d'antenne tout en réduisant (au sens large) les coûts variables. L'inégalité de sous-additivité est donc stricte pour toute paire de coalitions non vides et disjointes satisfaisant l'hypothèse précédente.
+La borne précédente montre que, sous l'hypothèse considérée, le gain
+collectif est au moins égal à la somme des coûts fixes des gardiens qui
+peuvent être désactivés dans la configuration construite. Il peut être
+supérieur lorsque la concentration du trafic réduit également les coûts
+variables.
 
 \subsubsection{Cas général : trafic quelconque}
 
 Dans le cas général (trafic non nécessairement faible), la sous-additivité n'est pas nécessairement stricte.
 
 \begin{exemple}
-    Il suffit de considérer le cas simple de $2$ coalitions d'opérateurs $S$ et $Q$ vérifiant $d(S) = q(S)$ et $d(Q) = q(Q)$. Dans ce cas, tous les gardiens ont une charge de $1$, et dans ce cas, la seule possibilité est $G_{S \cup Q} = S\cup Q$ puisque $d(S \cup Q) = q(S\cup Q)$, et on a l'égalité $C^*(S\cup Q) = C^*(S) + C^*(Q)$.
+Soient $S$ et $Q$ deux coalitions non vides et disjointes telles que
+$d(S)=q(S)$ et $d(Q)=q(Q)$. Comme $q_i>0$ pour tout $i$, tout
+sous-ensemble strict $G\subsetneq S$ vérifie $q(G)<q(S)=d(S)$ et n'est
+donc pas faisable. L'unique ensemble de gardiens faisable pour $S$ est
+ainsi $S$, et les contraintes de capacité et de conservation imposent
+$t_i=q_i$ pour tout $i\in S$. Le même raisonnement s'applique à $Q$ et à
+$S\cup Q$, puisque $d(S\cup Q)=q(S\cup Q)$. Par conséquent,
+$$
+C^*(S\cup Q)
+=\sum_{i\in S\cup Q}(F_i+\gamma_iq_i)
+=C^*(S)+C^*(Q).
+$$
 \end{exemple}
 
 
-\noindent L'exemple précédent constitue un cas extrême, mais il existe d'autres cas intermédiaires où l'égalité est vérifiée.
-
-Par conséquent, si le RAN sharing permet d'effectuer des économies (strictement non nulles) la nuit (faible trafic), il n'y a pas de garantie qu'il en soit de même le jour.
+\noindent L'exemple précédent constitue un cas extrême, mais il montre que
+la stricte sous-additivité n'est pas garantie en dehors des conditions
+suffisantes établies précédemment.
 
 
 

@@ -17,17 +17,35 @@ programme linéaire suivant :
     \text{s.c.}\quad
         & \sum_{i\in G} t_i=d(S),\\
         & 0\leqslant  t_i\leqslant q_i,
-        \qquad \forall i\in G
+        \qquad \forall i\in G,\\
+        & t_i=0,
+        \qquad \forall i\in N\setminus G
 \end{aligned}
 \end{equation}
 
 
 \subsubsection{Répartition gloutonne}
 
-L'algorithme glouton répartit le trafic entre les équipements actifs par ordre croissant de leur coût variable unitaire $\gamma_i$. En effet, une unité supplémentaire de trafic acheminée par l'équipement de l'opérateur \(i\) augmente le coût opérationnel de \(\gamma_i\), qui agrège l'ensemble des coûts variables imputables au trafic, et non la seule consommation énergétique.
+L'algorithme glouton répartit le trafic entre les équipements actifs par
+ordre croissant de leur coût variable unitaire $\gamma_i$. En effet, une
+unité supplémentaire de trafic acheminée par l'équipement de l'opérateur
+$i$ augmente le coût opérationnel de $\gamma_i$, qui agrège l'ensemble des
+coûts variables imputables au trafic, et non la seule consommation
+énergétique.
 
-Soit $G = \{i_1, \dots, i_p\}$ l'ensemble des gardiens, ordonnés de sorte que $\gamma_{i_1} \leqslant \dots \leqslant \gamma_{i_p}$. Les égalités entre coûts variables unitaires sont départagées selon un ordre total fixé une fois pour toutes.
-L'algorithme affecte successivement le trafic aux équipements correspondants jusqu'à acheminer le volume total $d(S)$. Il existe donc un unique indice pivot $k \in \{1, \dots, p\}$ tel que les équipements des gardiens $i_\ell$, pour $\ell < k$, sont saturés, que l'équipement du gardien pivot $i_k$ achemine le trafic résiduel et que les équipements des gardiens $i_\ell$, pour $\ell > k$, n'acheminent aucun trafic. La répartition gloutonne $\mathbf{t}^g(S, G)$ est donnée par :
+Soit $G=\{i_1,\dots,i_p\}$, ordonné de sorte que
+$\gamma_{i_1}\leqslant\dots\leqslant\gamma_{i_p}$. En présence d'ex æquo,
+un ordre compatible quelconque est retenu. L'indice pivot est défini par
+\[
+k:=\min\left\{
+r\in\{1,\dots,p\}\ \middle|\
+\sum_{\ell=1}^{r}q_{i_\ell}\geqslant d(S)
+\right\}.
+\]
+Cet ensemble est non vide puisque $G\in\mathcal G(S)$. La répartition
+gloutonne $\mathbf t^g(S,G)$ sature les gardiens précédant le pivot,
+affecte le trafic résiduel au pivot et laisse nul le trafic des gardiens
+suivants :
 \begin{equation}
  t_{i_\ell}^g(S,G) =
 \begin{cases} 
@@ -79,15 +97,17 @@ puisque \(t_{i_\ell}^g=0\). Le terme d'indice \(k\) est nul. Chaque terme
 de la somme est donc positif ou nul, d'où \(\Delta\geqslant0\).
 \end{proof}
 
-La concentration du trafic résulte de la linéarité des coûts variables :
-si les \(\gamma_i\) sont deux à deux distincts, la répartition optimale est
-unique ; en cas d'égalité, la règle de départage sélectionne une solution
-optimale. Ce résultat vaut pour un ensemble de gardiens fixé et ne préjuge
+La concentration du trafic résulte de la linéarité des coûts variables.
+Si les $\gamma_i$ sont deux à deux distincts, la répartition optimale est
+unique ; en présence d'ex æquo, plusieurs répartitions optimales peuvent
+exister. Ce résultat vaut pour un ensemble de gardiens fixé et ne préjuge
 ni de leur sélection, étudiée ci-dessous, ni de la répartition des économies
 de coopération entre opérateurs.
 
-Après un tri global des opérateurs en \(O(n\log n)\), la répartition
-gloutonne associée à un ensemble \(G\) est calculée en \(O(|G|)\).
+Une fois les gardiens ordonnés, un parcours de la liste construit la
+répartition gloutonne en $O(|G|)$. Si cet ordre doit être calculé, le tri
+coûte en outre $O(|G|\log |G|)$ ; un tri global préalable des opérateurs
+coûte $O(n\log n)$.
 
 
 
@@ -98,7 +118,7 @@ gloutonne associée à un ensemble \(G\) est calculée en \(O(|G|)\).
 \subsection{Sélection optimale des gardiens}
 \label{subsec:selection_gardiens}
 
-La section précédente fournit la répartition optimale du trafic lorsque
+La sous-section précédente fournit la répartition optimale du trafic lorsque
 l'ensemble de gardiens est fixé. Il reste à déterminer quels opérateurs
 doivent effectivement rester actifs.
 
@@ -124,7 +144,6 @@ C^*(S)
     & \sum_{i\in S}t_i=d(S),\\
     & 0\leqslant t_i\leqslant q_i x_i,
     \qquad \forall i\in S,\\
-    & \sum_{i\in S}x_i\geqslant 1,\\
     & x_i\in \{0,1\},
     \qquad \forall i\in S.
 \end{aligned}
@@ -150,53 +169,65 @@ Le problème de sélection optimale des gardiens est NP-difficile, même lorsque
 \end{proposition}
 
 \begin{proof}
-On effectue une réduction depuis \textsc{Subset Sum}. Soit
-\(u_1,\ldots,u_m\) des entiers strictement positifs et \(B\) une cible.
-On peut supposer \(B\leqslant U:=\sum_{i=1}^m u_i\).
+Considérons une instance de \textsc{Subset Sum}, problème faiblement
+NP-complet \cite{garey-johnson-1979}, composée de $m$ entiers strictement
+positifs $u_1,\ldots,u_m$ et d'une cible $B>0$. Posons
+$U:=\sum_{i=1}^m u_i$ (si $B>U$, la réponse est immédiatement négative)
+et supposons donc $B\leqslant U$.
 
-On construit une coalition \(S=\{1,\ldots,m\}\) en posant
+On construit $N:=\{1,\ldots,m\}$ et la coalition $S:=N$ en posant
 \[
-q_i:=u_i,\qquad
+q_i:=Uu_i,\qquad
 F_i:=u_i,\qquad
-\gamma_i:=1,
-\qquad
-d_i:=\frac{B}{U}u_i.
+\beta_i:=u_i,\qquad
+d_i:=Bu_i.
 \]
-On a ainsi \(d_i\leqslant q_i\) et
+Les paramètres primitifs produits sont entiers, leur taille d'encodage est
+polynomiale, et $\gamma_i=\beta_i/q_i=1/U$ pour tout $i\in N$. De plus,
+$d_i\leqslant q_i$ et
 \[
-d(S)=\sum_{i\in S}d_i=B.
+d(S)=\sum_{i\in S}d_i=BU.
 \]
 Cette construction s'effectue en temps polynomial dans la taille de
 l'instance initiale.
 
-Pour tout ensemble de gardiens $G\in \mathcal G(S)$, la configuration de gardiens est
-faisable si et seulement si
+Pour tout $G\subseteq N$, la configuration est faisable si et seulement si
 \[
-\sum_{i\in G}u_i\geqslant B.
+q(G)=U\sum_{i\in G}u_i\geqslant d(S)=BU,
 \]
-Comme tous les coûts variables unitaires valent \(1\), le coût variable total est
-toujours égal à \(d(S)=B\). Le coût total vaut donc
+soit si et seulement si $\sum_{i\in G}u_i\geqslant B$. Comme tous les
+coûts variables unitaires valent $1/U$, toute répartition admissible a
+pour coût variable
 \[
-B+\sum_{i\in G}u_i.
+\sum_{i\in G}\gamma_i t_i
+=\frac{1}{U}d(S)=B.
+\]
+Par conséquent,
+\[
+C^*(S)
+=B+\min\left\{
+\sum_{i\in G}u_i\ \middle|\
+G\subseteq N,\ \sum_{i\in G}u_i\geqslant B
+\right\}.
 \]
 
-Il existe une solution de coût inférieur ou égal à \(2B\) si et seulement si
+Puisque tout ensemble du minimum a une somme au moins égale à $B$,
 \[
-\sum_{i\in G}u_i\geqslant B
-\quad\text{et}\quad
-\sum_{i\in G}u_i\leqslant B,
+C^*(S)\leqslant2B
+\quad\Longleftrightarrow\quad
+\min_{\substack{G\subseteq N\\ \sum_{i\in G}u_i\geqslant B}}
+\sum_{i\in G}u_i=B
+\quad\Longleftrightarrow\quad
+\exists\,G\subseteq N,\ \sum_{i\in G}u_i=B.
 \]
-c'est-à-dire si et seulement si
-\[
-\sum_{i\in G}u_i=B.
-\]
-L'instance construite admet donc une solution de coût au plus \(2B\) si et
-seulement si l'instance initiale de \textsc{Subset Sum} est positive.
+Un algorithme polynomial pour la sélection optimale des gardiens
+permettrait donc de décider \textsc{Subset Sum} en temps polynomial. Le
+problème de sélection optimale des gardiens est ainsi NP-difficile.
 \end{proof}
 
 \begin{remarque}
-La réduction précédente établit la NP-difficulté du problème, sans
-permettre de déterminer si celle-ci est faible ou forte.
+\textsc{Subset Sum} étant faiblement NP-complet, cette réduction établit
+la NP-difficulté du problème, mais pas sa NP-difficulté forte.
 \end{remarque}
 
 Dans le cadre étudié, le nombre d'opérateurs présents sur un site est très
@@ -206,23 +237,27 @@ Pour chaque sous-ensemble non vide $G\subseteq S$ :
 \begin{enumerate}
     \item on teste sa faisabilité en vérifiant si $q(G)\geqslant d(S)$;
     \item si oui, on calcule la répartition gloutonne
-    $\mathbf{t}^g(S,G)$ grâce à l'algorithme de la  Section~\ref{subsec:allocation_gardiens_fixes};
+    $\mathbf{t}^g(S,G)$ grâce à l'algorithme de la
+    sous-section~\ref{subsec:allocation_gardiens_fixes};
     \item on évalue son coût
     \(C\bigl(S,G,\mathbf t^g(S,G)\bigr)
     =\sum_{i\in G}F_i+\sum_{i\in G}\gamma_i t_i^g(S,G)\);
-    \item on conserve un ensemble de gardiens minimisant le coût ; lorsque plusieurs ensembles produisent le même coût minimal, une règle de départage fixée à l'avance peut être appliquée.
+    \item on conserve un ensemble de gardiens minimisant le coût.
 \end{enumerate}
 
-On obtient ainsi $C^*(S)$ et $G^*(S)\in \operatorname*{arg\,min}_{G\in\mathcal G(S)} C\bigl(S,G,\mathbf t^g(S,G)\bigr)$.
-
-\begin{remarque}
-L'ensemble optimal de gardiens n'est pas nécessairement unique. Une implémentation déterministe peut en sélectionner un selon une règle de départage fixée à l'avance, sans modifier la valeur optimale $C^*(S)$.
-\end{remarque}
+On obtient ainsi $C^*(S)$. Dans la suite, $G^*(S)$ désigne un représentant
+arbitraire de
+\[
+\operatorname*{arg\,min}_{G\in\mathcal G(S)}
+C\bigl(S,G,\mathbf t^g(S,G)\bigr),
+\]
+sans présumer l'unicité de l'ensemble optimal.
 
 \begin{proposition}[Complexité de l'énumération]
 \label{prop:complexite_enumeration}
 Pour $S \in \mathcal S$ de taille $s$, l'énumération exacte des ensembles
-de gardiens s'effectue en $O(s2^s)$. Le calcul des valeurs $C^*(S)$ pour toutes les $S \in \mathcal S$ s'effectue en $O(n3^n)$.
+de gardiens s'effectue en $O(s\,2^s)$. Le calcul des valeurs $C^*(S)$ pour
+toutes les $S \in \mathcal S$ s'effectue en $O(n\,3^n)$.
 \end{proposition}
 
 \begin{proof}
@@ -230,23 +265,23 @@ Une coalition de taille \(s\) admet \(2^s-1\) ensembles de gardiens, chacun
 évalué en \(O(s)\) ; en sommant sur les coalitions, on obtient
 \[
 \sum_{s=1}^{n}\binom ns s(2^s-1)
-=2n3^{n-1}-n2^{n-1}
-=O(n3^n).
+=2n\,3^{n-1}-n\,2^{n-1}
+=O(n\,3^n).
 \]
 \end{proof}
 
 \begin{remarque}
 Le nombre de couples candidats $(S,G)$ est $\sum_{s=1}^{n}\binom ns(2^s - 1) = 3^n - 2^n.$
 Cette quantité compte les configurations de gardiens à examiner, tandis que la borne
-$O(n3^n)$ tient également compte du coût de leur évaluation.
+$O(n\,3^n)$ tient également compte du coût de leur évaluation.
 
 Dans le cas considéré, $n=4$. Le nombre total de couples candidats $(S,G)$ est donc $3^4 - 2^4 = 65$.
-L'énumération exhaustive est ainsi instantanée et présente l'avantage
+L'énumération exhaustive est ainsi négligeable et présente l'avantage
 d'être exacte, transparente et indépendante des tolérances d'un solveur
 MILP.
 \end{remarque}
 
-\subsection{Cas des capacités égales}
+\subsection{Cas particulier des capacités égales}
 
 Dans le cas particulier où les capacités sont égales, le problème de sélection optimale des gardiens se résout en temps polynomial, comme le montre la proposition suivante.
 
@@ -257,25 +292,34 @@ Alors le problème de sélection optimale des gardiens peut être résolu en tem
 \end{proposition}
 
 \begin{proof}
-Écrivons $d(S)=aq+r$ où $a\in\mathbb N$ et $0\leqslant r<q$.
+Posons
+\[
+k:=\left\lceil\frac{d(S)}{q}\right\rceil,
+\qquad
+\delta:=d(S)-(k-1)q\in(0,q].
+\]
+La faisabilité impose au moins $k$ gardiens. Réciproquement, la
+répartition gloutonne n'achemine du trafic que sur $k$ équipements lorsque
+les capacités valent toutes $q$. Si une solution activait davantage de
+gardiens, on pourrait choisir une répartition gloutonne de même coût
+variable, puis placer en veille tout équipement n'acheminant aucun trafic,
+ce qui réduirait strictement le coût fixe. Toute solution optimale active
+donc exactement $\lceil d(S)/q\rceil$ gardiens.
 
-D'après l'optimalité de la répartition gloutonne, les équipements des gardiens sont saturés, sauf éventuellement celui du gardien pivot. De plus, dans une solution optimale, aucun équipement actif n'achemine un trafic nul, puisque sa mise en veille permettrait d'économiser le coût fixe $F_i>0$ sans modifier la répartition du trafic. Le nombre de gardiens d'une solution optimale est donc
-\(\left\lceil d(S)/q\right\rceil\).
-
-$\bullet\quad$ Si $r=0$, une solution optimale utilise exactement $a$ gardiens dont les équipements sont saturés. Le coût associé au maintien en activité de l'équipement de l'opérateur $i$ est alors $F_i+\gamma_iq$. Il suffit de sélectionner les $a$ plus petites valeurs parmi les $s$ opérateurs, ce qui peut être réalisé en $O(s\log s)$.
-
-$\bullet\quad$ Si $r>0$, une solution optimale utilise exactement $a+1$ gardiens : les équipements de $a$ gardiens sont saturés et celui d'un gardien pivot achemine le volume résiduel $r$. Le coût variable unitaire de l'équipement pivot est supérieur ou égal à celui des équipements saturés.
-
-Pour chaque opérateur $j\in S$ candidat au rôle de pivot, on considère
-l'ensemble
-$$P_j = \{i\in S\setminus\{j\}\mid\gamma_i\leqslant\gamma_j\}$$
-Si $|P_j|<a$, le candidat $j$ n'est pas admissible. Sinon, la meilleure
-solution ayant $j$ pour pivot est obtenue en choisissant dans $P_j$ les
-$a$ opérateurs de plus faible valeur $F_i+\gamma_iq$. Son coût est alors
-$$F_j+\gamma_jr + \sum_{i\in A_j} \left(F_i+\gamma_iq\right)$$
-où $A_j$ désigne cet ensemble de $a$ opérateurs.
-
+Dans un ordre glouton, les $k-1$ premiers gardiens sont saturés et le
+pivot achemine $\delta$. Pour chaque opérateur $j\in S$ candidat au rôle
+de pivot, posons
+\[
+P_j:=\{i\in S\setminus\{j\}\mid\gamma_i\leqslant\gamma_j\}.
+\]
+Le candidat est admissible si $|P_j|\geqslant k-1$. La meilleure solution
+ayant $j$ pour pivot choisit alors dans $P_j$ les $k-1$ opérateurs de plus
+faible valeur $F_i+\gamma_iq$. Si $A_j$ désigne cet ensemble, son coût est
+\[
+F_j+\gamma_j\delta
++\sum_{i\in A_j}\left(F_i+\gamma_iq\right).
+\]
 Pour chacun des $s$ pivots candidats, la sélection de $A_j$ peut être
-effectuée par un tri en $O(s\log s)$. L'ensemble des candidats est donc
-examiné en $O(s^2\log s)$.
+effectuée par un tri en $O(s\log s)$. Tous les candidats sont donc examinés
+en $O(s^2\log s)$.
 \end{proof}

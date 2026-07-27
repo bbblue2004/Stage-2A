@@ -54,7 +54,9 @@ par la suite \emph{période de décision}.
     fonctionnement incompressible d'un équipement actif et
     l'accroissement de coût associé au trafic. Elle constitue une
     approximation de premier ordre adaptée au régime de faible trafic
-    étudié.
+    étudié. La pertinence empirique de cette approximation affine est
+    examinée dans la partie consacrée à l'évaluation numérique, à partir
+    de mesures opérationnelles et d'un ajustement linéaire.
 
     \item \textbf{Neutralité des revenus et utilité transférable.}
     Toute solution opérationnelle admissible sert la même demande totale. Les
@@ -108,8 +110,8 @@ Pour tout opérateur \(i\in N\), les paramètres primitifs du modèle sont :
 
 \paragraph{Réduction au coût différentiel.}
 La fonction de coût retenue peut être obtenue à partir d'une représentation
-comptable plus complète. Notons \(C_i^{\mathrm{inv}}\) l'ensemble des coûts
-supportés par l'opérateur \(i\) indépendamment de l'état de son équipement.
+comptable plus complète. Notons \(C_i^{\mathrm{inv}}\) le montant total des
+coûts supportés par l'opérateur \(i\) indépendamment de l'état de son équipement.
 Pour un taux de charge \(\rho\in[0,1]\), les coûts complets dans les états
 de veille et actif s'écrivent respectivement
 \[
@@ -118,19 +120,16 @@ de veille et actif s'écrivent respectivement
     \widehat C_i^{\mathrm{actif}}(\rho)
     =C_i^{\mathrm{inv}}+F_i+\beta_i\rho.
 \]
-Si \(R_i\) désigne le revenu total de l'opérateur sur la période, la
-positivité de \(d_i\) permet de poser \(c_i:=R_i/d_i\), exprimé en
-euros par gigaoctet, de sorte que
-\(R_i=c_i d_i\), sans imposer d'hypothèse particulière sur la structure
-tarifaire. En fonctionnement autonome, le coût comptable complet est
+Si \(R_i\) désigne le revenu total de l'opérateur sur la période, le
+fonctionnement autonome engendre le coût comptable complet
 \(\widehat C_i^0:=\widehat C_i^{\mathrm{actif}}(d_i/q_i)\), et le profit
 comptable vaut donc
 \[
     v_i^0
-    =c_i d_i-\widehat C_i^0.
+    =R_i-\widehat C_i^0.
 \]
 Toute solution admissible servant les mêmes demandes, les revenus
-\(\sum_{i\in S}c_i d_i\) et les coûts invariants
+\(\sum_{i\in S}R_i\) et les coûts invariants
 \(\sum_{i\in S}C_i^{\mathrm{inv}}\) sont identiques pour toutes les
 solutions d'une coalition donnée. Ils s'éliminent donc de leur comparaison.
 Maximiser le profit collectif revient ainsi exactement à minimiser les
@@ -212,13 +211,23 @@ L'hypothèse \(d_i\leqslant q_i\) pour tout \(i\in N\) implique
 
 
 \begin{definition}[Vecteur de répartition du trafic admissible]
-Soit $(S, G)\in \mathcal E$. Un \textit{vecteur de répartition du trafic} est un vecteur global $\mathbf{t} = ( t_1,  t_2, \dots,  t_{n}) \in \mathbb{R}_+^{n}$, où la composante $ t_i$ désigne le volume de trafic, exprimé en gigaoctets, acheminé par l'équipement de l'opérateur $i$. Ce vecteur est dit \textit{admissible} pour $(S, G)$ si et seulement s'il satisfait les trois conditions suivantes :
-\begin{enumerate}
-    \item \textit{Inactivité hors de l'ensemble des gardiens :} $\forall i \in N, \quad i \notin G \implies  t_i = 0$
-    \item \textit{Conservation du volume total de trafic :} $\sum_{i \in G}  t_i = d(S)$
-    \item \textit{Respect des capacités effectives :} $\forall i \in G, \quad  t_i \leqslant q_i$
-\end{enumerate}
-L'ensemble  de tous les vecteurs de répartition admissibles pour $(S, G)$ est noté $\mathcal{T}(S, G) \subseteq \mathbb{R}_+^{n}$.
+Soit $(S,G)\in\mathcal E$. Un \textit{vecteur de répartition du trafic}
+est un vecteur global $\mathbf t=(t_1,\dots,t_n)\in\mathbb R_+^n$, où
+$t_i$ désigne le volume de trafic, exprimé en gigaoctets, acheminé par
+l'équipement de l'opérateur $i$. L'ensemble des répartitions admissibles
+pour $(S,G)$ est
+\[
+\mathcal T(S,G):=
+\left\{
+\mathbf t\in\mathbb R_+^n\ \middle|\
+\begin{aligned}
+    &t_i=0, &&\forall i\in S\setminus G,\\
+    &0\leqslant t_i\leqslant q_i, &&\forall i\in G,\\
+    &\sum_{i\in S}t_i=d(S),\\
+    &t_i=0, &&\forall i\in N\setminus S
+\end{aligned}
+\right\}.
+\]
 \end{definition}
 
 Pour toute répartition \(\mathbf t\in\mathcal T(S,G)\), le
@@ -244,9 +253,6 @@ C(S,G , \mathbf{t})
 
 
 \end{definition}
-
-Il s'agit bien d'une extension du coût autonome au cas coopératif : si $S = \{i\}$, on a nécessairement $G = \{i\}$ et $\mathbf{t} = (d_i \mathds{1}_{j=i})_{j\in N}$, donc $C(\{i\}, \{i\}, (d_i \mathds{1}_{j=i})_{j\in N}) = F_i + \gamma_id_i = C_i^0$.
-
 
 \begin{definition}[Coût minimal d'une coalition]
 Soit $S\in \mathcal S$. On définit le coût minimal de $S$ par :
