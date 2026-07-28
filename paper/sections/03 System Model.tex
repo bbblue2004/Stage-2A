@@ -1,12 +1,21 @@
 \section{Modèle du système et formulation du problème}
 
-Cette section formalise le fonctionnement coopératif d'opérateurs présents sur un même site radio pendant une période de faible trafic. Au sein de chaque coalition, certains opérateurs, appelés \emph{gardiens}, maintiennent leurs équipements actifs afin d'acheminer l'intégralité du trafic de la coalition, tandis que les équipements des autres membres sont placés en veille. Le modèle détermine conjointement la configuration de gardiens et la répartition du trafic qui minimisent le coût opérationnel de la coalition.
+Cette section traduit le scénario présenté dans l'introduction en un modèle
+d'optimisation précis. Elle introduit les opérateurs, leurs demandes, leurs
+capacités et leurs coûts, puis caractérise les configurations de gardiens et
+les répartitions de trafic admissibles.
+
+L'accord finalement recherché réunit tous les opérateurs présents sur le site.
+Le même problème opérationnel doit néanmoins être défini pour chaque groupe
+susceptible de coopérer seul. Il devient ainsi possible de comparer la
+coopération globale aux options de repli dont disposent ses membres. Les
+notations nécessaires à cette comparaison sont introduites ci-dessous.
 
 
 \subsection{Cadre et hypothèses}
 
 Nous considérons un ensemble d'opérateurs de réseaux mobiles
-\(N=\{1,\dots,n\}\), présents sur un même site radio et desservant une
+\(N=\{1,\dots,n\}\), avec \(n\geqslant2\), présents sur un même site radio et desservant une
 même zone géographique. Chaque opérateur \(i\in N\) dispose d'un
 équipement radio agrégé qui peut être maintenu actif ou placé en veille.
 La décision est prise pour une période de faible trafic fixée, appelée
@@ -28,7 +37,9 @@ par la suite \emph{période de décision}.
     La capacité d'un équipement est une capacité effective, intégrant
     les marges nécessaires au respect des exigences de service. Elle est
     indépendante de l'identité des clients servis et des autres
-    équipements actifs. Les capacités sont ainsi additives et toute la
+    équipements actifs. L'acheminement du trafic d'un autre opérateur
+    n'entraîne ni perte de capacité ni coût spécifique au-delà du coût
+    variable modélisé. Les capacités sont ainsi additives et toute la
     demande doit être satisfaite.
 
     \item \textbf{Décision statique en information complète.}
@@ -108,33 +119,13 @@ Pour tout opérateur \(i\in N\), les paramètres primitifs du modèle sont :
     variable unitaire par gigaoctet.
 \end{itemize}
 
-\paragraph{Réduction au coût différentiel.}
-La fonction de coût retenue peut être obtenue à partir d'une représentation
-comptable plus complète. Notons \(C_i^{\mathrm{inv}}\) le montant total des
-coûts supportés par l'opérateur \(i\) indépendamment de l'état de son équipement.
-Pour un taux de charge \(\rho\in[0,1]\), les coûts complets dans les états
-de veille et actif s'écrivent respectivement
-\[
-    \widehat C_i^{\mathrm{veille}}=C_i^{\mathrm{inv}},
-    \qquad
-    \widehat C_i^{\mathrm{actif}}(\rho)
-    =C_i^{\mathrm{inv}}+F_i+\beta_i\rho.
-\]
-Si \(R_i\) désigne le revenu total de l'opérateur sur la période, le
-fonctionnement autonome engendre le coût comptable complet
-\(\widehat C_i^0:=\widehat C_i^{\mathrm{actif}}(d_i/q_i)\), et le profit
-comptable vaut donc
-\[
-    v_i^0
-    =R_i-\widehat C_i^0.
-\]
-Toute solution admissible servant les mêmes demandes, les revenus
-\(\sum_{i\in S}R_i\) et les coûts invariants
-\(\sum_{i\in S}C_i^{\mathrm{inv}}\) sont identiques pour toutes les
-solutions d'une coalition donnée. Ils s'éliminent donc de leur comparaison.
-Maximiser le profit collectif revient ainsi exactement à minimiser les
-seuls coûts différentiels \(F_i+\beta_i\rho\), qui constituent la fonction
-de coût opérationnel retenue dans la suite.
+\paragraph{Périmètre du coût.}
+Seuls les coûts qui dépendent de la décision opérationnelle sont retenus.
+Les charges supportées indépendamment de l'état de l'équipement sont
+identiques dans toutes les solutions d'une même coalition et peuvent donc
+être omises. Le coût différentiel de la veille est ainsi normalisé à zéro,
+tandis que celui de l'état actif au taux de charge
+\(\rho\in[0,1]\) vaut \(F_i+\beta_i\rho\).
 
 Le fonctionnement autonome est supposé réalisable :
 \[
@@ -177,28 +168,28 @@ Les grandeurs dérivées associées à l'opérateur \(i\) sont les suivantes :
 \begin{definition}[Coalition]
 Une \textbf{coalition} est un sous-ensemble non vide \(S\subseteq N\).
 Elle représente un groupe d'opérateurs coopérant sur le site.
-On note \(2^N:=\{S\mid S\subseteq N\}\) l'ensemble des sous-ensembles de
+On note \(2^N:=\{A\mid A\subseteq N\}\) l'ensemble des sous-ensembles de
 \(N\), et \(\mathcal S:=2^N\setminus\{\varnothing\}\) l'ensemble des
 coalitions. Ainsi, \(|\mathcal S|=2^n-1\).
 \end{definition}
 
-Pour tout $A \subseteq N$, la \textbf{demande de trafic totale} de $A$ est notée :
-\begin{equation}
-    d(A) := \sum_{i \in A} d_i
-\end{equation}
-et sa \textbf{capacité effective agrégée} est définie par :
-\begin{equation}
-    q(A) := \sum_{i \in A} q_i
-\end{equation}
+Pour tout $A\subseteq N$, sa \textbf{demande de trafic totale} et sa
+\textbf{capacité effective agrégée} sont respectivement
+\[
+    d(A):=\sum_{i\in A}d_i,
+    \qquad
+    q(A):=\sum_{i\in A}q_i.
+\]
 
 \begin{definition}[Configuration de gardiens]
 Dans une coalition $S \in \mathcal S$, un ensemble d'\textbf{opérateurs gardiens} est un sous-ensemble non vide $G\subseteq S$ dont les équipements restent actifs et acheminent la totalité de la demande de trafic $d(S)$.
 
 Le couple $(S,G)$ est appelé \textbf{configuration de gardiens}. Il est dit \textbf{faisable} si la capacité effective agrégée des équipements des gardiens est suffisante pour acheminer le trafic de la coalition, soit $d(S) \leqslant q(G)$.
 Pour tout $S \in \mathcal S$, on note $\mathcal G(S)$ l'ensemble des $G\subseteq S$ non vides tels que la configuration de gardiens $(S, G)$ est faisable :
-\begin{equation}
-    \mathcal G(S) = \left\{ \varnothing \not = G \subseteq S \;\middle|\; d(S) \leqslant q(G) \right\}
-\end{equation}
+\[
+    \mathcal G(S)
+    :=\left\{\varnothing\neq G\subseteq S\mid d(S)\leqslant q(G)\right\}.
+\]
 
 On note $\mathcal{E} = \left\{ (S, G) \;\middle|\; S \in \mathcal S \text{ et } G \in \mathcal G(S) \right\}$ l'ensemble de toutes les configurations de gardiens faisables.
 
@@ -212,19 +203,18 @@ L'hypothèse \(d_i\leqslant q_i\) pour tout \(i\in N\) implique
 
 \begin{definition}[Vecteur de répartition du trafic admissible]
 Soit $(S,G)\in\mathcal E$. Un \textit{vecteur de répartition du trafic}
-est un vecteur global $\mathbf t=(t_1,\dots,t_n)\in\mathbb R_+^n$, où
+est un vecteur global $\mathbf t=(t_i)_{i\in N}\in\mathbb R_+^N$, où
 $t_i$ désigne le volume de trafic, exprimé en gigaoctets, acheminé par
 l'équipement de l'opérateur $i$. L'ensemble des répartitions admissibles
 pour $(S,G)$ est
 \[
 \mathcal T(S,G):=
 \left\{
-\mathbf t\in\mathbb R_+^n\ \middle|\
+\mathbf t\in\mathbb R_+^N\ \middle|\
 \begin{aligned}
-    &t_i=0, &&\forall i\in S\setminus G,\\
     &0\leqslant t_i\leqslant q_i, &&\forall i\in G,\\
-    &\sum_{i\in S}t_i=d(S),\\
-    &t_i=0, &&\forall i\in N\setminus S
+    &\sum_{i\in G}t_i=d(S),\\
+    &t_i=0, &&\forall i\in N\setminus G
 \end{aligned}
 \right\}.
 \]
@@ -243,24 +233,20 @@ En particulier, \(\rho_i(\mathbf t)=0\) pour \(i\notin G\), tandis que
 
 
 \begin{definition}[Coût d'une solution opérationnelle admissible]
-Soit $(S, G)\in\mathcal E$ et $\mathbf{t}\in\mathcal{T}(S, G)$. Le triplet $(S,G,\mathbf t)$ est appelé \textbf{solution opérationnelle admissible}. Son \textbf{coût opérationnel total} est défini par :
-\begin{equation}
+Soit $(S, G)\in\mathcal E$ et $\mathbf{t}\in\mathcal{T}(S, G)$. Le triplet $(S,G,\mathbf t)$ est appelé \textbf{solution opérationnelle admissible}. Son \textbf{coût opérationnel total} est défini par
+\[
 C(S,G , \mathbf{t})
 =\sum_{i\in G}\left(F_i+\beta_i\rho_i(\mathbf t)\right)
 =\underbrace{\sum_{i\in G}F_i}_{\text{coûts fixes}}
 +\underbrace{\sum_{i\in G}\gamma_i t_i}_{\text{coûts variables}}
-\end{equation}
-
-
+\]
 \end{definition}
 
 \begin{definition}[Coût minimal d'une coalition]
-Soit $S\in \mathcal S$. On définit le coût minimal de $S$ par :
-
-\begin{equation}
+Soit $S\in \mathcal S$. On définit le coût minimal de $S$ par
+\[
 C^{*}(S)=\min_{G \in\mathcal{G}(S)}\min_{\mathbf{t}\in\mathcal T(S, G)}C(S, G, \mathbf{t})
-\end{equation}
-
+\]
 c'est-à-dire le plus faible coût opérationnel que la coalition $S$ puisse atteindre en choisissant une configuration de gardiens faisable et une répartition du trafic admissible.
 \end{definition}
 
@@ -273,7 +259,12 @@ de \(C^*(S)\) sont atteints.
 \begin{remarque}
 \label{rem:eq}
 Pour tout opérateur $i\in N$, l'unique ensemble de gardiens admissible pour la coalition singleton $\{i\}$ est $\{i\}$, et l'unique répartition admissible satisfait $t_i=d_i$. Par conséquent,
-\begin{equation}
+\[
 C^*(\{i\})=F_i+\gamma_i d_i=C_i^0.
-\end{equation}
+\]
 \end{remarque}
+
+Le modèle associe ainsi à chaque coalition un ensemble de décisions
+opérationnelles admissibles et un coût minimal à déterminer. La section
+suivante calcule ce coût en résolvant successivement la répartition du trafic à
+gardiens fixés et la sélection des gardiens.

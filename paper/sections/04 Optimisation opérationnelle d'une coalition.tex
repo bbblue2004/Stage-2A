@@ -2,6 +2,18 @@
 
 \section{Optimisation opérationnelle d'une coalition}
 
+Après avoir défini les décisions admissibles, nous déterminons maintenant le
+coût minimal que peut atteindre un groupe d'opérateurs coopérant seul. Nous
+fixons d'abord une coalition afin de résoudre son problème opérationnel, puis
+le même calcul sera répété pour tous les groupes pertinents. Cette étape ne
+vise donc pas à choisir la coalition finale, mais à quantifier les différentes
+possibilités de coopération qui seront comparées dans l'analyse économique.
+
+L'optimisation comporte deux niveaux. Pour un ensemble de gardiens fixé, la
+linéarité des coûts variables permet de déterminer explicitement la meilleure
+répartition du trafic. Il reste ensuite à sélectionner les gardiens en tenant
+compte de leurs coûts fixes de fonctionnement.
+
 \subsection{Répartition optimale du trafic à gardiens fixés}
 \label{subsec:allocation_gardiens_fixes}
 
@@ -12,7 +24,7 @@ programme linéaire suivant :
 \begin{equation}
 \label{eq:lp_allocation_fixe}
 \begin{aligned}
-    \min_{\mathbf{t}}\quad
+    \min_{\mathbf{t}\in\mathbb R_+^N}\quad
         & \sum_{i\in G}\gamma_i t_i,\\
     \text{s.c.}\quad
         & \sum_{i\in G} t_i=d(S),\\
@@ -35,7 +47,7 @@ coûts variables imputables au trafic, et non la seule consommation
 
 Soit $G=\{i_1,\dots,i_p\}$, ordonné de sorte que
 $\gamma_{i_1}\leqslant\dots\leqslant\gamma_{i_p}$. En présence d'ex æquo,
-un ordre compatible quelconque est retenu. L'indice pivot est défini par
+une règle de départage déterministe est fixée. L'indice pivot est défini par
 \[
 k:=\min\left\{
 r\in\{1,\dots,p\}\ \middle|\
@@ -46,14 +58,14 @@ Cet ensemble est non vide puisque $G\in\mathcal G(S)$. La répartition
 gloutonne $\mathbf t^g(S,G)$ sature les gardiens précédant le pivot,
 affecte le trafic résiduel au pivot et laisse nul le trafic des gardiens
 suivants :
-\begin{equation}
+\[
  t_{i_\ell}^g(S,G) =
 \begin{cases} 
 q_{i_\ell} & \text{si } \ell < k \\ 
 d(S) - \sum_{m=1}^{k-1} q_{i_m} & \text{si } \ell = k \\
 0 & \text{si } \ell > k
 \end{cases}
-\end{equation}
+\]
 (\(t_i^g(S,G)=0\) pour tout \(i\notin G\)).
 Lorsque \((S,G)\) est fixé dans un raisonnement, cette notation est abrégée
 en \(\mathbf t^g\).
@@ -64,10 +76,10 @@ en \(\mathbf t^g\).
 \label{pro:opt}
     Soit $(S, G) \in \mathcal{E}$. Alors la répartition gloutonne du trafic
     $\mathbf{t}^g(S,G)$ minimise le coût opérationnel :
-    \begin{equation}
+    \[
     C\bigl(S,G,\mathbf{t}^g(S,G)\bigr)
     =\min_{\mathbf{t}\in\mathcal T(S,G)}C(S,G,\mathbf{t})
-    \end{equation}
+    \]
 \end{proposition}
 
 \begin{proof}
@@ -122,13 +134,11 @@ La sous-section précédente fournit la répartition optimale du trafic lorsque
 l'ensemble de gardiens est fixé. Il reste à déterminer quels opérateurs
 doivent effectivement rester actifs.
 
-Pour chaque opérateur $i\in S$, on introduit :
-\begin{itemize}
-    \item un indicateur binaire d'activité $x_i$, égal à $1$ si
-    l'équipement de l'opérateur $i$ est actif et à $0$ s'il est en veille ;
-    \item une variable continue $t_i\geqslant0$, représentant le trafic
-    acheminé par cet équipement.
-\end{itemize}
+Pour chaque opérateur $i\in S$, on introduit un indicateur binaire
+d'activité $x_i$, égal à $1$ si son équipement est actif et à $0$ s'il
+est en veille. La répartition du trafic reste représentée par le vecteur
+global \(\mathbf t\in\mathbb R_+^N\) défini dans la partie précédente ;
+ses composantes hors de \(S\) sont imposées nulles.
 
 Le coût opérationnel optimal de la coalition $S$ est la valeur du programme
 linéaire en nombres entiers mixtes suivant :
@@ -137,15 +147,16 @@ linéaire en nombres entiers mixtes suivant :
 \begin{aligned}
 C^*(S)
 =
-\min_{\mathbf x,\mathbf t}\quad
+\min_{\substack{\mathbf x\in\{0,1\}^S\\
+                \mathbf t\in\mathbb R_+^N}}\quad
     & \sum_{i\in S}\gamma_i t_i
     + \sum_{i\in S}F_i x_i,\\
-    \text{s.c.}\quad
+\text{s.c.}\quad
     & \sum_{i\in S}t_i=d(S),\\
     & 0\leqslant t_i\leqslant q_i x_i,
     \qquad \forall i\in S,\\
-    & x_i\in \{0,1\},
-    \qquad \forall i\in S.
+    & t_i=0,
+    \qquad \forall i\in N\setminus S.
 \end{aligned}
 \end{equation}
 
@@ -171,7 +182,8 @@ Le problème de sélection optimale des gardiens est NP-difficile, même lorsque
 \begin{proof}
 Considérons une instance de \textsc{Subset Sum}, problème faiblement
 NP-complet \cite{garey-johnson-1979}, composée de $m$ entiers strictement
-positifs $u_1,\ldots,u_m$ et d'une cible $B>0$. Posons
+positifs $u_1,\ldots,u_m$ et d'une cible $B>0$. Le cas \(m=1\) étant
+trivial, supposons \(m\geqslant2\). Posons
 $U:=\sum_{i=1}^m u_i$ (si $B>U$, la réponse est immédiatement négative)
 et supposons donc $B\leqslant U$.
 
@@ -251,18 +263,24 @@ arbitraire de
 \operatorname*{arg\,min}_{G\in\mathcal G(S)}
 C\bigl(S,G,\mathbf t^g(S,G)\bigr),
 \]
-sans présumer l'unicité de l'ensemble optimal.
+sans présumer l'unicité de l'ensemble optimal, et
+\[
+    \mathbf t^*(S):=\mathbf t^g\bigl(S,G^*(S)\bigr)
+\]
+désigne la répartition de trafic associée à ce représentant.
 
 \begin{proposition}[Complexité de l'énumération]
 \label{prop:complexite_enumeration}
 Pour $S \in \mathcal S$ de taille $s$, l'énumération exacte des ensembles
-de gardiens s'effectue en $O(s\,2^s)$. Le calcul des valeurs $C^*(S)$ pour
-toutes les $S \in \mathcal S$ s'effectue en $O(n\,3^n)$.
+de gardiens requiert \(O(s\,2^s)\) opérations arithmétiques et
+comparaisons. Le calcul des valeurs $C^*(S)$ pour toutes les
+$S \in \mathcal S$ requiert \(O(n\,3^n)\) telles opérations.
 \end{proposition}
 
 \begin{proof}
-Une coalition de taille \(s\) admet \(2^s-1\) ensembles de gardiens, chacun
-évalué en \(O(s)\) ; en sommant sur les coalitions, on obtient
+Après avoir ordonné les membres de \(S\) par coût variable unitaire, une
+coalition de taille \(s\) admet \(2^s-1\) ensembles de gardiens, chacun
+évalué en \(O(s)\). En sommant sur les coalitions, on obtient
 \[
 \sum_{s=1}^{n}\binom ns s(2^s-1)
 =2n\,3^{n-1}-n\,2^{n-1}
@@ -275,51 +293,58 @@ Le nombre de couples candidats $(S,G)$ est $\sum_{s=1}^{n}\binom ns(2^s - 1) = 3
 Cette quantité compte les configurations de gardiens à examiner, tandis que la borne
 $O(n\,3^n)$ tient également compte du coût de leur évaluation.
 
-Dans le cas considéré, $n=4$. Le nombre total de couples candidats $(S,G)$ est donc $3^4 - 2^4 = 65$.
+Pour l'application numérique visée, $n=4$. Le nombre total de couples
+candidats $(S,G)$ est donc $3^4-2^4=65$.
 L'énumération exhaustive est ainsi négligeable et présente l'avantage
 d'être exacte, transparente et indépendante des tolérances d'un solveur
 MILP.
 \end{remarque}
 
-\subsection{Cas particulier des capacités égales}
+% \subsection{Cas particulier des capacités égales}
 
-Dans le cas particulier où les capacités sont égales, le problème de sélection optimale des gardiens se résout en temps polynomial, comme le montre la proposition suivante.
+% Dans le cas particulier où les capacités sont égales, le problème de sélection optimale des gardiens se résout en temps polynomial, comme le montre la proposition suivante.
 
-\begin{proposition}[Cas de capacités égales]
-\label{prop:capacites_egales}
-Supposons que $\forall i\in S$, $q_i=q$.
-Alors le problème de sélection optimale des gardiens peut être résolu en temps $O(s^2\log s)$, où $s=|S|$.
-\end{proposition}
+% \begin{proposition}[Cas de capacités égales]
+% \label{prop:capacites_egales}
+% Supposons que $\forall i\in S$, $q_i=q$.
+% Alors le problème de sélection optimale des gardiens peut être résolu en temps $O(s^2\log s)$, où $s=|S|$.
+% \end{proposition}
 
-\begin{proof}
-Posons
-\[
-k:=\left\lceil\frac{d(S)}{q}\right\rceil,
-\qquad
-\delta:=d(S)-(k-1)q\in(0,q].
-\]
-La faisabilité impose au moins $k$ gardiens. Réciproquement, la
-répartition gloutonne n'achemine du trafic que sur $k$ équipements lorsque
-les capacités valent toutes $q$. Si une solution activait davantage de
-gardiens, on pourrait choisir une répartition gloutonne de même coût
-variable, puis placer en veille tout équipement n'acheminant aucun trafic,
-ce qui réduirait strictement le coût fixe. Toute solution optimale active
-donc exactement $\lceil d(S)/q\rceil$ gardiens.
+% \begin{proof}
+% Posons
+% \[
+% k:=\left\lceil\frac{d(S)}{q}\right\rceil,
+% \qquad
+% \delta:=d(S)-(k-1)q\in(0,q].
+% \]
+% La faisabilité impose au moins $k$ gardiens. Réciproquement, la
+% répartition gloutonne n'achemine du trafic que sur $k$ équipements lorsque
+% les capacités valent toutes $q$. Si une solution activait davantage de
+% gardiens, on pourrait choisir une répartition gloutonne de même coût
+% variable, puis placer en veille tout équipement n'acheminant aucun trafic,
+% ce qui réduirait strictement le coût fixe. Toute solution optimale active
+% donc exactement $\lceil d(S)/q\rceil$ gardiens.
 
-Dans un ordre glouton, les $k-1$ premiers gardiens sont saturés et le
-pivot achemine $\delta$. Pour chaque opérateur $j\in S$ candidat au rôle
-de pivot, posons
-\[
-P_j:=\{i\in S\setminus\{j\}\mid\gamma_i\leqslant\gamma_j\}.
-\]
-Le candidat est admissible si $|P_j|\geqslant k-1$. La meilleure solution
-ayant $j$ pour pivot choisit alors dans $P_j$ les $k-1$ opérateurs de plus
-faible valeur $F_i+\gamma_iq$. Si $A_j$ désigne cet ensemble, son coût est
-\[
-F_j+\gamma_j\delta
-+\sum_{i\in A_j}\left(F_i+\gamma_iq\right).
-\]
-Pour chacun des $s$ pivots candidats, la sélection de $A_j$ peut être
-effectuée par un tri en $O(s\log s)$. Tous les candidats sont donc examinés
-en $O(s^2\log s)$.
-\end{proof}
+% Dans un ordre glouton, les $k-1$ premiers gardiens sont saturés et le
+% pivot achemine $\delta$. Pour chaque opérateur $j\in S$ candidat au rôle
+% de pivot, posons
+% \[
+% P_j:=\{i\in S\setminus\{j\}\mid\gamma_i\leqslant\gamma_j\}.
+% \]
+% Le candidat est admissible si $|P_j|\geqslant k-1$. La meilleure solution
+% ayant $j$ pour pivot choisit alors dans $P_j$ les $k-1$ opérateurs de plus
+% faible valeur $F_i+\gamma_iq$. Si $A_j$ désigne cet ensemble, son coût est
+% \[
+% F_j+\gamma_j\delta
+% +\sum_{i\in A_j}\left(F_i+\gamma_iq\right).
+% \]
+% Pour chacun des $s$ pivots candidats, la sélection de $A_j$ peut être
+% effectuée par un tri en $O(s\log s)$. Tous les candidats sont donc examinés
+% en $O(s^2\log s)$.
+% \end{proof}
+
+% En répétant cette optimisation pour chaque coalition, nous obtenons le coût de
+% la coopération globale ainsi que ceux des accords que pourraient former des
+% groupes plus petits. La section suivante transforme ces coûts en économies de
+% coopération et les utilise pour étudier l'intérêt collectif et la stabilité de
+% l'accord global.

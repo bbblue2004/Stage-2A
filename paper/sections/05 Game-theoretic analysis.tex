@@ -30,53 +30,25 @@ La fonction de coût minimal $C^*$ est sous-additive.
 Soient $S, Q \subseteq N$ disjoints. Si \(S=\varnothing\) ou
 \(Q=\varnothing\), l'inégalité résulte immédiatement de la convention
 \(C^*(\varnothing)=0\). Supposons désormais \(S\) et \(Q\) non vides.
-L'existence d'une solution optimale pour chaque coalition a été établie
-dans les parties précédentes et, d'après la Proposition~\ref{pro:opt}, la
-répartition gloutonne est optimale pour tout ensemble de gardiens fixé.
-Il existe donc des configurations de gardiens optimales
-$G_{S}^{*}\subseteq S$ et $G_{Q}^{*}\subseteq Q$ telles que :
-\begin{equation}
-    C^*(S) = C(S, G_{S}^{*}, {\mathbf t}^{(S)}) \quad \text{et} \quad C^*(Q) = C(Q, G_{Q}^{*}, {\mathbf t}^{(Q)})
-\end{equation}
+Posons \(G:=G^*(S)\cup G^*(Q)\) et
+\(\mathbf t:=\mathbf t^*(S)+\mathbf t^*(Q)\). Les deux coalitions étant
+disjointes, leurs ensembles de gardiens et les supports de leurs
+répartitions le sont également.
 
-où on a posé ${\mathbf t}^{(S)}:=\mathbf{t}^g(S, G_S^*)$ et ${\mathbf t}^{(Q)}:=\mathbf{t}^g(Q, G_{Q}^*)$. 
-
-On considère la coalition élargie $S \cup Q$ et l'ensemble de gardiens :
-\begin{equation}
-G_{S \cup Q} := G_{S}^{*} \cup G_{Q}^{*}
-\end{equation}
-
-La configuration $(S\cup Q, G_{S\cup Q})$ est faisable. En effet, $(S, G_S^*)$ et $(Q, G_{Q}^*)$ sont faisables et puisque $S\cap Q = \varnothing$, $G_S^*\cap G_{Q}^* = \varnothing$ également. Ainsi :
-\begin{equation}
-    q(G_{S\cup Q}) = q(G_S^*)+q(G_{Q}^*)\geqslant d(S)+d(Q)=d(S\cup Q) 
-\end{equation}
-
-On pose alors : 
-
-\begin{equation}
-    {\mathbf t} := {\mathbf t}^{(S)} + {\mathbf t}^{(Q)}
-\end{equation}
-
-qui correspond à la répartition du trafic $d(S\cup Q)$ sur $G_{S\cup Q}$. Puisque ${\mathbf t}^{(S)}$ et ${\mathbf t}^{(Q)}$ sont à supports disjoints, on a ${\mathbf t}\in\mathcal T(S\cup Q, G_{S\cup Q})$.
-En d'autres termes, les gardiens de $S$ se répartissent $d(S)$ comme avant, et de même pour les gardiens de $Q$ et $d(Q)$. 
-
-
-
-
-Par conséquent, on obtient :
-\begin{align}
-C(S \cup Q, G_{S \cup Q}, {\mathbf t}) &= \sum_{i \in G_{S \cup Q}} \gamma_{i}{t}_{i} + \sum_{i \in G_{S \cup Q}} F_{i} \\
-&= \left[\sum_{i \in G_{S}^{*}} \gamma_{i}{t}_{i}^{(S)} + \sum_{i \in G_{S}^{*}} F_{i} \right] \notag \\
-&\quad + \left[\sum_{i \in G_{Q}^{*}} \gamma_{i}{t}_{i}^{(Q)} + \sum_{i \in G_{Q}^{*}} F_{i} \right] \\
-&= C(S, G_{S}^{*}, {\mathbf t}^{(S)}) + C(Q, G_{Q}^{*}, {\mathbf t}^{(Q)}) \\
-&= C^*(S) + C^*(Q)
-\end{align}
-
-Par définition du coût minimal,
-\begin{equation}
-C^*(S \cup Q) \leqslant C(S \cup Q, G_{S \cup Q}, {\mathbf t}) = C^*(S) + C^*(Q)
-\end{equation}
-Ce qui termine la preuve.
+Par conséquent,
+\[
+q(G)
+=q\bigl(G^*(S)\bigr)+q\bigl(G^*(Q)\bigr)
+\geqslant d(S)+d(Q)
+=d(S\cup Q).
+\]
+Ainsi \(G\in\mathcal G(S\cup Q)\) et
+\(\mathbf t\in\mathcal T(S\cup Q,G)\). L'additivité des coûts sur les
+deux supports donne
+\[
+C(S\cup Q,G,\mathbf t)=C^*(S)+C^*(Q).
+\]
+La minimalité de \(C^*(S\cup Q)\) conclut.
 \end{proof}
 
 \begin{remarque}[Portée et interprétation économique]
@@ -87,117 +59,133 @@ pour tout \(S\in\mathcal S\) et tout \(i\in N\setminus S\),
     C^*(S\cup\{i\})\leqslant C^*(S)+C^*(\{i\}).
 \]
 Cette propriété établit l'intérêt collectif de la coopération au sens
-large, mais ne garantit ni un gain collectif strict ni l'existence d'une
-répartition des économies qui soit individuellement acceptable pour tous
-les opérateurs. La preuve repose sur l'additivité des capacités et des
-coûts : les configurations optimales de $S$ et $Q$ peuvent être réunies
-sans modifier les charges de leurs gardiens. Une condition suffisante pour
-obtenir un gain collectif strict est étudiée ci-dessous.
+large, mais ne garantit ni un gain strict ni une répartition stable contre
+les déviations de sous-coalitions. La preuve repose sur l'additivité des
+capacités et des coûts : les configurations optimales de $S$ et $Q$
+peuvent être réunies sans modifier les charges de leurs gardiens. Une
+condition suffisante pour obtenir un gain collectif strict est étudiée
+ci-dessous.
 \end{remarque}
 
 \begin{corollaire}[Comparaison avec le fonctionnement autonome]
-\label{cor}
+\label{cor:comparaison_autonome}
 Pour toute coalition $S\in\mathcal S$,
-\begin{equation}
+\[
 C^*(S)\leqslant \sum_{i\in S}C_i^0.
-\end{equation}
+\]
 \end{corollaire}
 
 \begin{proof}
 En appliquant successivement la sous-additivité de $C^*$ aux singletons disjoints qui composent $S$, on obtient
-\begin{equation}
+\[
 C^*(S)\leqslant \sum_{i\in S}C^*(\{i\}).
-\end{equation}
-Or, d'après la remarque \ref{rem:eq}, $C^*(\{i\})=C_i^0$ pour tout $i\in N$, d'où le résultat.
+\]
+Or, d'après la Remarque~\ref{rem:eq},
+$C^*(\{i\})=C_i^0$ pour tout $i\in N$, d'où le résultat.
 \end{proof}
 
 \subsubsection{Cas particulier : très faible trafic}
 
-\noindent Soient \(S,Q\in\mathcal S\) deux coalitions disjointes. On se
-place ici dans un régime de très faible trafic vérifiant
-$$\sum_{i\in S\cup Q} d_i \leqslant \min_{i\in S\cup Q} q_i$$ 
-c'est-à-dire que la demande agrégée peut être intégralement acheminée par
-n'importe quel opérateur du site pris individuellement.
-
-Cette hypothèse constitue une condition suffisante volontairement forte.
-Sa pertinence empirique dépend à la fois du niveau de trafic agrégé, de
-l'hétérogénéité des capacités effectives et de la définition retenue pour
-le taux de charge. Elle sera donc examinée dans la partie consacrée à
-l'évaluation numérique, plutôt que supposée vérifiée de manière générale.
+Nous donnons une condition suffisante sous laquelle la réunion de deux
+coalitions engendre une économie stricte.
 
 \begin{proposition}[Stricte sous-additivité en régime de très faible trafic]
 \label{prop:sousadd_stricte_faible_trafic}
-Sous l'hypothèse précédente, soient $G_S^*$ et $G_Q^*$ des ensembles de
-gardiens optimaux pour $S$ et $Q$, et soit
-$$
-\alpha\in\operatorname*{arg\,min}_{g\in G_S^*\cup G_Q^*}\gamma_g.
-$$
+Soient \(S,Q\in\mathcal S\) deux coalitions disjointes. Supposons qu'il
+existe
+\[
+\alpha\in\operatorname*{arg\,min}_{g\in G^*(S)\cup G^*(Q)}\gamma_g
+\qquad\text{tel que}\qquad
+d(S\cup Q)\leqslant q_\alpha.
+\]
 Alors
-$$
+\[
 C^*(S)+C^*(Q)-C^*(S\cup Q)
 \geqslant
-\sum_{i\in(G_S^*\cup G_Q^*)\setminus\{\alpha\}}F_i
+\sum_{i\in(G^*(S)\cup G^*(Q))\setminus\{\alpha\}}F_i
 >0.
-$$
+\]
 En particulier, $C^*(S\cup Q)<C^*(S)+C^*(Q)$.
 \end{proposition}
 
-
 \begin{proof}
-Reprenons les notations de la proposition et posons :
-$$C^*(S) = C(S, G_{S}^{*}, {\mathbf t}^{(S)}) \quad \text{et} \quad C^*(Q) = C(Q, G_{Q}^{*}, {\mathbf t}^{(Q)})$$
-où ${\mathbf t}^{(S)}:=\mathbf t^g(S,G_S^*)$ et
-${\mathbf t}^{(Q)}:=\mathbf t^g(Q,G_Q^*)$.
+Par définition des représentants optimaux,
+\[
+C^*(S)=C\bigl(S,G^*(S),\mathbf t^*(S)\bigr)
+\quad\text{et}\quad
+C^*(Q)=C\bigl(Q,G^*(Q),\mathbf t^*(Q)\bigr).
+\]
 
-Par hypothèse de faible trafic, $d(S \cup Q)\leqslant q_\alpha$, ce qui
+Par hypothèse, $d(S \cup Q)\leqslant q_\alpha$, ce qui
 implique que la configuration à un unique gardien
 $(S \cup Q,\{\alpha\})$ est faisable. Cet unique gardien achemine
 nécessairement l'intégralité de la demande $d(S\cup Q)$, et on note
 ${\mathbf t}:=\left((d(S)+d(Q))\mathds{1}_{i=\alpha}\right)_{i\in N}$.
 
 
-Posons 
-
-\begin{equation}
+Posons
+\[
     \Delta := \left(C^*(S) + C^*(Q)\right) - C(S \cup Q, \{\alpha\}, {\mathbf t})
-\end{equation}
+\]
 qui correspond à l'économie de coûts. Il vient :
-\begin{equation}
-\Delta = \sum_{i \in G_S^*} \gamma_i {t}_i^{(S)} + \sum_{i \in G_{Q}^*} \gamma_i {t}_i^{(Q)} + \sum_{i \in G_S^*} F_i + \sum_{i \in G_{Q}^*} F_i - \gamma_\alpha \left(d(S) + d(Q)\right) - F_\alpha
-\end{equation}
+\[
+\Delta
+=\sum_{i\in G^*(S)}\gamma_i t_i^*(S)
++\sum_{i\in G^*(Q)}\gamma_i t_i^*(Q)
++\sum_{i\in G^*(S)}F_i
++\sum_{i\in G^*(Q)}F_i
+-\gamma_\alpha\bigl(d(S)+d(Q)\bigr)-F_\alpha.
+\]
 
-En utilisant $d(S) = \sum_{i \in G_S^*} {t}_i^{(S)}$ et $d(Q) = \sum_{i \in G_{Q}^*} {t}_i^{(Q)}$ :
-\begin{equation}
-\Delta = \sum_{i \in G_S^*} \left(\gamma_i - \gamma_\alpha \right) {t}_i^{(S)} + \sum_{i \in  G_{Q}^*} \left(\gamma_i - \gamma_\alpha \right) {t}_i^{(Q)} + \sum_{i \in (G_S^* \cup G_{Q}^*) \setminus \{\alpha\}} F_i
-\end{equation}
+En utilisant
+\(d(S)=\sum_{i\in G^*(S)}t_i^*(S)\) et
+\(d(Q)=\sum_{i\in G^*(Q)}t_i^*(Q)\), on obtient
+\[
+\Delta
+=\sum_{i\in G^*(S)}(\gamma_i-\gamma_\alpha)t_i^*(S)
++\sum_{i\in G^*(Q)}(\gamma_i-\gamma_\alpha)t_i^*(Q)
++\sum_{i\in(G^*(S)\cup G^*(Q))\setminus\{\alpha\}}F_i.
+\]
 
 
 D'une part, puisque $\alpha$ possède le plus faible coût variable unitaire
-parmi les gardiens de $G_S^*\cup G_Q^*$, on a
+parmi les gardiens de $G^*(S)\cup G^*(Q)$, on a
 $\gamma_i-\gamma_\alpha\geqslant0$ pour tout
-$i\in G_S^*\cup G_Q^*$. Les deux premières sommes sont donc positives ou
+$i\in G^*(S)\cup G^*(Q)$. Les deux premières sommes sont donc positives ou
 nulles.
 
-D'autre part, $S\cap Q = \varnothing$ donc $G_S^*\cap G_{Q}^* = \varnothing$ également. Puisque $|G_S^*| \geqslant 1$ et $|G_{Q}^*| \geqslant 1$,  $G_S^*\cup G_{Q}^*$ contient au moins deux éléments, donc $(G_S^* \cup G_{Q}^*) \setminus \{\alpha\}$ contient au moins un opérateur $i$ de coût fixe $F_i > 0$.
+D'autre part, \(S\cap Q=\varnothing\) implique
+\(G^*(S)\cap G^*(Q)=\varnothing\). Chacun de ces ensembles étant non
+vide, leur union contient au moins deux éléments. Par conséquent,
+\((G^*(S)\cup G^*(Q))\setminus\{\alpha\}\) contient au moins un opérateur
+de coût fixe strictement positif.
 
 On en conclut que
-$$
+\[
 \Delta
 \geqslant
-\sum_{i\in(G_S^*\cup G_Q^*)\setminus\{\alpha\}}F_i
+\sum_{i\in(G^*(S)\cup G^*(Q))\setminus\{\alpha\}}F_i
 >0.
-$$
+\]
 Par minimalité de $C^*(S\cup Q)$,
-$$
+\[
 C^*(S)+C^*(Q)-C^*(S\cup Q)
 \geqslant
 C^*(S)+C^*(Q)-C(S\cup Q,\{\alpha\},{\mathbf t})
 =\Delta,
-$$
+\]
 ce qui établit la borne annoncée.
 
 \end{proof}
 
+La condition de capacité précédente impose seulement que l'un des
+gardiens de coût variable minimal puisse acheminer toute la demande
+réunie. Elle est notamment satisfaite sous la condition, plus forte mais
+directement vérifiable,
+\[
+d(S\cup Q)\leqslant\min_{i\in S\cup Q}q_i.
+\]
+Sa pertinence sera examinée dans l'évaluation numérique.
 
 La borne précédente montre que, sous l'hypothèse considérée, le gain
 collectif est au moins égal à la somme des coûts fixes des gardiens qui
@@ -217,11 +205,11 @@ donc pas faisable. L'unique ensemble de gardiens faisable pour $S$ est
 ainsi $S$, et les contraintes de capacité et de conservation imposent
 $t_i=q_i$ pour tout $i\in S$. Le même raisonnement s'applique à $Q$ et à
 $S\cup Q$, puisque $d(S\cup Q)=q(S\cup Q)$. Par conséquent,
-$$
+\[
 C^*(S\cup Q)
 =\sum_{i\in S\cup Q}(F_i+\gamma_iq_i)
 =C^*(S)+C^*(Q).
-$$
+\]
 \end{exemple}
 
 
@@ -234,296 +222,281 @@ suffisantes établies précédemment.
 \subsection{Jeu des économies de coopération et répartition stable}
 \label{subsec:partage_gains}
 
-La sous-additivité de $C^*$ montre que la coopération entre opérateurs permet d'effectuer des économies. Il est alors nécessaire de déterminer s'il existe une répartition équitable et stable de ces économies entre membres de la coalition.
+La sous-additivité de $C^*$ montre que la coopération entre opérateurs
+permet d'effectuer des économies. Il reste à déterminer si les économies
+de la grande coalition \(N\) peuvent être réparties de manière équitable
+et stable entre tous les opérateurs.
 
-Nous séparons deux opérations :
-\begin{enumerate}
-    \item le remboursement des coûts supportés par les
-    opérateurs gardiens ;
-    \item la répartition des économies engendrées par la
-    coopération.
-\end{enumerate}
+Nous distinguons le calcul comptable du transfert net de son règlement
+effectif entre les opérateurs.
 
-\subsubsection{Jeu des économies de coopération et remboursement des gardiens}
+\subsubsection{Jeu des économies de coopération et transferts internes}
 \label{subsubsec:jeu_economies}
 
-Pour tout $i \in N$, on note $R_i:=c_iT_i$ son revenu sur la période, et $C_i^0:=F_i+\gamma_i t_i$
-son coût opérationnel lorsqu'il agit seul. Son profit non coopératif est
-donc
-\begin{equation}
-    C^*(\{i\})=R_i-C_i^0.
-\end{equation}
-
-Considérons maintenant $S\subseteq N$, et fixons une solution optimale $\left(G_S^*,{\mathbf t}^{\,*}(S)\right)$ pour cette coalition. Le coût effectivement supporté par l'opérateur $i$ dans cette configuration est
-\begin{equation}
-\label{eq:cout_cooperatif_individuel}
-C_i^*(S)
-:=
-\mathds{1}_{\{i \in G_S^*\}}
-\left(
-    F_i+\beta_i{\rho}_i^*(S)
-\right)
-\end{equation}
-où ${\rho}_i^*(S) = T_i^*(S)/q_i$.
-On a alors
-\begin{equation}
-\label{eq:vstar_couts_individuels}
-C^*(S)
-=
-\sum_{i\in S}R_i
--
-\sum_{i\in S}C_i^*(S)
-\end{equation}
-
 \begin{definition}[Jeu des économies de coopération]
-\label{def}
-On définit le jeu $w:2^N\to\mathbb R$ par
-\begin{equation}
-w(\varnothing):=0
-\end{equation}
-et, pour toute coalition non vide $S\in\mathcal S$, par
-\begin{equation}
-\label{eq}
-w(S):=\sum_{i\in S}C_i^0-C^*(S).
-\end{equation}
+\label{def:jeu_economies}
+Le prolongement \(C^*(\varnothing)=0\) permet de définir le jeu
+\(v:2^N\to\mathbb R\), pour tout \(S\subseteq N\), par
+\[
+v(S):=\sum_{i\in S}C_i^0-C^*(S).
+\]
+En particulier, \(v(\varnothing)=0\).
 \end{definition}
 
-La quantité $w(S)$ représente l'économie opérationnelle maximale obtenue lorsque les membres de $S$ coopèrent, relativement à la situation de référence dans laquelle chacun fonctionne de manière autonome.
+La quantité $v(S)$ représente l'économie opérationnelle maximale obtenue lorsque les membres de $S$ coopèrent, relativement à la situation de référence dans laquelle chacun fonctionne de manière autonome.
 
 \begin{proposition}[Propriétés élémentaires du jeu d'économies]
-\label{prop}
-Le jeu $w$ vérifie
-\begin{equation}
-w({i})=0,
+\label{prop:proprietes_jeu_economies}
+Le jeu $v$ vérifie
+\[
+v(\{i\})=0,
 \qquad \forall i\in N,
-\end{equation}
+\]
 et
-\begin{equation}
-w(S)\geqslant0,
+\[
+v(S)\geqslant0,
 \qquad \forall S\subseteq N.
-\end{equation}
-En outre, $w$ est superadditif : pour toutes coalitions disjointes $S,Q\subseteq N$,
-\begin{equation}
-w(S\cup Q)\geqslant w(S)+w(Q).
-\end{equation}
+\]
+En outre, $v$ est superadditif : pour tous sous-ensembles disjoints
+$S,Q\subseteq N$,
+\[
+v(S\cup Q)\geqslant v(S)+v(Q).
+\]
 \end{proposition}
 
 \begin{proof}
-L'égalité $w({i})=0$ découle de l'identité $C^*({i})=C_i^0$. La non-négativité de $w$ résulte du Corollaire~\ref{cor}.
-
-Enfin, pour toutes coalitions disjointes $S,Q\subseteq N$, la sous-additivité de $C^*$ donne
-\begin{align}
-w(S\cup Q) = \sum_{i\in S\cup Q}C_i^0-C^*(S\cup Q)\ \geqslant \sum_{i\in S}C_i^0+\sum_{i\in Q}C_i^0 -C^*(S)-C^*(Q)\ = w(S)+w(Q).
-\end{align}
+L'égalité $v(\{i\})=0$ découle de l'identité
+$C^*(\{i\})=C_i^0$. La non-négativité de $v$ résulte du
+Corollaire~\ref{cor:comparaison_autonome} lorsque \(S\neq\varnothing\),
+et de \(v(\varnothing)=0\) sinon. Enfin, pour tous sous-ensembles
+disjoints \(S,Q\subseteq N\), la sous-additivité de \(C^*\) donne
+\begin{align*}
+v(S\cup Q)
+&=\sum_{i\in S}C_i^0+\sum_{i\in Q}C_i^0-C^*(S\cup Q)\\
+&\geqslant
+\sum_{i\in S}C_i^0+\sum_{i\in Q}C_i^0-C^*(S)-C^*(Q)\\
+&=v(S)+v(Q).
+\end{align*}
 \end{proof}
 
+Nous nous plaçons désormais dans la grande coalition \(N\). Fixons le
+représentant optimal \(G^*(N)\) introduit dans la partie précédente. Le
+coût physiquement supporté par l'opérateur \(i\in N\) dans la solution
+\(\bigl(G^*(N),\mathbf t^*(N)\bigr)\) est
+\[
+C_i^*(N)
+:=
+\mathds{1}_{\{i \in G^*(N)\}}
+\left(
+    F_i+\gamma_i t_i^*(N)
+\right).
+\]
+Ainsi, les gardiens supportent initialement le coût de fonctionnement de
+leur équipement, tandis que tout opérateur \(i\notin G^*(N)\) supporte le
+coût physique \(C_i^*(N)=0\). Le coût optimal de la grande coalition se
+décompose donc comme
+\[
+C^*(N)=\sum_{i\in N}C_i^*(N).
+\]
+Le vecteur \(\bigl(C_i^*(N)\bigr)_{i\in N}\in\mathbb R^N\) décrit les
+dépenses physiques initiales, avant toute compensation entre opérateurs.
+Sa somme est le coût réel à financer ; elle ne constitue pas encore une
+répartition des économies de coopération.
 
-Soit désormais $z_i\geqslant0$ la part des économies de coopération attribuée à l'opérateur $i$. Une répartition efficace satisfait
-\begin{equation}
-\label{eq:efficacite_z}
-    \sum_{i\in S}z_i=w(S).
-\end{equation}
-Le profit final attribué à l'opérateur $i$ est alors $u_i = C^*(\{i\})+z_i$. Ainsi, chaque opérateur $i$ est garanti de recevoir au moins son profit de référence $C^*(\{i\})$.
+Soit \(z=(z_i)_{i\in N}\in\mathbb R^N\) une répartition des économies de
+la grande coalition, où \(z_i\) désigne la part attribuée à l'opérateur
+\(i\). Nous la supposons ici déjà déterminée et efficace ; son choix et
+ses autres propriétés seront étudiés dans la sous-section suivante. Ainsi,
+\[
+    \sum_{i\in N}z_i=v(N).
+\]
+La part \(z_i\) réduit le coût autonome de l'opérateur \(i\). Le vecteur
+des coûts nets finaux \(y=(y_i)_{i\in N}\in\mathbb R^N\) est donc défini
+par
+\[
+    y_i:=C_i^0-z_i.
+\]
 
-Pour répartir ce profit à partir des coûts physiquement supportés, on définit le transfert net reçu par l'opérateur $i$ :
-\begin{equation}
-\label{eq:transfert_net}
+Or l'opérateur \(i\) a initialement supporté le coût physique
+\(C_i^*(N)\). Le transfert net qu'il doit recevoir pour que son coût final
+soit \(y_i\) est donc
+\[
 \tau_i
 :=
-u_i-\left(R_i-C_i^*(S)\right)
+C_i^*(N)-y_i
 =
-C_i^*(S)-C_i^0+z_i.
-\end{equation}
-Un transfert positif correspond à une somme reçue par l'opérateur ; un
-transfert négatif correspond à une contribution au mécanisme de
-compensation.
+C_i^*(N)-C_i^0+z_i.
+\]
+On note \(\tau=(\tau_i)_{i\in N}\in\mathbb R^N\) le vecteur de ces
+transferts nets. Le terme \(C_i^*(N)-C_i^0\) ramène comptablement chaque
+opérateur à son coût autonome, puis \(z_i\) lui attribue sa part des
+économies. Cette
+décomposition explique la valeur du transfert unique \(\tau_i\) ; elle
+ne décrit pas deux transferts successifs.
 
 \begin{proposition}[Équilibre budgétaire]
 \label{prop:equilibre_budgetaire}
-Le mécanisme de transfert est équilibré :
-\begin{equation}
-    \sum_{i\in S}\tau_i=0.
-\end{equation}
+Pour toute répartition \(z\) vérifiant l'égalité d'efficacité ci-dessus,
+le mécanisme de transfert est équilibré :
+\[
+    \sum_{i\in N}\tau_i=0.
+\]
 \end{proposition}
 
 \begin{proof}
-D'après \eqref{eq:transfert_net},
 \begin{align*}
-\sum_{i\in S}\tau_i
+\sum_{i\in N}\tau_i
 &=
-\sum_{i\in S}C_i^*(S)
+\sum_{i\in N}C_i^*(N)
 -
-\sum_{i\in S}C_i^0
+\sum_{i\in N}C_i^0
 +
-\sum_{i\in S}z_i\\
+\sum_{i\in N}z_i\\
 &=
--w(S)+w(S)
+C^*(N)-\sum_{i\in N}C_i^0+v(N)
 =
-0,
+0.
 \end{align*}
-où l'on a utilisé \eqref{eq:w_economie_couts} et
-\eqref{eq:efficacite_z}.
 \end{proof}
 
-\begin{remarque}[Rôle de la configuration de gardiens]
-La valeur $w(S)$ dépend uniquement de la valeur optimale $C^*(S)$. En
-revanche, lorsque plusieurs configurations physiques atteignent cette
-même valeur, le vecteur
-\[
-\left(C_i^*(S)\right)_{i\in S}
-\]
-et donc les transferts $\tau_i$ peuvent dépendre de la configuration
-retenue. Le profit final
-\[
-u_i=C^*(\{i\})+z_i
-\]
-reste toutefois déterminé par la règle de partage de $w$.
+Le règlement est alors immédiat. Chaque opérateur calcule son
+\(\tau_i\). Les opérateurs pour lesquels \(\tau_i<0\) versent d'abord
+\(-\tau_i\) dans la cagnotte de règlement ; une fois ces versements
+collectés, ceux pour lesquels \(\tau_i>0\) reçoivent \(\tau_i\).
+L'équilibre budgétaire garantit que les montants versés et reçus
+coïncident exactement.
 
-Dans l'implémentation, il convient donc de fixer une règle de départage
-entre solutions physiques optimales, par exemple l'ordre lexicographique
-des opérateurs, le nombre minimal de gardiens ou une rotation entre
-gardiens au cours du temps.
-\end{remarque}
+Si plusieurs solutions opérationnelles \((G,\mathbf t)\) sont optimales,
+les transferts \(\tau_i\) peuvent dépendre de la solution retenue, bien que
+les coûts nets \(y_i\) n'en dépendent pas. Une règle de départage doit donc
+être fixée dans l'implémentation.
 
 \subsubsection{Stabilité et coeur du jeu}
 \label{subsubsec:coeur}
 
-Pour toute $S\subseteq N$, on note la notation
-\begin{equation}
-    z(S):=\sum_{i\in S}z_i.
-\end{equation}
+Une répartition peut être acceptable pour chaque opérateur pris
+isolément, tout en étant rejetée par un groupe d'opérateurs. En effet, une
+sous-coalition \(Q\) a intérêt à quitter \(N\) si ses membres reçoivent
+ensemble moins que l'économie \(v(Q)\) qu'ils pourraient réaliser seuls.
+Nous cherchons donc une répartition qui distribue toute l'économie de
+\(N\) et écarte toute déviation collective.
 
-\begin{definition}[Imputation des économies]
-Une imputation du jeu $(S,w)$ est un vecteur
-$z=(z_i)_{i\in S}\in\mathbb R^S$ tel que
-\begin{equation}
-\label{eq:imputation_w}
-    z(S)=w(S)
+Pour \(z=(z_i)_{i\in N}\in\mathbb R^N\) et \(Q\subseteq N\), notons
+\[
+    z(Q):=\sum_{i\in Q}z_i.
+\]
+
+\begin{definition}[Allocation des économies]
+Une allocation des économies du jeu $(N,v)$ est un vecteur
+$z=(z_i)_{i\in N}\in\mathbb R^N$ tel que
+\[
+    z(N)=v(N)
     \qquad\text{et}\qquad
     z_i\geqslant0,
-    \quad \forall i \in S.
-\end{equation}
-L'ensemble des imputations est noté $\mathcal I(S,w)$.
+    \quad \forall i \in N.
+\]
+L'ensemble de ces allocations est noté $\mathcal A(N,v)$.
 \end{definition}
 
 La condition $z_i\geqslant0$ exprime la rationalité individuelle puisque
-$w(\{i\})=0$ : aucun opérateur ne doit recevoir un profit final inférieur
-à son profit non coopératif.
+$v(\{i\})=0$ : aucun opérateur ne doit supporter un coût net supérieur à
+son coût autonome.
 
 \begin{definition}[Coeur du jeu des économies]
-\label{def:coeur_w}
-Le coeur du jeu $(S,w)$ est l'ensemble
-\begin{equation}
-\label{eq:coeur_w}
-\mathcal C(S,w)
+\label{def:coeur_v}
+Le coeur du jeu $(N,v)$ est l'ensemble
+\[
+\mathcal C(N,v)
 :=
 \left\{
-z\in\mathcal I(S,w)
+z\in\mathcal A(N,v)
 \;\middle|\;
-z(Q)\geqslant w(Q),
+z(Q)\geqslant v(Q),
 \quad
-\forall\,\varnothing\neq Q\subsetneq S
+\forall\,Q\subseteq N
 \right\}.
-\end{equation}
+\]
 \end{definition}
 
-La contrainte $z(Q)\geqslant w(Q)$ garantit que les membres de $Q$
-reçoivent collectivement au moins l'économie qu'ils pourraient obtenir en
-quittant $S$ pour coopérer entre eux.
+Pour tout groupe susceptible de faire sécession, la contrainte
+$z(Q)\geqslant v(Q)$ garantit que ses membres reçoivent collectivement au
+moins l'économie qu'ils pourraient obtenir en coopérant séparément.
 
-\begin{proposition}[Équivalence des deux jeux]
+\begin{proposition}[Équivalence entre économies attribuées et coûts nets]
 \label{prop:translation_coeur}
-Soit $z\in\mathbb R^S$ et définissons
-\begin{equation}
-    u_i=C^*(\{i\})+z_i,
-    \qquad \forall i \in S.
-\end{equation}
-Alors $z\in\mathcal C(S,w)$ si et seulement si le vecteur
-$u=(u_i)_{i\in S}$ appartient au coeur du jeu de profit $(S,C^*)$.
+Soit \(z\in\mathcal A(N,v)\) une allocation et \(y\) le vecteur de coûts
+nets qui lui est associé. Alors
+\(z\in\mathcal C(N,v)\) si et seulement si
+\[
+    \sum_{i\in N}y_i=C^*(N)
+    \qquad\text{et}\qquad
+    \sum_{i\in Q}y_i\leqslant C^*(Q),
+    \quad
+    \forall\,Q\subseteq N.
+\]
 \end{proposition}
 
 \begin{proof}
-L'efficacité de $z$ donne
+L'efficacité de \(z\) donne
 \[
-\sum_{i\in S}u_i
+\sum_{i\in N}y_i
 =
-\sum_{i\in S}C^*(\{i\})+w(S)
+\sum_{i\in N}C_i^0-v(N)
 =
-C^*(S).
+C^*(N).
 \]
-Pour toute coalition $Q\subseteq S$,
+Pour toute coalition \(Q\subseteq N\),
 \begin{align*}
-\sum_{i\in Q}u_i\geqslant C^*(Q)
+\sum_{i\in Q}y_i\leqslant C^*(Q)
 &\Longleftrightarrow
-\sum_{i\in Q}C^*(\{i\})+z(Q)\geqslant C^*(Q)\\
+\sum_{i\in Q}C_i^0-z(Q)\leqslant C^*(Q)\\
 &\Longleftrightarrow
 z(Q)\geqslant
-C^*(Q)-\sum_{i\in Q}C^*(\{i\})\\
+\sum_{i\in Q}C_i^0-C^*(Q)\\
 &\Longleftrightarrow
-z(Q)\geqslant w(Q).
+z(Q)\geqslant v(Q).
 \end{align*}
-Les contraintes de coeur sont donc équivalentes.
+Les contraintes de stabilité sont donc équivalentes.
 \end{proof}
 
 \begin{remarque}[Stabilité et équité]
-L'appartenance au coeur exprime une propriété de stabilité, mais ne
-sélectionne pas nécessairement une répartition équitable parmi toutes les
-répartitions stables.
-
-Par exemple, considérons trois opérateurs symétriques tels que
-\[
-w(S)=1
-\]
-pour la grande coalition et
-\[
-w(Q)=0
-\]
-pour toute coalition propre $Q\subsetneq S$. Le coeur est alors
-\[
-\left\{
-z\in\mathbb R_+^3
-\;\middle|\;
-z_1+z_2+z_3=1
-\right\}.
-\]
-Il contient notamment $(1,0,0)$, qui est stable mais ne respecte pas la
-symétrie des opérateurs. Une règle de partage supplémentaire est donc
-nécessaire pour sélectionner une allocation particulière dans le coeur.
+Le coeur garantit la stabilité, non l'équité. Si \(N=\{1,2,3\}\),
+\(v(N)=1\) et \(v(Q)=0\) pour tout \(Q\subsetneq N\), alors
+\(\mathcal C(N,v)=\{z\in\mathbb R_+^N\mid z_1+z_2+z_3=1\}\). Il contient
+notamment \((1,0,0)\), allocation stable mais asymétrique.
 \end{remarque}
 
 \subsubsection{Existence du coeur et théorème de Bondareva--Shapley}
 \label{subsubsec:bondareva_shapley}
 
-La sous-additivité de $w$ ne suffit pas, en général, à garantir que le
+La superadditivité de $v$ ne suffit pas, en général, à garantir que le
 coeur est non vide. La caractérisation nécessaire et suffisante repose sur
 la notion de famille équilibrée \cite{bondareva1963,shapley1967balanced}.
 
 \begin{definition}[Famille équilibrée]
 Une famille de coefficients
 \[
-(\lambda_Q)_{\varnothing\neq Q\subseteq S}
+(\lambda_Q)_{\varnothing\neq Q\subseteq N}
 \]
 est dite équilibrée si
-\begin{equation}
-\label{eq:famille_equilibree}
+\[
     \lambda_Q\geqslant0,
     \qquad
-    \sum_{\substack{Q\subseteq S\\i \in Q}}\lambda_Q=1,
-    \quad \forall i \in S.
-\end{equation}
+    \sum_{\substack{\varnothing\neq Q\subseteq N\\i \in Q}}\lambda_Q=1,
+    \quad \forall i \in N.
+\]
 \end{definition}
 
 \begin{theorem}[Bondareva--Shapley]
 \label{thm:bondareva_shapley}
-Le coeur $\mathcal C(S,w)$ est non vide si et seulement si, pour toute
+Le coeur $\mathcal C(N,v)$ est non vide si et seulement si, pour toute
 famille équilibrée $(\lambda_Q)$,
-\begin{equation}
-\label{eq:condition_equilibree}
-    \sum_{\varnothing\neq Q\subseteq S}
-    \lambda_Qw(Q)
+\[
+    \sum_{\varnothing\neq Q\subseteq N}
+    \lambda_Qv(Q)
     \leqslant
-    w(S).
-\end{equation}
+    v(N).
+\]
 \end{theorem}
 
 L'existence d'une allocation du coeur peut être testée directement par le
@@ -532,42 +505,44 @@ programme linéaire de faisabilité
 \label{eq:lp_faisabilite_coeur}
 \begin{aligned}
 \text{trouver}\quad
-    & z\in\mathbb R^S,\\
+    & z\in\mathbb R^N,\\
 \text{s.c.}\quad
-    & z(S)=w(S),\\
-    & z(Q)\geqslant w(Q),
+    & z(N)=v(N),\\
+    & z(Q)\geqslant v(Q),
       \qquad
-      \forall\,\varnothing\neq Q\subsetneq S.
+      \forall\,\varnothing\neq Q\subsetneq N.
 \end{aligned}
 \end{equation}
+Les contraintes correspondant aux singletons \(Q=\{i\}\) imposent
+directement \(z_i\geqslant v(\{i\})=0\) ; le programme recherche donc bien
+une allocation.
 
 Une formulation équivalente, directement reliée au théorème de
 Bondareva--Shapley, est
 \begin{equation}
 \label{eq:lp_bondareva_shapley}
 \begin{aligned}
-B(S)
+B(N)
 =
 \max_{\boldsymbol\lambda}\quad
-    & \sum_{\varnothing\neq Q\subseteq S}\lambda_Qw(Q),\\
+    & \sum_{\varnothing\neq Q\subseteq N}\lambda_Qv(Q),\\
 \text{s.c.}\quad
-    & \sum_{\substack{Q\subseteq S\\i \in Q}}\lambda_Q=1,
-      \qquad \forall i \in S,\\
+    & \sum_{\substack{\varnothing\neq Q\subseteq N\\i \in Q}}\lambda_Q=1,
+      \qquad \forall i \in N,\\
     & \lambda_Q\geqslant0,
-      \qquad \forall\,\varnothing\neq Q\subseteq S.
+      \qquad \forall\,\varnothing\neq Q\subseteq N.
 \end{aligned}
 \end{equation}
-Comme le choix $\lambda_S=1$ et $\lambda_Q=0$ pour $Q\neq S$ est
-admissible, on a toujours $B(S)\geqslant w(S)$. Le
+Comme le choix $\lambda_N=1$ et $\lambda_Q=0$ pour $Q\neq N$ est
+admissible, on a toujours $B(N)\geqslant v(N)$. Le
 Théorème~\ref{thm:bondareva_shapley} donne donc
-\begin{equation}
-\label{eq:test_coeur}
-    \mathcal C(S,w)\neq\varnothing
+\[
+    \mathcal C(N,v)\neq\varnothing
     \quad\Longleftrightarrow\quad
-    B(S)=w(S).
-\end{equation}
+    B(N)=v(N).
+\]
 
-Lorsque $B(S)>w(S)$, une solution optimale
+Lorsque $B(N)>v(N)$, une solution optimale
 $\boldsymbol\lambda^*$ fournit un certificat explicite de vacuité du
 coeur.
 
@@ -583,16 +558,15 @@ au moyen de \eqref{eq:lp_faisabilite_coeur} ou
 \label{subsubsec:nucleole}
 
 \begin{definition}[Excès d'une coalition]
-Pour une imputation $z\in\mathcal I(S,w)$ et une coalition
-$Q\subsetneq S$, l'excès de $Q$ est
-\begin{equation}
-\label{eq:exces}
-    e(Q,z):=w(Q)-z(Q).
-\end{equation}
+Pour une allocation $z\in\mathcal A(N,v)$ et une coalition propre non vide
+\(\varnothing\neq Q\subsetneq N\), l'excès de $Q$ est
+\[
+    e(Q,z):=v(Q)-z(Q).
+\]
 \end{definition}
 
 Un excès positif signifie que la coalition $Q$ pourrait obtenir davantage
-en quittant la grande coalition. Une imputation appartient au coeur si et
+en quittant la grande coalition. Une allocation appartient au coeur si et
 seulement si tous ses excès sont négatifs ou nuls.
 
 La plus petite valeur uniforme permettant de satisfaire les coalitions est
@@ -603,22 +577,21 @@ obtenue par le programme linéaire
 \min_{z,\varepsilon}\quad
     & \varepsilon,\\
 \text{s.c.}\quad
-    & z(S)=w(S),\\
+    & z(N)=v(N),\\
     & z_i\geqslant0,
-      \qquad \forall i \in S,\\
-    & z(Q)\geqslant w(Q)-\varepsilon,
+      \qquad \forall i \in N,\\
+    & z(Q)\geqslant v(Q)-\varepsilon,
       \qquad
-      \forall\,\varnothing\neq Q\subsetneq S.
+      \forall\,\varnothing\neq Q\subsetneq N.
 \end{aligned}
 \end{equation}
 
 Si $\varepsilon^*$ désigne sa valeur optimale, alors
-\begin{equation}
-\label{eq:test_epsilon_coeur}
-\mathcal C(S,w)\neq\varnothing
+\[
+\mathcal C(N,v)\neq\varnothing
 \quad\Longleftrightarrow\quad
 \varepsilon^*\leqslant0.
-\end{equation}
+\]
 Lorsque $\varepsilon^*>0$, le coeur est vide et $\varepsilon^*$ mesure la
 plus petite violation maximale inévitable des contraintes coalitionnelles.
 
@@ -627,10 +600,10 @@ Il ne suffit pas, à lui seul, à déterminer le nucléole.
 
 \begin{definition}[Nucléole]
 \label{def:nucleole}
-Pour une imputation $z$, considérons le vecteur formé par les excès
-$e(Q,z)$ de toutes les coalitions propres non vides, classés dans l'ordre
-décroissant. Le nucléole est l'unique imputation qui minimise ce vecteur
-pour l'ordre lexicographique \cite{schmeidler1969}.
+Pour une allocation \(z\in\mathcal A(N,v)\), considérons le vecteur formé
+par les excès \(e(Q,z)\) de toutes les coalitions propres non vides,
+classés dans l'ordre décroissant. Le nucléole est l'unique allocation qui
+minimise ce vecteur pour l'ordre lexicographique \cite{schmeidler1969}.
 \end{definition}
 
 Le calcul du nucléole commence par le programme
@@ -663,66 +636,63 @@ La valeur de Shapley fournit une autre règle de partage, fondée sur les
 contributions marginales moyennes des opérateurs
 \cite{shapley1953value}.
 
-Soit $s:=|S|$. Pour tout opérateur $i \in S$, sa valeur de Shapley dans le
-jeu des économies est
-\begin{equation}
-\label{eq:shapley_w}
-\phi_i(w)
+Pour tout opérateur $i\in N$, sa valeur de Shapley dans le jeu des
+économies est
+\[
+\phi_i(v)
 =
-\sum_{Q\subseteq S\setminus\{i\}}
-\frac{|Q|!\,(s-|Q|-1)!}{s!}
+\sum_{Q\subseteq N\setminus\{i\}}
+\frac{|Q|!\,(n-|Q|-1)!}{n!}
 \left[
-    w(Q\cup\{i\})-w(Q)
+    v(Q\cup\{i\})-v(Q)
 \right].
-\end{equation}
+\]
 
 Cette quantité est la contribution marginale moyenne de l'opérateur $i$,
-lorsque tous les ordres d'arrivée des membres de $S$ sont supposés
+lorsque tous les ordres d'arrivée des membres de $N$ sont supposés
 équiprobables. La valeur de Shapley satisfait les propriétés d'efficacité,
-de symétrie, de nullité et d'additivité.
+de symétrie, de nullité et d'additivité. On note
+\(\phi(v)=(\phi_i(v))_{i\in N}\in\mathbb R^N\) le vecteur correspondant.
 
-Le profit final associé à cette règle est
-\begin{equation}
-\label{eq:profit_shapley}
-    u_i^{\mathrm{Sh}}
+Le coût net associé à cette règle est
+\[
+    y_i^{\mathrm{Sh}}
     =
-    C^*(\{i\})+\phi_i(w).
-\end{equation}
+    C_i^0-\phi_i(v).
+\]
 
 La valeur de Shapley n'appartient pas nécessairement au coeur. Son défaut
 maximal de stabilité est mesuré par
-\begin{equation}
-\label{eq:exces_shapley}
-E_{\mathrm{Sh}}(S)
+\[
+E_{\mathrm{Sh}}(N)
 :=
-\max_{\varnothing\neq Q\subsetneq S}
+\max_{\varnothing\neq Q\subsetneq N}
 \left\{
-    w(Q)-\sum_{i\in Q}\phi_i(w)
+    v(Q)-\sum_{i\in Q}\phi_i(v)
 \right\}.
-\end{equation}
+\]
 On a
 \begin{equation}
 \label{eq:test_shapley_coeur}
-    \phi(w)\in\mathcal C(S,w)
+    \phi(v)\in\mathcal C(N,v)
     \quad\Longleftrightarrow\quad
-    E_{\mathrm{Sh}}(S)\leqslant0.
+    E_{\mathrm{Sh}}(N)\leqslant0.
 \end{equation}
 
 \begin{definition}[Jeu convexe]
-Le jeu $w$ est convexe, ou supermodulaire, si
-\begin{equation}
-\label{eq:convexite_jeu}
-w(Q)+w(Q')
+Le jeu $v$ est convexe, ou supermodulaire, si
+\[
+v(Q)+v(Q')
 \leqslant
-w(Q\cup Q')+w(Q\cap Q'),
+v(Q\cup Q')+v(Q\cap Q'),
 \qquad
-\forall Q,Q'\subseteq S.
-\end{equation}
+\forall Q,Q'\subseteq N.
+\]
 \end{definition}
 
 \begin{proposition}
 \label{prop:shapley_coeur_convexe}
-Si le jeu $w$ est convexe, alors son coeur est non vide et sa valeur de
+Si le jeu $v$ est convexe, alors son coeur est non vide et sa valeur de
 Shapley appartient au coeur \cite{shapley1971convex}.
 \end{proposition}
 

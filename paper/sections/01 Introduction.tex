@@ -1,38 +1,85 @@
 \section{Introduction}
 
-\subsection{Contexte}
-En France, quatre opérateurs majeurs (Orange, Bouygues Telecom, SFR et Free) possèdent chacun leur propre réseau d'accès radio (RAN, Radio Access Network). Dans les zones urbaines denses, les couvertures sont largement redondantes : chaque opérateur y a déployé un réseau dimensionné pour absorber les pics de trafic et garantir une qualité de service optimale à ses abonnés. Or, l'analyse des données de trafic révèle que ces pics ne durent que quelques heures par jour. En dehors de ces périodes, et en particulier durant la nuit, le trafic observé dans les différentes stations de base est significativement inférieur à sa valeur maximale. L'ensemble des infrastructures radio reste pourtant en fonctionnement, ce qui entraîne un gaspillage énergétique considérable. Par exemple, Orange consacre environ un milliard d'euros par an à sa facture énergétique réseau.
+Les réseaux d'accès radio sont dimensionnés pour absorber les pointes de
+trafic et garantir la continuité du service. La charge qu'ils supportent varie
+cependant fortement au cours du temps. Pendant les périodes creuses, une part
+importante de la capacité déployée demeure inutilisée, alors que les
+équipements radio restent actifs et continuent d'engendrer des coûts
+opérationnels. Réduire cette consommation résiduelle constitue ainsi un enjeu
+à la fois économique pour les opérateurs et environnemental pour le secteur
+des télécommunications.
 
-Cela soulève deux enjeux principaux. Sur le plan économique, la réduction de la consommation énergétique permettrait de diminuer significativement les coûts d'exploitation (OPEX) des opérateurs, ainsi que les investissements en maintenance et en refroidissement des équipements. Sur le plan environnemental, elle contribuerait à limiter l'empreinte carbone du secteur des télécommunications, qui représente une part croissante des émissions mondiales de $\text{CO}_2$ du numérique. Selon l'Agence internationale de l'énergie, les réseaux mobiles consomment environ 0.5\% de l'électricité mondiale, un chiffre en augmentation constante avec le déploiement de la 5G. 
+La présence de plusieurs opérateurs sur une même zone ouvre une possibilité
+supplémentaire. Lorsque le trafic est suffisamment faible, tous les
+équipements disponibles ne sont pas nécessaires pour servir la demande. Les
+opérateurs peuvent alors mettre temporairement en commun leurs capacités,
+laisser actifs certains équipements et placer les autres en veille. Les
+équipements maintenus en fonctionnement, qualifiés de \emph{gardiens}, prennent
+en charge le trafic des opérateurs qui s'éteignent. Ce partage opportuniste du
+RAN transforme ainsi la redondance des infrastructures en une source
+potentielle d'économies.
 
-Les défis à relever sont nombreux: garantir la continuité de service pour tous les abonnés, préserver une concurrence équitable entre acteurs du marché, mettre en place des mécanismes de coordination fiables et développer des algorithmes de décision efficaces pour gérer l'extinction et l'activation dynamique des équipements.
+Cette possibilité technique ne suffit toutefois pas à rendre la coopération
+acceptable. Les opérateurs restent des acteurs autonomes et concurrents. Ceux
+qui maintiennent leurs équipements actifs supportent directement les coûts de
+la configuration commune, tandis que ceux qui les placent en veille en
+retirent immédiatement le bénéfice. Une solution collectivement avantageuse
+peut donc être refusée si les efforts et les économies qu'elle engendre sont
+mal répartis. Le mécanisme doit à la fois déterminer une organisation
+opérationnelle efficace et fournir à chaque opérateur des raisons suffisantes
+pour y participer.
 
-\subsection{Problématique: RAN sharing opportuniste et opérateur gardien}
+Ce travail étudie la possibilité de faire coopérer, sur un site et pendant une
+période de faible trafic, l'ensemble des opérateurs qui y sont présents. Il
+s'agit d'abord de déterminer quels équipements doivent rester actifs et
+comment le trafic doit être acheminé afin de réduire le coût total. Il faut
+ensuite établir si la coopération de tous les opérateurs est collectivement
+préférable à leur fonctionnement séparé. Enfin, les économies obtenues doivent
+être réparties de façon à tenir compte des contributions de chacun et à
+préserver l'accord commun.
 
-Dans ce projet, nous étudions un scénario de \textbf{RAN sharing opportuniste} en période de faible trafic. Sur un site radio donné où plusieurs opérateurs sont présents, ceux-ci peuvent former une \textbf{coalition} afin de coordonner l'extinction d'une partie de leurs équipements radio. 
+Bien que l'accord recherché réunisse tous les opérateurs, son analyse ne peut
+ignorer les groupes plus petits. Un groupe qui s'estimerait insuffisamment
+rémunéré pourrait préférer quitter l'accord et organiser seul le partage de
+ses équipements. Ce qu'il serait capable d'économiser de son côté constitue
+donc une option de repli crédible dans la négociation. La théorie des jeux
+coopératifs fournit précisément un cadre pour comparer ces possibilités et
+étudier la répartition de l'économie commune. Elle permet en particulier de
+distinguer deux questions : la coopération globale crée-t-elle le plus
+d'économies au total, et existe-t-il une répartition qui dissuade tout groupe
+de faire défection ? La première propriété ne garantit pas, à elle seule, la
+seconde.
 
-L'idée est la suivante : au sein d'une coalition, un ou plusieurs opérateurs restent actifs et assurent le service pour l'ensemble des abonnés présents sur le site pendant la période considérée. Ces opérateurs sont appelés \textbf{opérateurs gardiens}. Les autres opérateurs de la coalition peuvent alors éteindre tout ou partie de leurs équipements, ce qui permet de réaliser des économies d'énergie significatives. 
+Nous développons pour cela un modèle statique, appliqué à un site et à une
+période de décision fixés, dans lequel les demandes, les capacités et les
+paramètres de coût sont connus. Le coût d'un équipement actif comporte une
+part fixe et une part liée au trafic qu'il achemine. À partir de ce modèle,
+nous formulons le choix des gardiens et la répartition du trafic comme un
+problème d'optimisation. Nous montrons que, lorsque les gardiens sont connus,
+le trafic peut être réparti de manière optimale par une procédure gloutonne.
+La sélection des gardiens reste combinatoire, mais peut être résolue
+exactement dans le contexte étudié, où seuls quelques opérateurs sont présents
+sur un site.
 
-Ce mécanisme soulève trois questions centrales, qui structurent l'ensemble du projet: 
-\begin{itemize}
-    \item Comment \textbf{modéliser} les gains économiques et les coûts énergétiques associés au partage du RAN? 
-    \item Comment \textbf{choisir}, pour une coalition donnée, une configuration d'opérateurs gardiens capable d'absorber l'ensemble du trafic? 
-    \item Comment \textbf{répartir} les gains issus de la coopération de manière à inciter les opérateurs à rejoindre et à maintenir la coalition? 
-\end{itemize}
+Les coûts coopératifs ainsi obtenus servent ensuite à mesurer les économies
+accessibles à chaque groupe d'opérateurs. Nous étudions la propriété selon
+laquelle la réunion de groupes disjoints ne diminue pas l'économie totale, ce
+qui justifie de viser la coopération de tous les opérateurs. Nous examinons
+ensuite la répartition de cette économie globale à l'aide du cœur, du nucléole
+et de la valeur de Shapley, afin de confronter stabilité et équité.
 
-\subsection{Objectifs du projet}
-L'objectif principal du projet est de proposer un cadre de modélisation complet (théorique, algorithmique et numérique) permettant d'analyser le partage opportuniste entre opérateurs mobiles, avec pour but la réduction de la consommation énergétique en période de faible trafic. Plus précisément, les objectifs sont les suivants :
+Le modèle ne décrit pas un processus dynamique de formation des coalitions.
+Les groupes autres que la coalition globale interviennent comme des scénarios
+de comparaison, nécessaires pour évaluer les incitations des opérateurs. De
+même, l'analyse se concentre sur une période en information complète et
+n'intègre pas encore l'incertitude sur le trafic, les transitions répétées
+entre veille et activité ou les interactions entre plusieurs sites.
 
-\begin{enumerate}
-    \item Définir un modèle décrivant les opérateurs présents sur un site radio, leurs capacités d'accueil, le trafic à servir et les principales composantes de coûts et de revenus.
-    \item Formuler le problème dans un cadre de théorie des jeux, en distinguant un cas non coopératif et un cas coopératif avec formation de coalitions.
-    \item Étudier des propriétés théoriques de la fonction de valeur des coalitions, notamment la super-additivité, qui justifie l'intérêt économique de la coopération.
-    \item Proposer et analyser des règles de partage des gains entre opérateurs, en tenant compte du rôle spécifique des opérateurs gardiens.
-    \item Implémenter et valider numériquement le modèle à travers des simulations, en comparant un mode << oracle > (connaissance parfaite du trafic) et un mode << en ligne (prédiction du trafic à partir de données historiques).
-\end{enumerate}
-
-\subsection{Organisation du rapport}
-
-A REFAIRE A LA FIN
-
-Le rapport est structuré comme suit. La section 2 présente l'état de l'art. La section 3 formalise le modèle retenu. La section 4 introduit et compare plusieurs règles de répartition du trafic entre gardiens, point technique essentiel dont dépendent les propriétés théoriques du modèle. La section 5 est consacrée à l'étude théorique de la super-additivité. La section 6 traite du partage des gains via la valeur de Shapley et ses variantes. Les sections 7 et 8 présentent l'implémentation logicielle et les résultats numériques. La section 9 discute les limites et perspectives. La section 10 détaille la répartition des tâches au sein du groupe.
+La suite de l'article est organisée comme suit. La section 2 présente les
+travaux connexes sur le partage d'infrastructures et les approches issues de la
+théorie des jeux. La section 3 formalise le système, ses hypothèses et les
+solutions opérationnelles admissibles. La section 4 résout le problème de
+sélection des gardiens et de répartition du trafic. La section 5 construit le
+jeu coopératif à partir des économies réalisables et étudie l'efficacité et la
+stabilité de la coopération globale. La section 6 est consacrée à l'évaluation
+numérique du modèle.
