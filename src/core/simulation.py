@@ -1,142 +1,88 @@
-"""
-Day-long evaluation of the cooperative RAN-sharing game.
-
-Hourly loop: v*(S), rho, surplus, optimal guardians.
-Least-core LP runs once at the end on summed hourly coalition values.
-"""
-
-from __future__ import annotations
+"""Evaluate the hourly games and aggregate them over one day."""
 
 from collections import defaultdict
-from typing import Any, Callable
+from typing import Any
 
-from src.core.generate_data import OperatorParams, Scenario
-from src.core.optimiser import coalition_value_star
-from src.core.profit import build_v_star_map, least_core_allocation
-from src.core.utility import single_operator_utility
-
-HOURLY_DURATION_HOURS = 1.0
-
-
-def _standalone_profit(
-    op: OperatorParams,
-    traffic: float,
-    duration_hours: float,
-) -> float:
-    rho = min(1.0, traffic / op.capacity_epsilon) if op.capacity_epsilon > 0 else 0.0
-    return single_operator_utility(op.c, traffic, op.beta, rho, op.K, duration_hours)
+from src.core.generate_data import Scenario
+from src.core.optimiser import coalition_cost_star
+from src.core.game import (
+    bondareva_shapley_test,
+    build_cost_map,
+    build_savings_game,
+    build_settlement,
+    core_allocation,
+    physical_costs,
+)
 
 
-def _mean_rho(
-    ops: list[OperatorParams],
-    traffic_at_t: dict[int, float],
-    coalition: list[int],
-) -> float:
-    rhos = [
-        min(1.0, traffic_at_t[i] / ops[i].capacity_epsilon)
-        if ops[i].capacity_epsilon > 0
-        else 0.0
-        for i in coalition
-    ]
-    return sum(rhos) / len(rhos) if rhos else 0.0
+def evaluate_day(scenario: Scenario) -> dict[str, Any]:
+    operators, players = scenario.operators, scenario.coalition
+    grand = tuple(players)
+    daily_costs: dict[tuple[int, ...], float] = defaultdict(float)
+    daily_savings: dict[tuple[int, ...], float] = defaultdict(float)
+    physical = {i: 0.0 for i in players}
+    hourly: list[dict[str, Any]] = []
+    previous_guardians: tuple[int, ...] | None = None
+    changes = 0
 
+    for hour in range(scenario.num_hours):
+        demands = scenario.demands_at_hour(hour)
+        costs = build_cost_map(operators, demands, players)
+        savings = build_savings_game(costs, players)
+        for coalition in costs:
+            daily_costs[coalition] += costs[coalition]
+            daily_savings[coalition] += savings[coalition]
 
-def _guardian_label(guardians: list[int]) -> str:
-    if not guardians:
-        return "[]"
-    return "[" + ", ".join(str(g + 1) for g in guardians) + "]"
-
-
-def evaluate_day(
-    scenario: Scenario,
-    on_hour: Callable[[dict[str, Any]], None] | None = None,
-    on_phase: Callable[[str], None] | None = None,
-    on_progress: Callable[[int, int], None] | None = None,
-) -> dict[str, Any]:
-    """
-    Run the grand-coalition game at each clock hour; least-core once at the end.
-
-    ``on_progress(current, total)`` fires after each hour is computed.
-    ``on_hour`` fires once per hour after the daily LP (includes LC gain share).
-    """
-    def phase(msg: str) -> None:
-        if on_phase:
-            on_phase(msg)
-
-    ops = scenario.operators
-    coalition = scenario.coalition
-    num_hours = int(scenario.horizon_hours)
-
-    payoffs: dict[str, dict[int, float]] = {
-        "standalone": {i: 0.0 for i in coalition},
-        "least_core": {i: 0.0 for i in coalition},
-    }
-    hourly_rows: list[dict[str, Any]] = []
-    daily_v_star_map: dict[tuple[int, ...], float] = defaultdict(float)
-    prev_guardians: tuple[int, ...] | None = None
-    guardian_changes = 0
-
-    phase(f"Evaluating {num_hours} clock hours...")
-    for hour in range(num_hours):
-        traffic_at_t = scenario.hourly_traffic_means(hour)
-
-        for i in coalition:
-            payoffs["standalone"][i] += _standalone_profit(
-                ops[i], traffic_at_t[i], HOURLY_DURATION_HOURS
-            )
-
-        v_star_map = build_v_star_map(
-            ops, traffic_at_t, coalition, duration_hours=HOURLY_DURATION_HOURS
+        grand_cost, guardians, allocation = coalition_cost_star(
+            players, operators, demands
         )
-        for key, value in v_star_map.items():
-            daily_v_star_map[key] += value
+        hour_physical = physical_costs(players, guardians, allocation, operators)
+        for i in players:
+            physical[i] += hour_physical[i]
 
-        v_star_h, guardians_h, _ = coalition_value_star(
-            coalition, ops, traffic_at_t, duration_hours=HOURLY_DURATION_HOURS
-        )
-        guardians_key = tuple(sorted(guardians_h))
-        changed = prev_guardians is not None and guardians_key != prev_guardians
-        if changed:
-            guardian_changes += 1
-        prev_guardians = guardians_key
-
-        solo_v_star_h = sum(v_star_map[(i,)] for i in coalition)
-        hourly_rows.append(
+        guardian_tuple = tuple(guardians)
+        changed = previous_guardians is not None and guardian_tuple != previous_guardians
+        changes += int(changed)
+        previous_guardians = guardian_tuple
+        hourly.append(
             {
                 "hour": hour,
-                "rho_mean": _mean_rho(ops, traffic_at_t, coalition),
-                "surplus": v_star_h - solo_v_star_h,
-                "guardians": guardians_h,
-                "guardians_label": _guardian_label(guardians_h),
+                "standalone_cost": sum(costs[(i,)] for i in players),
+                "coalition_cost": grand_cost,
+                "savings": savings[grand],
+                "guardians_label": "[" + ", ".join(str(i + 1) for i in guardians) + "]",
                 "guardians_changed": changed,
             }
         )
-        if on_progress:
-            on_progress(hour + 1, num_hours)
 
-    phase("Running least-core LP (daily allocation)...")
-    lc = least_core_allocation(coalition, dict(daily_v_star_map))
-    for i in coalition:
-        payoffs["least_core"][i] = lc.payoffs[i]
-
-    total_surplus = sum(r["surplus"] for r in hourly_rows)
-    total_lc_gain = sum(payoffs["least_core"].values()) - sum(payoffs["standalone"].values())
-    for row in hourly_rows:
-        if total_surplus > 1e-9:
-            row["lc_gain"] = row["surplus"] / total_surplus * total_lc_gain
-        else:
-            row["lc_gain"] = 0.0
-        if on_hour:
-            on_hour(row)
+    costs, savings = dict(daily_costs), dict(daily_savings)
+    standalone = {i: costs[(i,)] for i in players}
+    core = core_allocation(players, savings)
+    balancedness = bondareva_shapley_test(players, savings)
+    settlement = (
+        build_settlement(players, standalone, physical, core.allocation)
+        if core.feasible
+        else None
+    )
 
     return {
-        "payoffs": payoffs,
-        "hourly": hourly_rows,
-        "guardian_changes": guardian_changes,
-        "total_lc_gain": total_lc_gain,
-        "least_core_summary": {
-            "status": lc.status,
-            "epsilon": lc.epsilon,
-            "feasible": lc.status == "Optimal",
+        "hourly": hourly,
+        "guardian_changes": changes,
+        "cost_map": costs,
+        "savings_map": savings,
+        "standalone_costs": standalone,
+        "physical_costs": physical,
+        "savings_allocation": core.allocation,
+        "net_costs": settlement.net_costs if settlement else {},
+        "transfers": settlement.transfers if settlement else {},
+        "total_savings": savings[grand],
+        "core_summary": {"status": core.status, "feasible": core.feasible},
+        "bondareva_summary": {
+            "status": balancedness.status,
+            "balanced_value": balancedness.balanced_value,
+            "grand_value": balancedness.grand_value,
+            "gap": balancedness.gap,
+            "core_nonempty": balancedness.core_nonempty,
         },
+        "budget_residual": settlement.budget_residual if settlement else None,
     }

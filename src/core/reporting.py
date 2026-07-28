@@ -1,140 +1,116 @@
-"""Console report with progressive output."""
-
-from __future__ import annotations
+"""Console report for the daily simulation."""
 
 from typing import Any
 
 from src.core.generate_data import Scenario
 from src.core.simulation import evaluate_day
 
-
-def _emit(msg: str = "") -> None:
-    print(msg, flush=True)
+WIDTH = 94
 
 
-def _print_header(scenario: Scenario) -> None:
-    source = "radio_sites.csv" if scenario.data_source == "csv" else "hard-coded fallback"
+def _header(scenario: Scenario) -> None:
+    sources = {
+        "compact_csv": "radio_sites_10x7.csv",
+        "csv": "radio_sites.csv",
+        "fallback": "hard-coded fallback",
+    }
+    print("=" * WIDTH)
+    print("RAN sharing - operational costs and cooperative savings")
+    print("=" * WIDTH)
+    print(f"Site              : {scenario.antenna_id}")
+    print(f"Traffic source    : {sources[scenario.data_source]}")
+    print("Traffic profile   : five-day hourly means")
+    print(f"Horizon           : {scenario.num_hours} hourly periods")
+    print("Game              : v(S) = sum_i C_i^0 - C*(S)")
 
-    _emit("=" * 78)
-    _emit("RAN sharing - cooperative game evaluation")
-    _emit("=" * 78)
-    _emit(f"Site (operator 1) : {scenario.antenna_id}")
-    _emit(f"Traffic source    : {source}")
-    if scenario.data_source == "csv":
-        _emit("Cost coeffs (beta, K): derived from CSV power-vs-rho regression")
-    else:
-        _emit("Cost coeffs (beta, K): synthetic fallback")
-    _emit(f"Horizon           : {scenario.horizon_label()} (hourly resolution)")
-    _emit("Allocation        : least-core once at end (rules 1-3 disabled)")
-    _emit()
-
-    _emit(f"{'Op':<4} {'epsilon':>8} {'c':>6} {'beta':>6} {'K':>6}")
-    _emit("-" * 36)
-    for i, op in enumerate(scenario.operators):
-        _emit(
-            f"{i + 1:<4} {op.capacity_epsilon:>8.1f} {op.c:>6.2f} "
-            f"{op.beta:>6.2f} {op.K:>6.2f}"
+    fit = scenario.power_regression
+    if fit:
+        print(
+            f"\nRegression        : P_conso = {fit.f_tilde:.4f} "
+            f"+ {fit.gamma_tilde:.4f} d    R^2 = {fit.r_squared:.6f}"
         )
-    _emit()
+
+    print(f"\n{'Op':<4} {'q_i (GB)':>11} {'F_i':>14} {'gamma_i':>14}")
+    print("-" * 48)
+    for i, operator in enumerate(scenario.operators, 1):
+        print(
+            f"{i:<4} {operator.q:>11.3f} "
+            f"{operator.F:>14.6f} {operator.gamma:>14.6f}"
+        )
 
 
-def _print_hourly_header() -> None:
-    _emit("Hourly load, surplus, LC gain share and guardians (^ = config change)")
-    _emit("-" * 78)
-    _emit(
-        f"{'Hour':>4} | {'rho':>6} | {'Surplus':>8} | {'Gain LC':>8} | "
-        f"{'Chg':>3} | Gardiens"
+def _hourly_table(result: dict[str, Any]) -> None:
+    print("\nHourly optimal cost, cooperative savings and guardians (^ = change)")
+    print("-" * WIDTH)
+    print(
+        f"{'Hour':>5} | {'sum C_i^0':>12} | {'C*(N)':>12} | "
+        f"{'v(N)':>12} | {'Chg':>3} | Guardians"
     )
-    _emit("-" * 78)
+    print("-" * WIDTH)
+    for row in result["hourly"]:
+        changed = "^" if row["guardians_changed"] else ""
+        print(
+            f"{row['hour']:02d}:00 | {row['standalone_cost']:>12.6f} | "
+            f"{row['coalition_cost']:>12.6f} | {row['savings']:>+12.6f} | "
+            f"{changed:>3} | {row['guardians_label']}"
+        )
 
-
-def _print_hour_row(row: dict[str, Any]) -> None:
-    chg = "^" if row["guardians_changed"] else ""
-    _emit(
-        f"{row['hour']:02d}:00 | {row['rho_mean']:>6.3f} | "
-        f"{row['surplus']:>+8.2f} | {row['lc_gain']:>+8.2f} | "
-        f"{chg:>3} | {row['guardians_label']}"
+    peak = max(result["hourly"], key=lambda row: row["savings"])
+    print("-" * WIDTH)
+    print(
+        f"Peak saving at {peak['hour']:02d}:00 ({peak['savings']:+.6f}); "
+        f"guardians {peak['guardians_label']}"
     )
+    print(f"Guardian changes: {result['guardian_changes']}")
+    print(f"Total daily saving v(N): {result['total_savings']:+.6f}")
+
+
+def _daily_summary(scenario: Scenario, result: dict[str, Any]) -> None:
+    core, test = result["core_summary"], result["bondareva_summary"]
+    print(
+        f"\nCore LP: {core['status']}.  "
+        f"Bondareva--Shapley: B(N)={test['balanced_value']:.8f}, "
+        f"v(N)={test['grand_value']:.8f}, gap={test['gap']:+.3e}."
+    )
+    conclusion = {
+        True: "The core is non-empty.",
+        False: "The core is empty.",
+        None: "The balancedness test is inconclusive.",
+    }
+    print(conclusion[test["core_nonempty"]])
+    if not core["feasible"]:
+        return
+
+    standalone = result["standalone_costs"]
+    physical = result["physical_costs"]
+    savings = result["savings_allocation"]
+    net = result["net_costs"]
+    transfers = result["transfers"]
+    print("\nDaily accounting per operator")
+    print("-" * WIDTH)
+    print(
+        f"{'Op':<4} {'C_i^0':>14} {'C_i^*(N)':>14} {'z_i':>14} "
+        f"{'y_i':>14} {'tau_i':>14}"
+    )
+    print("-" * WIDTH)
+    for i in scenario.coalition:
+        print(
+            f"{i + 1:<4} {standalone[i]:>14.6f} {physical[i]:>14.6f} "
+            f"{savings[i]:>14.6f} {net[i]:>14.6f} {transfers[i]:>+14.6f}"
+        )
+    print("-" * WIDTH)
+    print(
+        f"{'Tot':<4} {sum(standalone.values()):>14.6f} "
+        f"{sum(physical.values()):>14.6f} {sum(savings.values()):>14.6f} "
+        f"{sum(net.values()):>14.6f} {sum(transfers.values()):>+14.3e}"
+    )
+    print(f"Budget residual: {result['budget_residual']:+.3e}")
 
 
 def run_report(scenario: Scenario) -> dict[str, Any]:
-    """Print progressively and return evaluation results."""
-    _print_header(scenario)
-
-    def on_progress(current: int, total: int) -> None:
-        _emit(f">> hour {current}/{total} computed")
-
-    def on_phase(msg: str) -> None:
-        _emit()
-        _emit(f">> {msg}")
-
-    peak: dict[str, Any] | None = None
-
-    def on_hour(row: dict[str, Any]) -> None:
-        nonlocal peak
-        if peak is None or row["surplus"] > peak["surplus"]:
-            peak = row
-        _print_hour_row(row)
-
-    _emit(">> Computing hourly v* and guardians...")
-    result = evaluate_day(
-        scenario,
-        on_hour=None,
-        on_phase=on_phase,
-        on_progress=on_progress,
-    )
-
-    _print_hourly_header()
-    for row in result["hourly"]:
-        on_hour(row)
-
-    _emit("-" * 78)
-    if peak:
-        _emit(
-            f"Peak surplus at {peak['hour']:02d}:00 (+{peak['surplus']:.2f}); "
-            f"gardiens {peak['guardians_label']}"
-        )
-    _emit(
-        f"Guardian configuration changes: {result['guardian_changes']} "
-        f"(over {len(result['hourly']) - 1} possible transitions)"
-    )
-    _emit(f"Total LC gain (daily): {result['total_lc_gain']:+.2f}")
-    _emit()
-
-    summary = result["least_core_summary"]
-    if summary["feasible"]:
-        _emit(
-            f"Least-core LP: feasible optimal solution found "
-            f"(status: {summary['status']}, epsilon = {summary['epsilon']:.4f})."
-        )
-    else:
-        _emit(
-            f"Least-core LP: no optimal solution (status: {summary['status']}). "
-            "The core may be empty; no theoretical guarantee of feasibility."
-        )
-    _emit()
-
-    coalition = scenario.coalition
-    payoffs = result["payoffs"]
-    standalone = payoffs["standalone"]
-
-    _emit("Daily summary per operator")
-    _emit("-" * 60)
-    _emit(f"{'Op':<4} {'Standalone':>12} {'Least core':>12} {'Gain LC':>10}")
-    _emit("-" * 60)
-    for i in coalition:
-        gain_lc = payoffs["least_core"][i] - standalone[i]
-        _emit(
-            f"{i + 1:<4} {standalone[i]:>12.2f} "
-            f"{payoffs['least_core'][i]:>12.2f} {gain_lc:>+10.2f}"
-        )
-    _emit("-" * 60)
-    total_surplus = sum(r["surplus"] for r in result["hourly"])
-    _emit(
-        f"{'Tot':<4} {sum(standalone.values()):>12.2f} "
-        f"{sum(payoffs['least_core'].values()):>12.2f} "
-        f"{result['total_lc_gain']:>+10.2f}"
-    )
-    _emit(f"Sum of hourly surpluses: {total_surplus:+.2f}")
-
+    _header(scenario)
+    print("\n>> Computing the 24 hourly games...")
+    result = evaluate_day(scenario)
+    _hourly_table(result)
+    _daily_summary(scenario, result)
     return result

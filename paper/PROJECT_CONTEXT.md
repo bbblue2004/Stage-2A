@@ -15,9 +15,24 @@ théorie des jeux coopératifs.
 - gamma_i : coût variable unitaire
 - d(S) : demande de la coalition S
 - t_i : volume de trafic acheminé par l’équipement de l’opérateur i
+- G^*(S) : représentant optimal fixé parmi les ensembles de gardiens de S
+- t^*(S) : répartition gloutonne associée à G^*(S)
 - C^*(S) : coût minimal de la coalition
+- C_i^*(N) : coût physique supporté par l’opérateur i dans la solution
+  optimale retenue pour N
 - C_i^0 : coût individuel de référence
-- w(S) : économie réalisée par la coalition
+- v(S) : économie réalisée par la coalition
+- z_i : part de la cagnotte attribuée à l’opérateur
+- y_i : coût net final supporté par l’opérateur
+- tau_i : transfert net total reçu par l’opérateur
+- pour A inclus dans N, R^A désigne les vecteurs dont les coordonnées sont
+  indexées par A
+- les vecteurs physiques t sont globaux dans R^N, avec des zéros hors de
+  la coalition considérée
+- l’analyse de stabilité porte sur le jeu (N,v) ; les vecteurs z, y et tau
+  appartiennent à R^N
+- une allocation des économies est notée z et l’ensemble des allocations
+  efficaces et individuellement rationnelles est noté A(N,v)
 
 # Structure scientifique
 
@@ -32,8 +47,10 @@ théorie des jeux coopératifs.
   capacités par ordre croissant des coûts variables unitaires.
 - La sélection globale des gardiens est un problème à coûts fixes.
 - Pour les petites coalitions, l’énumération exacte est acceptable.
+- La sous-additivité est stricte lorsque l’un des gardiens de coût variable
+  minimal des deux solutions séparées peut acheminer toute la demande réunie.
 - Le jeu d’économies est défini par :
-  w(S) = somme des coûts individuels de référence - coût coopératif minimal.
+  v(S) = somme des coûts individuels de référence - coût coopératif minimal.
 - Le nucléole et la valeur de Shapley sont étudiés.
 - La non-vacuité générale du cœur n’est pas encore démontrée.
 

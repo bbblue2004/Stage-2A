@@ -9,8 +9,10 @@ build/
 venv/
 .DS_Store
 data/
+.vscode/
 
-# LaTeX build files
+# LaTeX generated files
+paper/main.pdf
 *.aux
 *.fdb_latexmk
 *.fls

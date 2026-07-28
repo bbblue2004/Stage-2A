@@ -1,15 +1,17 @@
-"""CSV loading for radio_sites.csv."""
-
-from __future__ import annotations
+"""Read the field CSV and build its compact working extract."""
 
 import csv
 from datetime import datetime
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CSV_PATH = PROJECT_ROOT / "data" / "raw" / "radio_sites.csv"
-OUTPUT_DIR = PROJECT_ROOT / "figures" / "data_figures"
+ROOT = Path(__file__).resolve().parents[2]
+FULL_CSV_PATH = ROOT / "data" / "raw" / "radio_sites.csv"
+COMPACT_CSV_PATH = ROOT / "data" / "processed" / "radio_sites_10x7.csv"
+CSV_PATH = COMPACT_CSV_PATH if COMPACT_CSV_PATH.is_file() else FULL_CSV_PATH
+OUTPUT_DIR = ROOT / "figures" / "data_figures"
 DEFAULT_ANTENNA_ID = "00000001U6"
+
+Record = tuple[datetime, str, float, float]
 
 
 def make_output_path(filename: str) -> Path:
@@ -17,140 +19,121 @@ def make_output_path(filename: str) -> Path:
     return OUTPUT_DIR / filename
 
 
-def _find_column(fieldnames: list[str] | None, keywords: list[str]) -> str | None:
-    for keyword in keywords:
-        for name in fieldnames or []:
-            if keyword.lower() in name.lower():
-                return name
-    return None
+def _columns(fieldnames: list[str] | None) -> tuple[str, str, str, str]:
+    names = fieldnames or []
+
+    def find(*tokens: str) -> str:
+        match = next(
+            (name for token in tokens for name in names if token in name.lower()),
+            None,
+        )
+        if not match:
+            raise ValueError(f"Missing CSV column among {tokens}")
+        return match
+
+    return (
+        find("heure", "date"),
+        find("nidt"),
+        find("dl_volume", "pdcp", "gbytes"),
+        find("power", "consumption"),
+    )
 
 
-def _parse_datetime(value: str) -> datetime:
-    value = value.strip()
-    for fmt in (
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d %H",
-        "%Y/%m/%d %H:%M:%S",
-        "%d/%m/%Y %H:%M:%S",
-        "%Y%m%d%H%M%S",
-        "%Y%m%d%H%M",
-        "%Y-%m-%d",
-        "%Y/%m/%d",
-    ):
-        try:
-            return datetime.strptime(value, fmt)
-        except ValueError:
-            continue
-    raise ValueError(f"Unsupported date format: {value!r}")
-
-
-def is_weekday(dt: datetime) -> bool:
-    return dt.weekday() < 5
-
-
-def detect_columns(fieldnames: list[str] | None) -> dict[str, str | None]:
-    return {
-        "heure": _find_column(fieldnames, ["heure", "date"]),
-        "antenna_id": _find_column(fieldnames, ["nidt", "sys.nidt"]),
-        "traffic": _find_column(fieldnames, ["dl_volume", "pdcp", "gbytes"]),
-        "power": _find_column(fieldnames, ["power", "consumption"]),
-    }
-
-
-def _parse_row(row: dict, columns: dict[str, str | None], fields: tuple[str, ...]) -> dict | None:
+def _record(row: dict, columns: tuple[str, str, str, str]) -> Record | None:
+    date_col, id_col, traffic_col, power_col = columns
     try:
-        parsed: dict = {}
-        for field in fields:
-            col = columns["heure"] if field == "datetime" else columns.get(field)
-            if not col:
-                return None
-            text = (row.get(col) or "").strip()
-            if not text:
-                return None
-            if field == "datetime":
-                parsed["datetime"] = _parse_datetime(text)
-            elif field in {"traffic", "power"}:
-                parsed[field] = float(text.replace(",", "."))
-            else:
-                parsed[field] = text
-        return parsed
-    except ValueError:
+        return (
+            datetime.fromisoformat(row[date_col].strip()),
+            row[id_col].strip(),
+            float(row[traffic_col].replace(",", ".")),
+            float(row[power_col].replace(",", ".")),
+        )
+    except (KeyError, TypeError, ValueError):
         return None
+
+
+def first_antenna_ids(count: int, csv_path: Path = CSV_PATH) -> list[str]:
+    if count <= 0:
+        raise ValueError("count must be positive")
+
+    ids: list[str] = []
+    with open(csv_path, newline="", encoding="utf-8", errors="replace") as file:
+        reader = csv.DictReader(file, delimiter=";")
+        _, id_col, _, _ = _columns(reader.fieldnames)
+        for row in reader:
+            antenna_id = (row.get(id_col) or "").strip()
+            if antenna_id and antenna_id not in ids:
+                ids.append(antenna_id)
+            if len(ids) == count:
+                return ids
+    raise ValueError(f"Expected {count} antennas, found {len(ids)}")
+
+
+def first_antenna_id(csv_path: Path = CSV_PATH) -> str:
+    return first_antenna_ids(1, csv_path)[0]
 
 
 def extract_antenna_time_series(
     antenna_id: str,
     csv_path: Path = CSV_PATH,
 ) -> list[tuple[datetime, float, float]]:
-    """Return (datetime, traffic, power) tuples for one antenna, sorted by time."""
-    with open(csv_path, newline="", encoding="utf-8", errors="replace") as f:
-        reader = csv.DictReader(f, delimiter=";")
-        columns = detect_columns(reader.fieldnames)
-        required = ("heure", "antenna_id", "traffic", "power")
-        if any(not columns[k] for k in required):
-            raise SystemExit(f"Missing CSV columns. Found: {reader.fieldnames}")
-
-        rows = []
-        for row in reader:
-            parsed = _parse_row(row, columns, ("antenna_id", "datetime", "traffic", "power"))
-            if parsed and parsed["antenna_id"] == antenna_id:
-                rows.append((parsed["datetime"], parsed["traffic"], parsed["power"]))
-
+    rows: list[tuple[datetime, float, float]] = []
+    with open(csv_path, newline="", encoding="utf-8", errors="replace") as file:
+        reader = csv.DictReader(file, delimiter=";")
+        columns = _columns(reader.fieldnames)
+        for raw_row in reader:
+            record = _record(raw_row, columns)
+            if record and record[1] == antenna_id:
+                rows.append((record[0], record[2], record[3]))
     if not rows:
-        raise SystemExit(f"No valid rows found for antenna {antenna_id}")
-    rows.sort(key=lambda item: item[0])
-    return rows
+        raise ValueError(f"No data for antenna {antenna_id}")
+    return sorted(rows)
 
 
-def compute_rho_from_traffic(traffic_values: list[float]) -> list[float]:
-    if not traffic_values:
-        return []
-    peak = max(traffic_values)
-    return [0.0 if peak <= 0 else v / peak for v in traffic_values]
+def create_compact_csv(
+    source_csv: Path = FULL_CSV_PATH,
+    output_csv: Path = COMPACT_CSV_PATH,
+    num_antennas: int = 10,
+    num_days: int = 7,
+) -> Path:
+    """Keep one row per hour for the first antennas and their first days."""
+    antenna_ids = first_antenna_ids(num_antennas, source_csv)
+    samples: dict[str, dict[tuple, Record]] = {i: {} for i in antenna_ids}
 
+    with open(source_csv, newline="", encoding="utf-8", errors="replace") as file:
+        reader = csv.DictReader(file, delimiter=";")
+        columns = _columns(reader.fieldnames)
+        for raw_row in reader:
+            record = _record(raw_row, columns)
+            if record and record[1] in samples:
+                samples[record[1]].setdefault((record[0].date(), record[0].hour), record)
 
-def extract_ids_data(
-    ids: list[str] | None = None,
-    n: int = 1,
-    include_power: bool = False,
-    csv_path: Path = CSV_PATH,
-) -> tuple[list[str], dict]:
-    """Extract traffic (and optionally power) time series for one or more antennas."""
-    with open(csv_path, newline="", encoding="utf-8", errors="replace") as f:
-        reader = csv.DictReader(f, delimiter=";")
-        columns = detect_columns(reader.fieldnames)
-        fields = ["antenna_id", "datetime", "traffic"]
-        if include_power:
-            fields.append("power")
+    output_rows: list[Record] = []
+    expected = 24 * num_days
+    for antenna_id, antenna_samples in samples.items():
+        days = sorted({day for day, _ in antenna_samples})[:num_days]
+        rows = sorted(
+            record
+            for (day, _), record in antenna_samples.items()
+            if day in days
+        )
+        if len(rows) != expected:
+            raise ValueError(f"{antenna_id}: expected {expected} rows, found {len(rows)}")
+        output_rows.extend(rows)
 
-        if ids is None:
-            ids = []
-            for row in reader:
-                parsed = _parse_row(row, columns, ("antenna_id",))
-                if parsed and parsed["antenna_id"] not in ids:
-                    ids.append(parsed["antenna_id"])
-                if len(ids) >= n:
-                    break
-            f.seek(0)
-            reader = csv.DictReader(f, delimiter=";")
-
-        data: dict = {
-            nid: {"traffic": [], "datetime": [], **({"power": []} if include_power else {})}
-            for nid in ids
-        }
-        for row in reader:
-            parsed = _parse_row(row, columns, tuple(fields))
-            if not parsed or parsed["antenna_id"] not in data:
-                continue
-            nid = parsed["antenna_id"]
-            data[nid]["datetime"].append(parsed["datetime"])
-            data[nid]["traffic"].append(parsed["traffic"])
-            if include_power:
-                data[nid]["power"].append(parsed["power"])
-
-    ids = [nid for nid in ids if data[nid]["traffic"]]
-    if not ids:
-        raise SystemExit("No valid data found for the selected IDs")
-    return ids, data
+    output_csv.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_csv, "w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file, delimiter=";")
+        writer.writerow(
+            (
+                "HEURE(PSDATE)",
+                "SYS.NIDT",
+                "DL_VOLUME_PDCP_GBYTES",
+                "AVERAGE_POWER_CONSUMPTION_(W)",
+            )
+        )
+        writer.writerows(
+            (date.isoformat(sep=" "), antenna_id, traffic, power)
+            for date, antenna_id, traffic, power in output_rows
+        )
+    return output_csv
