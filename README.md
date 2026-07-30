@@ -7,10 +7,12 @@ game developed in Sections 3--5 of the report:
 - optimal traffic allocation and guardian selection for every coalition;
 - minimal coalition cost `C*(S)`;
 - savings game `v(S) = sum_{i in S} C_i^0 - C*(S)`;
-- one feasible core allocation and the Bondareva--Shapley balancedness test;
+- convexity, core and Bondareva--Shapley tests;
+- Shapley value, Shapley projection, least core and nucleolus;
 - physical costs, final net costs, and budget-balanced internal transfers.
 
-The least-core code is intentionally left for later work and is not called.
+The feasibility LP is only used to test the core. The final allocation is
+selected by an explicit contribution-or-robustness rule.
 
 ## Setup
 
@@ -36,18 +38,57 @@ Subsequent runs automatically use `data/processed/radio_sites_10x7.csv`.
 ## Run
 
 ```bash
-# Default: first antenna in the CSV
+# Default: first antenna, five-day hourly-average mode, hours 01:00--06:00
 python main.py
 
-# Select another antenna
-python main.py --antenna-id 00007240W4
+# First antenna, with days 1--4 assigned to operators 1--4
+python main.py 1 --traffic-mode daily
+
+# Third antenna, averaged mode
+python main.py 3
+
+# Third antenna, full-day evaluation
+python main.py 3 --hours 0 23
+
+# An overnight window is also accepted
+python main.py 3 --hours 22 6
+
+# Fourth antenna, with its seven daily traffic profiles
+python main.py 4 --plot-weekly-traffic
 
 # Change the electricity price used to convert W into period costs
-python main.py --price-per-kwh 0.18
+python main.py 1 --price-per-kwh 0.18
+
+# Prefer the nucleolus when Shapley is outside the core
+python main.py 1 --allocation-priority robustness
+
+# Change the acceptable relative least-core instability threshold
+python main.py 1 --max-instability-ratio 0.02
 
 # Generate only the requested regression graph
 python plot_regression.py
+
+# Count empty cores among all antennas, by default over hours 01:00--06:00
+python check_empty_cores.py
+
+# Restrict the calculation to the first 50 antennas and change the window
+python check_empty_cores.py --count 50 --hours 0 23
 ```
+
+The bounds passed to `--hours START END` are inclusive. The selected window
+only changes the games that are evaluated and aggregated. Operator capacities
+`q_i` are always computed from the maximum traffic over the full 24-hour
+profile.
+
+## Allocation rule
+
+The program always computes Shapley, its core membership, the least core and
+the nucleolus. If Shapley belongs to the core, it is selected. Otherwise,
+`--allocation-priority contribution` selects the normalized Euclidean
+projection of Shapley on the core, or on the optimal least core when the core
+is empty. With `--allocation-priority robustness`, the nucleolus is selected.
+An empty-core allocation is flagged as operationally unacceptable when its
+relative least-core epsilon exceeds `--max-instability-ratio`.
 
 The regression graph and console report use only
 `P_conso = F_tilde + gamma_tilde d` and its coefficient of determination.
@@ -59,7 +100,8 @@ The regression graph and console report use only
 | `generate_data.py` | 24-hour scenario, `q_i`, `F_i`, and `gamma_i` |
 | `optimiser.py` | Operational cost `C(S,G,t)` and minimum `C*(S)` |
 | `allocate.py` | Greedy traffic allocation at fixed guardians |
-| `game.py` | Savings game, transfers, core, Bondareva--Shapley |
-| `simulation.py` | Hourly games and daily aggregation |
+| `game.py` | Convexity, Shapley, core, least core and nucleolus |
+| `simulation.py` | Hourly games and selected-period aggregation |
+| `time_window.py` | Inclusive hour-window validation and formatting |
 | `reporting.py` | Console results and accounting checks |
 | `data_processing/` | CSV loading, five-day averages, regressions, figures |

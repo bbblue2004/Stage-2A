@@ -18,17 +18,17 @@ class PowerRegression:
     r_squared: float
 
 
-def load_antenna_profiles(
+def load_antenna_days(
     antenna_id: str,
     num_days: int = DEFAULT_DAYS,
-) -> tuple[list[float], list[float]]:
-    """Average traffic and power by hour over the first ``num_days`` days."""
+) -> tuple[list[list[float]], list[list[float]]]:
+    """Return one 24-hour traffic and power profile per selected day."""
     rows = data_loader.extract_antenna_time_series(antenna_id)
     days = sorted({dt.date() for dt, _, _ in rows})[:num_days]
     if len(days) < num_days:
         raise ValueError(f"{antenna_id}: only {len(days)} complete days available")
 
-    def profile(value_index: int) -> list[float]:
+    def daily_profiles(value_index: int) -> list[list[float]]:
         cells: dict[tuple, list[float]] = defaultdict(list)
         for row in rows:
             dt = row[0]
@@ -37,11 +37,23 @@ def load_antenna_profiles(
         if any((day, hour) not in cells for day in days for hour in range(24)):
             raise ValueError(f"{antenna_id}: missing hourly observations")
         return [
-            float(np.mean([np.mean(cells[(day, hour)]) for day in days]))
-            for hour in range(24)
+            [float(np.mean(cells[(day, hour)])) for hour in range(24)]
+            for day in days
         ]
 
-    return profile(1), profile(2)
+    return daily_profiles(1), daily_profiles(2)
+
+
+def load_antenna_profiles(
+    antenna_id: str,
+    num_days: int = DEFAULT_DAYS,
+) -> tuple[list[float], list[float]]:
+    """Average the daily profiles hour by hour."""
+    traffic_days, power_days = load_antenna_days(antenna_id, num_days)
+    return (
+        [float(np.mean(values)) for values in zip(*traffic_days)],
+        [float(np.mean(values)) for values in zip(*power_days)],
+    )
 
 
 def power_regression_from_profiles(

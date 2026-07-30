@@ -1,0 +1,98 @@
+\section{Simulations numériques}
+\label{sec:simulations_numeriques}
+
+\subsection{Protocole}
+
+L'évaluation porte sur les \(3\,825\) identifiants d'antenne du fichier
+\texttt{data/raw/radio\_sites.csv}. Pour chaque antenne, les cinq premiers
+jours calendaires sont retenus et doivent comporter chacun \(24\) heures.
+Le trafic et la puissance sont moyennés heure par heure sur ces cinq jours,
+ce qui fournit deux profils moyens de \(24\) valeurs.
+Une régression linéaire
+\[
+    P(h)=\widetilde F+\widetilde\gamma\,d(h)
+\]
+est ensuite estimée sur ces \(24\) couples. Avec le prix commun de
+l'électricité fixé à \(0{,}15\) euro/kWh, les paramètres de coût de
+l'opérateur de référence sont
+\[
+    F=\frac{0{,}15}{1000}\widetilde F,
+    \qquad
+    \gamma=\frac{0{,}15}{1000}\widetilde\gamma.
+\]
+
+Chaque instance comporte quatre opérateurs. Le premier reprend le profil
+mesuré ; les trois autres sont obtenus en appliquant au même profil un
+facteur uniforme dans \([0{,}8;1]\), puis un bruit multiplicatif gaussien
+d'écart-type \(2\,\%\). Leurs paramètres \(F_i\) et \(\gamma_i\) sont
+obtenus par des perturbations uniformes indépendantes dans
+\([0{,}9;1{,}1]\) autour des valeurs de référence. La graine
+pseudo-aléatoire est fixée à \(42\) pour les profils et à \(43\) pour les
+coûts. Enfin,
+\[
+    q_i=\frac{\max_{0\leqslant h\leqslant23}d_i^h}{0{,}75}.
+\]
+Les règles de construction, les graines, le prix de l'électricité et le
+facteur de capacité sont donc communs aux \(3\,825\) instances. En
+revanche, les valeurs finales de \(d_i^h\), \(q_i\), \(F_i\) et
+\(\gamma_i\) sont propres à chaque antenne, puisque le trafic et la
+régression de puissance sont recalculés pour chacune d'elles.
+
+\subsection{Évaluation de la non-vacuité du coeur}
+
+Pour chaque heure \(h\) et chaque coalition non vide \(Q\), le coût
+\(C_h^*(Q)\) est calculé exactement par énumération des ensembles de
+gardiens faisables, puis allocation du trafic par coût marginal croissant.
+Les coûts sont agrégés avant de construire le jeu :
+\[
+    C_H^*(Q)=\sum_{h\in H}C_h^*(Q),
+    \qquad
+    v_H(Q)=\sum_{i\in Q}C_H^*(\{i\})-C_H^*(Q).
+\]
+La non-vacuité est testée par le programme linéaire de faisabilité
+\eqref{eq:lp_faisabilite_coeur}, en imposant les contraintes de toutes les
+coalitions. Lorsqu'il est infaisable, le programme dual
+\eqref{eq:lp_bondareva_shapley} fournit un certificat de Bondareva--Shapley.
+Deux fenêtres sont étudiées : la journée complète
+\(H=\{0,\ldots,23\}\), puis les heures nocturnes de \(1\) h à \(6\) h
+incluses. Dans ce second calcul, les capacités \(q_i\) restent déterminées
+par le maximum des \(24\) heures.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|r|r|r|r|}
+\hline
+Fenêtre & Calculables & Erreurs & Coeur vide & Coeur non vide \\
+\hline
+Journée complète & \(3\,626\) & \(199\) & \(33\) & \(3\,593\) \\
+Nuit, \(1\)--\(6\) h & \(3\,626\) & \(199\) & \(18\) & \(3\,608\) \\
+\hline
+\end{tabular}
+\caption{Résultats obtenus sur les \(3\,825\) antennes.}
+\label{tab:coeur_3825_antennes}
+\end{table}
+
+Parmi les instances calculables, la proportion de coeurs vides est donc
+de \(0{,}91\,\%\) sur la journée complète et de \(0{,}50\,\%\) sur la
+fenêtre nocturne. Les \(199\) erreurs interviennent avant le calcul du jeu :
+\(149\) profils ont un trafic moyen constant, ce qui empêche d'identifier
+la pente de la régression, et \(50\) régressions produisent au moins un
+coefficient \(\widetilde F\) ou \(\widetilde\gamma\) non strictement
+positif. Elles ne doivent donc pas être interprétées comme des coeurs
+vides.
+
+Pour les \(33\) coeurs vides sur la journée complète, le certificat
+optimal est la famille équilibrée constituée des quatre coalitions de
+trois opérateurs, chacune affectée du poids \(1/3\). Autrement dit,
+\[
+    \frac{1}{3}\sum_{i\in N}v_H(N\setminus\{i\})>v_H(N),
+\]
+ou, de manière équivalente,
+\[
+    C_H^*(N)>
+    \frac{1}{3}\sum_{i\in N}C_H^*(N\setminus\{i\}).
+\]
+Le même certificat apparaît dans \(17\) des \(18\) cas nocturnes ; le
+dernier est certifié par une autre famille équilibrée, composée d'une
+paire et de deux coalitions de trois opérateurs. Seules trois antennes ont
+un coeur vide dans les deux fenêtres.

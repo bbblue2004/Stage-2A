@@ -6,7 +6,7 @@ import random
 from src.data_processing.antenna_metrics import (
     DEFAULT_ELECTRICITY_PRICE_PER_KWH,
     PowerRegression,
-    load_antenna_profiles,
+    load_antenna_days,
     power_coefficients_to_cost,
     power_regression_from_profiles,
 )
@@ -54,6 +54,7 @@ class Scenario:
     antenna_id: str
     data_source: str
     power_regression: PowerRegression | None
+    traffic_mode: str
 
     @property
     def coalition(self) -> list[int]:
@@ -88,34 +89,88 @@ def _nearby_costs(F: float, gamma: float, seed: int) -> list[tuple[float, float]
     ]
 
 
+def build_scenario_from_days(
+    antenna_id: str,
+    traffic_days: list[list[float]],
+    power_days: list[list[float]],
+    traffic_mode: str = "average",
+    seed: int = 42,
+    price_per_kwh: float = DEFAULT_ELECTRICITY_PRICE_PER_KWH,
+    data_source: str = "csv",
+) -> Scenario:
+    """Build a scenario from five already-loaded daily field profiles."""
+    if traffic_mode not in {"average", "daily"}:
+        raise ValueError("traffic_mode must be 'average' or 'daily'")
+    if len(traffic_days) < 5 or len(power_days) < 5:
+        raise ValueError("Five traffic and power days are required")
+    if any(len(profile) != 24 for profile in traffic_days[:5] + power_days[:5]):
+        raise ValueError("Every daily profile must contain 24 hourly values")
+
+    base = [sum(values) / 5 for values in zip(*traffic_days[:5])]
+    power = [sum(values) / 5 for values in zip(*power_days[:5])]
+    regression = power_regression_from_profiles(base, power)
+    if min(regression.f_tilde, regression.gamma_tilde) <= 0.0:
+        raise ValueError("The fitted coefficients must be positive")
+
+    F, gamma = power_coefficients_to_cost(
+        regression.f_tilde,
+        regression.gamma_tilde,
+        price_per_kwh,
+    )
+    costs = _nearby_costs(F, gamma, seed)
+    profiles = (
+        _nearby_profiles(base, seed)
+        if traffic_mode == "average"
+        else traffic_days[:4]
+    )
+    operators = [
+        OperatorParams(NAMES[i], max(profile) / PEAK_FRACTION, *costs[i])
+        for i, profile in enumerate(profiles)
+    ]
+    return Scenario(
+        operators,
+        {i: profile for i, profile in enumerate(profiles)},
+        antenna_id,
+        data_source,
+        regression,
+        traffic_mode,
+    )
+
+
 def load_scenario(
     antenna_id: str | None = None,
+    traffic_mode: str = "average",
     seed: int = 42,
     price_per_kwh: float = DEFAULT_ELECTRICITY_PRICE_PER_KWH,
 ) -> Scenario:
-    """Load operator 1 from data and generate three nearby operators."""
+    """Build either the averaged or four-distinct-days traffic scenario."""
+    if traffic_mode not in {"average", "daily"}:
+        raise ValueError("traffic_mode must be 'average' or 'daily'")
+
     if CSV_PATH.is_file():
         site_id = antenna_id or first_antenna_id()
-        base, power = load_antenna_profiles(site_id)
-        regression = power_regression_from_profiles(base, power)
-        if min(regression.f_tilde, regression.gamma_tilde) <= 0.0:
-            raise ValueError("The fitted coefficients must be positive")
-        F, gamma = power_coefficients_to_cost(
-            regression.f_tilde,
-            regression.gamma_tilde,
-            price_per_kwh,
-        )
-        costs = _nearby_costs(F, gamma, seed)
+        traffic_days, power_days = load_antenna_days(site_id, 5)
         source = "compact_csv" if CSV_PATH == COMPACT_CSV_PATH else "csv"
+        return build_scenario_from_days(
+            site_id,
+            traffic_days,
+            power_days,
+            traffic_mode,
+            seed,
+            price_per_kwh,
+            source,
+        )
     else:
+        if traffic_mode == "daily":
+            raise ValueError("The daily mode requires field CSV data")
         site_id, base, regression = (
             antenna_id or DEFAULT_ANTENNA_ID,
             list(FALLBACK_TRAFFIC),
             None,
         )
         costs, source = list(FALLBACK_COSTS), "fallback"
+        profiles = _nearby_profiles(list(base), seed)
 
-    profiles = _nearby_profiles(list(base), seed)
     operators = [
         OperatorParams(NAMES[i], max(profile) / PEAK_FRACTION, *costs[i])
         for i, profile in enumerate(profiles)
@@ -126,4 +181,5 @@ def load_scenario(
         site_id,
         source,
         regression,
+        traffic_mode,
     )

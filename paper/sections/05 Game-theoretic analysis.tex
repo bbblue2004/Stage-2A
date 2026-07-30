@@ -731,3 +731,89 @@ partage stable. La valeur de Shapley est calculée comme référence d'équité
 contributive. Lorsqu'elle appartient au coeur, elle constitue également une
 répartition stable admissible et peut être comparée au nucléole dans les
 résultats numériques.
+
+\subsubsection{Une condition suffisante de non-vacuité du coeur}
+
+\begin{theorem}[Capacité individuelle suffisante]
+\label{thm:capacite_coeur_non_vide}
+Supposons que la demande totale puisse être acheminée par chacun des
+opérateurs :
+\[
+    d(N)\leqslant \min_{i\in N}q_i.
+\]
+Alors le coeur du jeu des économies est non vide. Plus précisément,
+l'allocation
+\[
+    z_i
+    =
+    C_i^0-\frac{d_i}{d(N)}\,C^*(N),
+    \qquad i\in N,
+\]
+appartient à \(\mathcal C(N,v)\).
+\end{theorem}
+
+\begin{proof}
+Soit \(Q\subseteq N\) une coalition non vide. Pour tout \(j\in Q\),
+l'hypothèse donne \(d(Q)\leqslant d(N)\leqslant q_j\), donc \(j\) peut
+acheminer seul toute la demande de \(Q\). Réciproquement, considérons une
+configuration faisable de gardiens \(G\subseteq Q\) et choisissons
+\(j\in\operatorname*{arg\,min}_{i\in G}\gamma_i\). Pour toute répartition
+faisable \(\mathbf t\),
+\[
+    \sum_{i\in G}\left(F_i+\gamma_i t_i\right)
+    \geqslant
+    F_j+\gamma_j\sum_{i\in G}t_i
+    =
+    F_j+\gamma_jd(Q).
+\]
+La configuration à un seul gardien \(j\) est faisable ; il en résulte
+\[
+    C^*(Q)=\min_{j\in Q}\left\{F_j+\gamma_jd(Q)\right\}.
+\]
+
+Posons \(p:=C^*(N)/d(N)\) et \(y_i:=p\,d_i\). Pour tous \(Q\neq\varnothing\)
+et \(j\in Q\), la définition de \(C^*(N)\) implique
+\[
+    p
+    \leqslant
+    \gamma_j+\frac{F_j}{d(N)}
+    \leqslant
+    \gamma_j+\frac{F_j}{d(Q)}.
+\]
+Ainsi,
+\[
+    \sum_{i\in Q}y_i
+    =
+    p\,d(Q)
+    \leqslant
+    \min_{j\in Q}\left\{F_j+\gamma_jd(Q)\right\}
+    =
+    C^*(Q).
+\]
+En outre, \(\sum_{i\in N}y_i=C^*(N)\). Pour \(Q=\{i\}\), l'inégalité
+précédente donne \(z_i=C_i^0-y_i\geqslant0\), tandis que
+\(\sum_{i\in N}z_i=v(N)\). La
+Proposition~\ref{prop:translation_coeur} permet donc de conclure que
+\(z\in\mathcal C(N,v)\).
+\end{proof}
+
+\begin{corollaire}[Agrégation temporelle]
+\label{cor:capacite_coeur_agrege}
+Soit \(H\) un ensemble fini de périodes et posons
+\[
+    C_H^*(Q):=\sum_{h\in H}C_h^*(Q).
+\]
+Si
+\[
+    d^h(N)\leqslant\min_{i\in N}q_i,
+    \qquad \forall h\in H,
+\]
+alors le coeur du jeu agrégé sur \(H\) est non vide.
+\end{corollaire}
+
+\begin{proof}
+Le théorème fournit, à chaque période \(h\), un vecteur de coûts nets
+\(y^h\) qui vérifie les contraintes de coeur du jeu de coûts horaire.
+Le vecteur \(\sum_{h\in H}y^h\) vérifie les mêmes contraintes après
+sommation sur \(h\), pour le coût \(C_H^*\).
+\end{proof}

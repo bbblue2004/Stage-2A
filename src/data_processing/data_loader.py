@@ -52,6 +52,17 @@ def _record(row: dict, columns: tuple[str, str, str, str]) -> Record | None:
         return None
 
 
+def iter_records(csv_path: Path = CSV_PATH):
+    """Yield valid field records while reading the CSV only once."""
+    with open(csv_path, newline="", encoding="utf-8", errors="replace") as file:
+        reader = csv.DictReader(file, delimiter=";")
+        columns = _columns(reader.fieldnames)
+        for raw_row in reader:
+            record = _record(raw_row, columns)
+            if record is not None:
+                yield record
+
+
 def first_antenna_ids(count: int, csv_path: Path = CSV_PATH) -> list[str]:
     if count <= 0:
         raise ValueError("count must be positive")
