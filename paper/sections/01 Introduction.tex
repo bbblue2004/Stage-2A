@@ -64,28 +64,35 @@ Les coûts coopératifs ainsi obtenus servent ensuite à mesurer les économies
 accessibles à chaque groupe d'opérateurs. Nous étudions la propriété selon
 laquelle la réunion de groupes disjoints ne diminue pas l'économie totale, ce
 qui justifie de viser la coopération de tous les opérateurs. Nous examinons
-ensuite la répartition de cette économie globale à l'aide du cœur, du nucléole
-et de la valeur de Shapley, afin de confronter stabilité et équité.
+ensuite si cette économie globale admet une répartition stable. La valeur de
+Shapley et le nucléole sont mobilisés comme deux règles de référence
+classiques, fondées respectivement sur les contributions marginales et sur la
+minimisation lexicographique des objections coalitionnelles. Leur utilisation
+ne constitue pas, en elle-même, une contribution de ce travail.
 
 Le message central de l'article est que l'efficacité énergétique de la
-coopération ne garantit pas sa stabilité coalitionnelle. Une organisation peut
-minimiser le coût total tout en laissant à certains groupes d'opérateurs une
-option de retrait plus attractive que la part qui leur est proposée. Les
+coopération ne garantit pas sa stabilité coalitionnelle. Dans notre modèle,
+les activations discrètes et les contraintes de capacité produisent des
+économies par paliers : le jeu peut être superadditif tout en ayant un coeur
+vide. Nous ne prétendons pas caractériser complètement ce phénomène. Les
 contributions de ce travail sont les suivantes :
 \begin{enumerate}
     \item nous formulons exactement le partage opportuniste avec coûts fixes,
-    capacités et coûts variables, démontrons l'optimalité de l'allocation
+    capacités et coûts variables, puis démontrons l'optimalité de l'allocation
     gloutonne à gardiens fixés et caractérisons la complexité de leur
     sélection ;
-    \item nous construisons le jeu coopératif associé, distinguons création de
-    valeur et stabilité, et fournissons des conditions positives ainsi qu'un
-    cadre de certification des cœurs vides ;
-    \item nous définissons une évaluation semi-empirique à grande échelle,
-    fondée sur des profils de trafic et de puissance de terrain, afin de relier
-    capacité, charge, économies et stabilité ;
-    \item nous retenons Shapley lorsqu'elle appartient au coeur et le nucléole
-    sinon, puis comparons leurs coûts nets, transferts et objections
-    coalitionnelles.
+    \item nous imposons un même ensemble de gardiens sur toute la fenêtre,
+    tout en autorisant des allocations de trafic horaires, et distinguons
+    cette politique d'une relaxation permettant de changer les équipements
+    actifs à chaque heure ; son surcoût éventuel reste à quantifier ;
+    \item nous établissons la superadditivité du jeu d'économies, puis montrons
+    par un contre-exemple homogène explicite qu'elle n'empêche pas la vacuité
+    du coeur ; nous donnons également une condition suffisante de non-vacuité
+    et des outils pour mesurer les violations coalitionnelles ;
+    \item nous définissons un protocole d'évaluation semi-empirique fondé sur
+    des profils de trafic et de puissance de terrain, afin de relier capacité,
+    charge, économies et stabilité sans assimiler les scénarios construits à
+    des observations multi-opérateurs réelles.
 \end{enumerate}
 
 Les données disponibles n'observent pas plusieurs opérateurs colocalisés sur

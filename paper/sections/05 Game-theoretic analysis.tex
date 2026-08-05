@@ -3,7 +3,10 @@
 \section{Jeu coopératif et répartition des économies}
 \label{sec:jeu_cooperatif}
 
-Cette section établit d'abord la sous-additivité de la fonction de coût minimal, qui caractérise l'intérêt économique collectif de la coopération. Elle introduit ensuite le jeu des économies de coopération et étudie la stabilité de leur répartition.
+Cette section établit d'abord la sous-additivité de la fonction de coût
+minimal et la superadditivité du jeu d'économies. Elle montre ensuite que cet
+intérêt collectif ne garantit pas l'existence d'une répartition stable, puis
+présente les outils utilisés pour mesurer et traiter cette instabilité.
 
 \subsection{Sous-additivité du coût opérationnel minimal}
 
@@ -256,10 +259,26 @@ Lorsque les décisions portent sur \(H\), la fonction de coût pertinente est
     \qquad S\subseteq N.
     \label{eq:jeu_persistant}
 \end{equation}
-Les définitions données ci-dessous sont ensuite appliquées au jeu
-\((N,v_H)\). La réunion des gardiens de deux coalitions disjointes fournit une
-solution admissible sur toute la fenêtre ; le même argument que pour \(C^*\)
-montre donc que \(C_H^*\) est sous-additive et que \(v_H\) est superadditif.
+\begin{proposition}[Propriétés du jeu sur une fenêtre]
+\label{prop:proprietes_jeu_fenetre}
+La fonction \(C_H^*\) est sous-additive. Par conséquent,
+\(v_H(\{i\})=0\), \(v_H(S)\geqslant0\) et \(v_H\) est superadditif.
+\end{proposition}
+
+\begin{proof}
+Soient \(S,Q\subseteq N\) disjoints. La réunion de leurs ensembles de
+gardiens optimaux reste fixe et faisable sur \(H\). À chaque heure, la somme
+de leurs répartitions optimales sert \(d^h(S\cup Q)\), sur des supports
+disjoints. Cette solution a pour coût \(C_H^*(S)+C_H^*(Q)\), donc
+\[
+    C_H^*(S\cup Q)\leqslant C_H^*(S)+C_H^*(Q).
+\]
+Les trois propriétés de \(v_H\) s'en déduisent comme dans la
+Proposition~\ref{prop:proprietes_jeu_economies}.
+\end{proof}
+
+Les définitions données ci-dessous sont appliquées indifféremment à
+\((N,v)\) ou à \((N,v_H)\).
 
 \begin{proposition}[Propriétés élémentaires du jeu d'économies]
 \label{prop:proprietes_jeu_economies}
@@ -577,15 +596,75 @@ $\boldsymbol\lambda^*$ fournit un certificat explicite de vacuité du
 coeur.
 
 \begin{remarque}
-Dans l'état actuel du modèle, nous ne disposons pas d'une preuve que le jeu
-est équilibré pour toutes les valeurs possibles des paramètres. La
-non-vacuité du coeur est donc vérifiée numériquement, pour chaque instance,
-au moyen de \eqref{eq:lp_faisabilite_coeur} ou
-\eqref{eq:lp_bondareva_shapley}.
+Le jeu n'est pas équilibré pour toutes les valeurs admissibles des
+paramètres, comme l'établit le contre-exemple ci-dessous. La non-vacuité du
+coeur doit donc être vérifiée instance par instance, au moyen de
+\eqref{eq:lp_faisabilite_coeur} ou \eqref{eq:lp_bondareva_shapley}.
 \end{remarque}
+
+\begin{proposition}[Contre-exemple homogène à la non-vacuité du coeur]
+\label{prop:contre_exemple_coeur_vide}
+Considérons \(N=\{1,2,3\}\) et, pour tout \(i\in N\),
+\[
+    d_i=1,\qquad q_i=2,\qquad F_i=1,\qquad \gamma_i=1.
+\]
+Le jeu \(v\) est superadditif, mais son coeur est vide.
+\end{proposition}
+
+\begin{proof}
+On a \(d_i\leqslant q_i\) et
+\(\beta_i=\gamma_iq_i=2>0\) : l'instance satisfait donc les hypothèses du
+modèle. Le fonctionnement autonome coûte
+\(C_i^0=F_i+\gamma_i d_i=2\), donc \(v(\{i\})=0\). Toute paire a une demande
+totale égale à \(2\). Le coût variable vaut \(2\) quelle que soit la
+répartition, et au moins un coût fixe est nécessaire ; un seul gardien atteint
+donc le coût minimal \(3\). Ainsi,
+\[
+    v(\{i,j\})=C_i^0+C_j^0-3=1,
+    \qquad i\neq j.
+\]
+La grande coalition a une demande égale à \(3\). Un gardien est insuffisant,
+tandis que deux sont faisables ; son coût optimal vaut donc \(2+3=5\), d'où
+\[
+    v(N)=3C_i^0-5=1.
+\]
+Ces valeurs vérifient la superadditivité. Si \(z\) appartenait au coeur, les
+trois paires imposeraient
+\[
+    z_1+z_2\geqslant1,\qquad
+    z_1+z_3\geqslant1,\qquad
+    z_2+z_3\geqslant1,
+\]
+tandis que l'efficacité donnerait \(z_1+z_2+z_3=1\). La somme des trois
+contraintes de paire conduirait alors à
+\[
+    2=2(z_1+z_2+z_3)\geqslant3,
+\]
+ce qui est impossible.
+\end{proof}
+
+La capacité et l'indivisibilité des activations créent ici des économies par
+paliers : chaque paire peut économiser un coût fixe, mais la grande coalition
+ne crée pas assez de valeur supplémentaire pour satisfaire simultanément les
+trois paires. Avec un poids \(1/2\) sur chacune d'elles, ces paires forment
+d'ailleurs une famille équilibrée dont la valeur pondérée vaut \(3/2>v(N)\).
+Ainsi, la superadditivité n'implique pas l'équilibrage du jeu, ni par
+conséquent la non-vacuité du coeur. Ce résultat ne contredit pas les garanties
+obtenues dans des formulations apparentées sous d'autres hypothèses ; il
+montre que ces garanties ne se transfèrent pas automatiquement en présence
+d'activations entières et de contraintes de capacité.
+
+Ce constat conduit à rechercher les conditions assurant un coeur non vide,
+la fréquence des coeurs vides dans les instances semi-empiriques et
+l'intensité de l'instabilité. Lorsque le coeur est vide, la valeur
+\(\varepsilon^*\) du moindre coeur fournit précisément une mesure de la plus
+petite violation maximale inévitable.
 
 \subsubsection{Moindre coeur et nucléole}
 \label{subsubsec:nucleole}
+
+Le moindre coeur et le nucléole sont ici employés comme outils classiques de
+diagnostic et de partage, et non comme des contributions méthodologiques.
 
 \begin{definition}[Excès d'une coalition]
 Pour une allocation $z\in\mathcal A(N,v)$ et une coalition propre non vide
@@ -647,7 +726,8 @@ ce qu'une allocation unique soit obtenue.
 Le nucléole existe et est unique. Si le coeur du jeu est non vide, le
 nucléole lui appartient. Si le coeur est vide, le nucléole appartient au
 moindre coeur et fournit la répartition qui minimise lexicographiquement
-les objections des coalitions.
+les objections des coalitions, sans rétablir une stabilité exacte devenue
+impossible.
 \end{proposition}
 
 \begin{remarque}[Interprétation]
@@ -662,8 +742,8 @@ marginales dans toutes les configurations possibles.
 \subsubsection{Valeur de Shapley}
 \label{subsubsec:shapley}
 
-La valeur de Shapley fournit une autre règle de partage, fondée sur les
-contributions marginales moyennes des opérateurs
+La valeur de Shapley constitue une règle de référence classique, fondée sur
+les contributions marginales moyennes des opérateurs
 \cite{shapley1953value}.
 
 Pour tout opérateur $i\in N$, sa valeur de Shapley dans le jeu des
@@ -741,19 +821,32 @@ notions d'équité ne domine l'autre dans tous les jeux.
 \subsubsection{Projection de Shapley}
 \label{subsubsec:projection_shapley}
 
-Une allocation stable proche de Shapley peut être obtenue par projection.
-Si le cœur est non vide, nous définissons
+% Construction secondaire : à déplacer en annexe, ou à retirer, si
+% l'évaluation numérique ne met pas en évidence de valeur ajoutée.
+La projection cherche l'allocation admissible la plus proche de Shapley au
+meilleur niveau de stabilité disponible. Posons
+\[
+\mathcal K(v):=
+\begin{cases}
+\mathcal C(N,v), & \text{si le cœur est non vide},\\
+\left\{
+z\in\mathcal A(N,v)\ \middle|\
+z(Q)\geqslant v(Q)-\varepsilon^*,
+\ \forall\,\varnothing\neq Q\subsetneq N
+\right\}, & \text{sinon}.
+\end{cases}
+\]
+Nous définissons alors
 \begin{equation}
     z^{\mathrm{proj}}
     :=
-    \operatorname*{arg\,min}_{z\in\mathcal C(N,v)}
+    \operatorname*{arg\,min}_{z\in\mathcal K(v)}
     \sum_{i\in N}
     \left(\frac{z_i-\phi_i(v)}{C_i^0}\right)^2.
     \label{eq:projection_shapley}
 \end{equation}
-Si le cœur est vide, le même programme est résolu sur la face optimale du
-moindre cœur définie par \(\varepsilon^*\). Les normalisations par \(C_i^0\)
-évitent qu'un opérateur de grande taille domine mécaniquement la distance.
+Les normalisations par \(C_i^0\) évitent qu'un opérateur de grande taille
+domine mécaniquement la distance.
 Cette projection est un compromis calculatoire, et non une nouvelle notion
 axiomatique d'équité ; nous n'employons donc pas l'expression
 \emph{fairest core}. Pour le jeu \(v_H\), les coûts autonomes
@@ -762,13 +855,13 @@ axiomatique d'équité ; nous n'employons donc pas l'expression
 \subsubsection{Comparaison des règles de partage}
 \label{subsubsec:comparaison_partages}
 
-Le nucléole et la valeur de Shapley sont tous deux efficaces et traitent de
-manière identique des opérateurs symétriques. Ils diffèrent cependant par
-leur objectif principal :
+Le nucléole et la valeur de Shapley servent de références classiques pour
+deux objectifs distincts :
 \begin{itemize}
-    \item le nucléole privilégie la stabilité coalitionnelle ;
-    \item la valeur de Shapley privilégie la rémunération des contributions
-    marginales.
+    \item la valeur de Shapley répartit la valeur selon les contributions
+    marginales moyennes, sans garantir la stabilité ;
+    \item le nucléole minimise lexicographiquement les objections
+    coalitionnelles et appartient au coeur lorsque celui-ci est non vide.
 \end{itemize}
 
 Si le coeur est non vide, le nucléole lui appartient toujours, tandis que
@@ -782,6 +875,170 @@ coeur : elle combine alors équité contributive et stabilité coalitionnelle.
 Sinon, nous retenons le nucléole. Celui-ci appartient au coeur lorsque ce
 dernier est non vide ; si le coeur est vide, aucune allocation n'est stable
 et le nucléole minimise lexicographiquement les objections.
+
+\subsubsection{Cas homogène et seuils de capacité}
+\label{subsubsec:cas_homogene}
+
+Le contre-exemple de la
+Proposition~\ref{prop:contre_exemple_coeur_vide} appartient à une famille
+homogène plus générale, qui isole l'effet des seuils de capacité de toute
+hétérogénéité entre opérateurs.
+
+\begin{proposition}[Caractérisation du cas homogène]
+\label{prop:coeur_cas_homogene}
+Supposons que \(d_i=d\), \(q_i=q\), \(F_i=F\) et
+\(\gamma_i=\gamma\) pour tout \(i\in N\). Pour \(s\in\{1,\dots,n\}\),
+posons
+\[
+    k_s:=\left\lceil\frac{sd}{q}\right\rceil,
+    \qquad
+    v_s:=(s-k_s)F.
+\]
+Toute coalition \(S\) de taille \(s\) vérifie alors
+\[
+    C^*(S)=k_sF+\gamma sd,
+    \qquad
+    v(S)=v_s.
+\]
+De plus,
+\[
+    \mathcal C(N,v)\neq\varnothing
+    \quad\Longleftrightarrow\quad
+    \frac{v_s}{s}\leqslant\frac{v_n}{n},
+    \qquad s=1,\dots,n-1.
+\]
+La valeur de Shapley et le nucléole sont égaux à
+\(v_n/n\) pour chaque opérateur. Enfin, la valeur du moindre coeur est
+\[
+    \varepsilon^*
+    =
+    \max_{1\leqslant s<n}
+    \left\{v_s-\frac{s}{n}v_n\right\},
+\]
+et l'allocation égalitaire atteint cette valeur.
+\end{proposition}
+
+\begin{proof}
+Une coalition de taille \(s\) requiert au moins \(k_s\) gardiens, et tout
+ensemble de \(k_s\) gardiens est faisable. Comme le coût variable total vaut
+toujours \(\gamma sd\), une solution optimale active exactement \(k_s\)
+équipements. Les expressions de \(C^*(S)\) et de \(v(S)\) en découlent.
+
+Si \(z\in\mathcal C(N,v)\), la somme des contraintes du coeur sur toutes les
+coalitions de taille \(s\) donne
+\[
+    \binom{n-1}{s-1}v_n
+    =
+    \sum_{|S|=s}z(S)
+    \geqslant
+    \binom{n}{s}v_s,
+\]
+soit \(v_s/s\leqslant v_n/n\). Réciproquement, sous ces inégalités,
+l'allocation \(z_i=v_n/n\) satisfait toutes les contraintes du coeur.
+La symétrie et l'efficacité donnent les expressions de Shapley et du
+nucléole. Enfin, pour toute allocation efficace, l'excès moyen des coalitions
+de taille \(s\) vaut \(v_s-sv_n/n\). L'allocation égalitaire rend tous ces
+excès égaux à leur moyenne, ce qui établit la formule du moindre coeur.
+\end{proof}
+
+\begin{corollaire}[Famille homogène à coeur vide]
+\label{cor:coeur_vide_homogene}
+Supposons \(n\geqslant3\) et, dans le cadre homogène de la
+Proposition~\ref{prop:coeur_cas_homogene}, \(q=(n-1)d\). Alors le coeur est
+vide.
+\end{corollaire}
+
+\begin{proof}
+On a \(k_{n-1}=1\) et \(k_n=2\). Pour tout \(i\in N\),
+\[
+    v(N\setminus\{i\})=v_{n-1}=(n-2)F
+    \qquad\text{et}\qquad
+    v(N)=v_n=(n-2)F.
+\]
+Attribuons le poids \(1/(n-1)\) à chacune des \(n\) coalitions
+\(N\setminus\{i\}\), et un poids nul aux autres coalitions. Chaque opérateur
+appartient à exactement \(n-1\) de ces coalitions : cette famille est donc
+équilibrée. Or
+\[
+    \frac{1}{n-1}
+    \sum_{i\in N}v(N\setminus\{i\})
+    =
+    \frac{n}{n-1}(n-2)F
+    >
+    (n-2)F
+    =
+    v(N).
+\]
+Le Théorème~\ref{thm:bondareva_shapley} implique alors que le coeur est vide.
+\end{proof}
+
+\begin{proposition}[Certificat leave-one-out]
+\label{prop:certificat_leave_one_out}
+Supposons \(n\geqslant3\) et posons
+\begin{equation}
+    \Delta_{\mathrm{LOO}}(N)
+    :=
+    C^*(N)
+    -
+    \frac{1}{n-1}
+    \sum_{i\in N}C^*(N\setminus\{i\}).
+    \label{eq:gap_leave_one_out}
+\end{equation}
+Si \(\Delta_{\mathrm{LOO}}(N)>0\), alors
+\(\mathcal C(N,v)=\varnothing\). De plus, la valeur du moindre coeur vérifie
+\[
+    \varepsilon^*
+    \geqslant
+    \frac{n-1}{n}\Delta_{\mathrm{LOO}}(N).
+\]
+\end{proposition}
+
+\begin{proof}
+Attribuons le poids \(1/(n-1)\) à chaque coalition
+\(N\setminus\{i\}\), et un poids nul aux autres coalitions. Cette famille est
+équilibrée. En utilisant la définition de \(v\), on obtient
+\begin{align*}
+    \frac{1}{n-1}\sum_{i\in N}v(N\setminus\{i\})-v(N)
+    &=
+    C^*(N)
+    -
+    \frac{1}{n-1}
+    \sum_{i\in N}C^*(N\setminus\{i\})\\
+    &=
+    \Delta_{\mathrm{LOO}}(N).
+\end{align*}
+Ainsi, \(\Delta_{\mathrm{LOO}}(N)>0\) viole la condition de
+Bondareva--Shapley.
+
+Considérons maintenant toute solution admissible \((z,\varepsilon)\) du
+programme \eqref{eq:lp_moindre_coeur}. En sommant ses contraintes pour les
+\(n\) coalitions \(N\setminus\{i\}\), il vient
+\[
+    (n-1)v(N)
+    =
+    \sum_{i\in N}z(N\setminus\{i\})
+    \geqslant
+    \sum_{i\in N}v(N\setminus\{i\})-n\varepsilon.
+\]
+Par conséquent,
+\[
+    \varepsilon
+    \geqslant
+    \frac{1}{n}
+    \left[
+        \sum_{i\in N}v(N\setminus\{i\})-(n-1)v(N)
+    \right]
+    =
+    \frac{n-1}{n}\Delta_{\mathrm{LOO}}(N).
+\]
+Cette borne valant pour toute solution admissible, elle vaut en particulier
+pour \(\varepsilon^*\).
+\end{proof}
+
+Le même résultat s'applique au jeu \(v_H\) en remplaçant \(C^*\) par
+\(C_H^*\). Le gap \(\Delta_{\mathrm{LOO}}\) relie ainsi directement les
+certificats observés numériquement à une borne sur l'intensité de
+l'instabilité.
 
 \subsubsection{Une condition suffisante de non-vacuité du coeur}
 
@@ -848,28 +1105,46 @@ Proposition~\ref{prop:translation_coeur} permet donc de conclure que
 \(z\in\mathcal C(N,v)\).
 \end{proof}
 
-\begin{corollaire}[Agrégation temporelle]
+\begin{corollaire}[Capacité individuelle suffisante sur une fenêtre]
 \label{cor:capacite_coeur_agrege}
-Soit \(H\) un ensemble fini de périodes et posons
-\[
-    \underline C_H^*(Q):=\sum_{h\in H}C_h^*(Q),
-    \qquad
-    \underline v_H(Q)
-    :=
-    \sum_{i\in Q}\underline C_H^*(\{i\})
-    -\underline C_H^*(Q).
-\]
-Si
+Soit \(H\) une fenêtre telle que
 \[
     d^h(N)\leqslant\min_{i\in N}q_i,
     \qquad \forall h\in H,
 \]
-alors le coeur du jeu horaire agrégé \((N,\underline v_H)\) est non vide.
+et posons \(D_i:=\sum_{h\in H}d_i^h\) et
+\(D(Q):=\sum_{i\in Q}D_i\). Supposons \(D_i>0\) pour tout \(i\in N\).
+Alors le coeur de \((N,v_H)\) est non vide. L'allocation
+\[
+    z_{i,H}
+    :=
+    C_H^*(\{i\})
+    -\frac{D_i}{D(N)}C_H^*(N)
+\]
+appartient à \(\mathcal C(N,v_H)\).
 \end{corollaire}
 
 \begin{proof}
-Le théorème fournit, à chaque période \(h\), un vecteur de coûts nets
-\(y^h\) qui vérifie les contraintes de coeur du jeu de coûts horaire.
-Le vecteur \(\sum_{h\in H}y^h\) vérifie les mêmes contraintes après
-sommation sur \(h\), pour le coût \(\underline C_H^*\).
+Sous l'hypothèse de capacité, tout \(j\in Q\) peut servir seul \(Q\) à
+chaque heure. L'argument du Théorème~\ref{thm:capacite_coeur_non_vide},
+appliqué après sommation sur \(H\), donne
+\[
+    C_H^*(Q)
+    =
+    \min_{j\in Q}
+    \left\{|H|F_j+\gamma_jD(Q)\right\}.
+\]
+Posons \(p_H:=C_H^*(N)/D(N)\) et \(y_{i,H}:=p_HD_i\). Pour tout
+\(Q\neq\varnothing\) et tout \(j\in Q\),
+\[
+    p_H
+    \leqslant
+    \gamma_j+\frac{|H|F_j}{D(N)}
+    \leqslant
+    \gamma_j+\frac{|H|F_j}{D(Q)}.
+\]
+Ainsi, \(\sum_{i\in Q}y_{i,H}\leqslant C_H^*(Q)\) et
+\(\sum_{i\in N}y_{i,H}=C_H^*(N)\). L'équivalence de la
+Proposition~\ref{prop:translation_coeur}, appliquée aux quantités sur
+\(H\), conclut.
 \end{proof}

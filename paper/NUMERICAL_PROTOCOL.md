@@ -41,9 +41,10 @@ secondaire.
 
 ## 3. Objectifs de l'évaluation
 
-L'évaluation mesure successivement la précision prédictive du modèle de
-puissance, les économies et la sélection des gardiens, l'effet du trafic et de
-la capacité, puis la stabilité et le partage des économies.
+L'évaluation contrôle d'abord les algorithmes et résultats théoriques, puis
+mesure la précision prédictive du modèle de puissance, les économies et la
+sélection des gardiens, l'effet des paramètres, et enfin la stabilité et le
+partage des économies.
 
 ## 4. Données et population d'étude
 
@@ -67,7 +68,19 @@ rapportera séparément chaque motif d'exclusion. Les profils constants et les
 ajustements non positifs resteront dans l'analyse des exclusions afin de
 quantifier le biais de sélection.
 
-## 5. Validation du modèle de puissance
+## 5. Validation des calculs et du modèle de puissance
+
+Avant la campagne empirique :
+
+1. comparer la répartition gloutonne au programme linéaire ;
+2. comparer l'énumération des gardiens au MILP ;
+3. vérifier l'équivalence entre faisabilité du cœur et
+   Bondareva--Shapley ;
+4. vérifier l'équilibre budgétaire des transferts ;
+5. générer les conditions suffisantes et contre-exemples théoriques sur des
+   grilles de paramètres.
+
+Ces expériences contrôlent l'implémentation mais ne remplacent pas les preuves.
 
 La validation utilise les observations journalières brutes, sans réduire au
 préalable la semaine à 24 moyennes horaires.
@@ -160,8 +173,9 @@ sans donnée permettant de le calibrer.
 1. absence de partage ;
 2. un seul opérateur actif, si sa capacité suffit sur toute la fenêtre ;
 3. activation par capacité décroissante jusqu'à faisabilité ;
-4. optimum exact avec gardiens fixes sur la fenêtre ;
-5. optimum avec choix horaire des gardiens, utilisé comme borne basse.
+4. gardiens optimaux avec trafic réparti proportionnellement aux capacités ;
+5. optimum exact avec gardiens fixes sur la fenêtre ;
+6. optimum avec choix horaire des gardiens, utilisé comme borne basse.
 
 Une baseline infaisable est déclarée comme telle ; aucune demande n'est
 abandonnée pour la rendre artificiellement comparable.
@@ -181,9 +195,10 @@ Pour une même grille, trois cartes sont produites :
 - nombre de gardiens actifs sur la fenêtre ;
 - fréquence de cœur vide et de Shapley hors du cœur.
 
-La famille semi-synthétique est présentée comme test de robustesse autour de
-cette figure. Le cas `n = 4` est principal ; `n = 2,...,6` est une extension
-secondaire.
+La famille semi-synthétique, la part fixe du coût, la dispersion de
+`F_i`, `gamma_i`, `q_i`, la corrélation des profils et le nombre d'opérateurs
+sont présentés comme tests secondaires. Le cas `n = 4` est principal ;
+`n = 2,...,6` est une extension.
 
 ## 11. Métriques et inférence
 
@@ -198,6 +213,9 @@ certificat et epsilon du moindre cœur normalisé par `v(N)`.
 Métriques de partage : économie individuelle `z_i`, coût net `y_i`, transfert
 `tau_i`, dispersion des économies et distance Shapley--nucléole.
 
+Métriques de validation : erreur maximale entre formulations équivalentes,
+nombre de contradictions et résidu d'équilibre budgétaire.
+
 Les distributions sont résumées par médiane, quartiles et quantiles 5 %--95 %.
 Les intervalles bootstrap à 95 % sont regroupés par antenne d'ancrage afin de
 ne pas traiter les graines d'un même site virtuel comme des observations
@@ -209,6 +227,7 @@ indépendantes.
   résultats de stabilité ;
 - règles d'admissibilité exécutées et motifs d'exclusion audités ;
 - validation leave-one-day-out terminée ;
+- tests de cohérence théorique et algorithmique terminés ;
 - listes des antennes, partenaires et graines exportées ;
 - chaque configuration entièrement déterminée par un fichier de paramètres ;
 - résultats pilotes reproduits à l'identique à graine fixée.

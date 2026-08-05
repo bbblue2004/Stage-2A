@@ -68,3 +68,10 @@
 - La projection normalisée de Shapley est définie en Section 5 et n'est pas
   qualifiée de \emph{fairest core}, faute de propriété axiomatique justifiant
   ce terme.
+- Relecture de fin de Day 1 : ajout d'une proposition formelle de
+  sous-additivité de \(C_H^*\), extension au jeu \(v_H\) de la condition
+  suffisante de capacité, et définition explicite de la face du moindre cœur
+  utilisée pour projeter Shapley.
+- La Section 6 comprend désormais un test préalable de cohérence entre
+  algorithmes et formulations théoriques, cinq tests numériques, une baseline
+  d'allocation proportionnelle et une discussion des limites.

@@ -78,9 +78,13 @@ Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
 - Pour les petites coalitions, l’énumération exacte est acceptable.
 - La sous-additivité est stricte lorsque l’un des gardiens de coût variable
   minimal des deux solutions séparées peut acheminer toute la demande réunie.
+- Le coût \(C_H^*\) avec gardiens fixes est sous-additif et le jeu \(v_H\)
+  est superadditif.
 - Le jeu d’économies est défini par :
   v(S) = somme des coûts individuels de référence - coût coopératif minimal.
 - Le nucléole et la valeur de Shapley sont étudiés.
+- Si chaque opérateur peut servir la demande totale à chaque heure de \(H\),
+  le cœur de \((N,v_H)\) est non vide.
 - La non-vacuité générale du cœur n’est pas encore démontrée.
 
 # Points ouverts
