@@ -1,6 +1,7 @@
 \newpage
 
 \section{Jeu coopératif et répartition des économies}
+\label{sec:jeu_cooperatif}
 
 Cette section établit d'abord la sous-additivité de la fonction de coût minimal, qui caractérise l'intérêt économique collectif de la coopération. Elle introduit ensuite le jeu des économies de coopération et étudie la stabilité de leur répartition.
 
@@ -245,6 +246,21 @@ En particulier, \(v(\varnothing)=0\).
 
 La quantité $v(S)$ représente l'économie opérationnelle maximale obtenue lorsque les membres de $S$ coopèrent, relativement à la situation de référence dans laquelle chacun fonctionne de manière autonome.
 
+\paragraph{Jeu associé à une fenêtre.}
+Lorsque les décisions portent sur \(H\), la fonction de coût pertinente est
+\(C_H^*\), définie par \eqref{eq:cout_persistant}. Le jeu des économies devient
+\begin{equation}
+    v_H(S)
+    :=
+    \sum_{i\in S}C_H^*(\{i\})-C_H^*(S),
+    \qquad S\subseteq N.
+    \label{eq:jeu_persistant}
+\end{equation}
+Les définitions données ci-dessous sont ensuite appliquées au jeu
+\((N,v_H)\). La réunion des gardiens de deux coalitions disjointes fournit une
+solution admissible sur toute la fenêtre ; le même argument que pour \(C^*\)
+montre donc que \(C_H^*\) est sous-additive et que \(v_H\) est superadditif.
+
 \begin{proposition}[Propriétés élémentaires du jeu d'économies]
 \label{prop:proprietes_jeu_economies}
 Le jeu $v$ vérifie
@@ -298,6 +314,20 @@ décompose donc comme
 \[
 C^*(N)=\sum_{i\in N}C_i^*(N).
 \]
+
+Sur une fenêtre \(H\), les dépenses physiques correspondantes sont
+\[
+    C_{i,H}^*(N)
+    :=
+    \mathds{1}_{\{i\in G_H^*(N)\}}
+    \sum_{h\in H}
+    \left(F_i+\gamma_i t_i^{h,*}(N)\right),
+\]
+et leur somme vaut \(C_H^*(N)\). Les formules de partage et de transfert
+ci-dessous s'appliquent alors en remplaçant \(C_i^0\), \(C_i^*(N)\) et
+\(v\) par \(C_H^*(\{i\})\), \(C_{i,H}^*(N)\) et \(v_H\). Les transferts
+sont ainsi calculés et réglés une fois pour l'ensemble de la fenêtre.
+
 Le vecteur \(\bigl(C_i^*(N)\bigr)_{i\in N}\in\mathbb R^N\) décrit les
 dépenses physiques initiales, avant toute compensation entre opérateurs.
 Sa somme est le coût réel à financer ; elle ne constitue pas encore une
@@ -708,6 +738,27 @@ lexicographiquement les objections des coalitions. Aucune de ces deux
 notions d'équité ne domine l'autre dans tous les jeux.
 \end{remarque}
 
+\subsubsection{Projection de Shapley}
+\label{subsubsec:projection_shapley}
+
+Une allocation stable proche de Shapley peut être obtenue par projection.
+Si le cœur est non vide, nous définissons
+\begin{equation}
+    z^{\mathrm{proj}}
+    :=
+    \operatorname*{arg\,min}_{z\in\mathcal C(N,v)}
+    \sum_{i\in N}
+    \left(\frac{z_i-\phi_i(v)}{C_i^0}\right)^2.
+    \label{eq:projection_shapley}
+\end{equation}
+Si le cœur est vide, le même programme est résolu sur la face optimale du
+moindre cœur définie par \(\varepsilon^*\). Les normalisations par \(C_i^0\)
+évitent qu'un opérateur de grande taille domine mécaniquement la distance.
+Cette projection est un compromis calculatoire, et non une nouvelle notion
+axiomatique d'équité ; nous n'employons donc pas l'expression
+\emph{fairest core}. Pour le jeu \(v_H\), les coûts autonomes
+\(C_H^*(\{i\})\) remplacent \(C_i^0\).
+
 \subsubsection{Comparaison des règles de partage}
 \label{subsubsec:comparaison_partages}
 
@@ -726,11 +777,11 @@ la valeur de Shapley doit être testée au moyen de
 parfaitement stable n'existe ; le nucléole fournit alors une solution du
 moindre coeur.
 
-Dans ce travail, nous retenons donc le nucléole comme règle principale de
-partage stable. La valeur de Shapley est calculée comme référence d'équité
-contributive. Lorsqu'elle appartient au coeur, elle constitue également une
-répartition stable admissible et peut être comparée au nucléole dans les
-résultats numériques.
+Dans ce travail, la valeur de Shapley est retenue lorsqu'elle appartient au
+coeur : elle combine alors équité contributive et stabilité coalitionnelle.
+Sinon, nous retenons le nucléole. Celui-ci appartient au coeur lorsque ce
+dernier est non vide ; si le coeur est vide, aucune allocation n'est stable
+et le nucléole minimise lexicographiquement les objections.
 
 \subsubsection{Une condition suffisante de non-vacuité du coeur}
 
@@ -801,19 +852,24 @@ Proposition~\ref{prop:translation_coeur} permet donc de conclure que
 \label{cor:capacite_coeur_agrege}
 Soit \(H\) un ensemble fini de périodes et posons
 \[
-    C_H^*(Q):=\sum_{h\in H}C_h^*(Q).
+    \underline C_H^*(Q):=\sum_{h\in H}C_h^*(Q),
+    \qquad
+    \underline v_H(Q)
+    :=
+    \sum_{i\in Q}\underline C_H^*(\{i\})
+    -\underline C_H^*(Q).
 \]
 Si
 \[
     d^h(N)\leqslant\min_{i\in N}q_i,
     \qquad \forall h\in H,
 \]
-alors le coeur du jeu agrégé sur \(H\) est non vide.
+alors le coeur du jeu horaire agrégé \((N,\underline v_H)\) est non vide.
 \end{corollaire}
 
 \begin{proof}
 Le théorème fournit, à chaque période \(h\), un vecteur de coûts nets
 \(y^h\) qui vérifie les contraintes de coeur du jeu de coûts horaire.
 Le vecteur \(\sum_{h\in H}y^h\) vérifie les mêmes contraintes après
-sommation sur \(h\), pour le coût \(C_H^*\).
+sommation sur \(h\), pour le coût \(\underline C_H^*\).
 \end{proof}

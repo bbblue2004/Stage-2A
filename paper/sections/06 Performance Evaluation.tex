@@ -1,98 +1,149 @@
-\section{Simulations numériques}
+\section{Évaluation numérique}
 \label{sec:simulations_numeriques}
 
-\subsection{Protocole}
+Cette section évalue la précision du modèle affine de puissance, puis les
+économies et la stabilité de la coopération. Comme les données n'observent
+pas plusieurs opérateurs colocalisés, les scénarios multi-opérateurs sont
+construits à partir de profils Orange distincts.
 
-L'évaluation porte sur les \(3\,825\) identifiants d'antenne du fichier
-\texttt{data/raw/radio\_sites.csv}. Pour chaque antenne, les cinq premiers
-jours calendaires sont retenus et doivent comporter chacun \(24\) heures.
-Le trafic et la puissance sont moyennés heure par heure sur ces cinq jours,
-ce qui fournit deux profils moyens de \(24\) valeurs.
-Une régression linéaire
-\[
-    P(h)=\widetilde F+\widetilde\gamma\,d(h)
-\]
-est ensuite estimée sur ces \(24\) couples. Avec le prix commun de
-l'électricité fixé à \(0{,}15\) euro/kWh, les paramètres de coût de
-l'opérateur de référence sont
-\[
-    F=\frac{0{,}15}{1000}\widetilde F,
+\subsection{Scénario et paramètres}
+
+Les données regroupent, pour des équipements radio d'Île-de-France, un trafic
+descendant horaire et une puissance moyenne. Leur provenance détaillée, la
+période d'acquisition et la technologie seront précisées avant soumission. Une
+antenne n'est retenue que si elle possède suffisamment de journées complètes
+et des observations finies et non négatives. Les profils constants et les
+ajustements à coefficients non positifs sont comptabilisés séparément.
+
+Chaque site virtuel associe une antenne d'ancrage à trois antennes distinctes,
+tirées sans remise. Le scénario principal apparie des profils de pics de
+trafic et d'intercepts actifs comparables ; un tirage sans restriction mesure
+l'effet de l'hétérogénéité. Les profils obtenus par perturbation d'une même
+antenne sont réservés à la reproduction des calculs exploratoires. Vingt
+tirages, indexés de 0 à 19, sont réalisés pour chaque ancre.
+
+Le fichier ne contient pas la capacité physique. Elle est donc traitée comme
+un paramètre de scénario :
+\begin{equation}
+    q_i
+    =\frac{\max_h d_i^h}{\rho_i^{\mathrm{peak}}},
     \qquad
-    \gamma=\frac{0{,}15}{1000}\widetilde\gamma.
-\]
+    \rho_i^{\mathrm{peak}}
+    \in\{0{,}30,0{,}50,0{,}70,0{,}90\}.
+    \label{eq:capacite_scenario}
+\end{equation}
+Le maximum porte sur toute la période disponible. Toute la demande doit être
+servie sans dépasser les capacités ; le débit utilisateur, la latence et la
+couverture ne sont pas modélisés.
 
-Chaque instance comporte quatre opérateurs. Le premier reprend le profil
-mesuré ; les trois autres sont obtenus en appliquant au même profil un
-facteur uniforme dans \([0{,}8;1]\), puis un bruit multiplicatif gaussien
-d'écart-type \(2\,\%\). Leurs paramètres \(F_i\) et \(\gamma_i\) sont
-obtenus par des perturbations uniformes indépendantes dans
-\([0{,}9;1{,}1]\) autour des valeurs de référence. La graine
-pseudo-aléatoire est fixée à \(42\) pour les profils et à \(43\) pour les
-coûts. Enfin,
-\[
-    q_i=\frac{\max_{0\leqslant h\leqslant23}d_i^h}{0{,}75}.
-\]
-Les règles de construction, les graines, le prix de l'électricité et le
-facteur de capacité sont donc communs aux \(3\,825\) instances. En
-revanche, les valeurs finales de \(d_i^h\), \(q_i\), \(F_i\) et
-\(\gamma_i\) sont propres à chaque antenne, puisque le trafic et la
-régression de puissance sont recalculés pour chacune d'elles.
+Les principaux paramètres sont résumés dans le
+Tableau~\ref{tab:parametres_evaluation}.
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+Paramètre & Valeurs \\
+\hline
+Nombre d'opérateurs & \(4\) ; extension de \(2\) à \(6\) \\
+Tirages par antenne & \(20\) \\
+Charge au pic \(\rho^{\mathrm{peak}}\) & \(0{,}30;0{,}50;0{,}70;0{,}90\) \\
+Multiplicateur de trafic & \(0{,}50;0{,}75;1;1{,}25;1{,}50;2\) \\
+Fenêtre & \(H(h_{\mathrm{start}},h_{\mathrm{end}})\) \\
+Puissance de veille & \(0\ \mathrm{W}\) \\
+\hline
+\end{tabular}
+\caption{Paramètres de la campagne numérique.}
+\label{tab:parametres_evaluation}
+\end{table}
 
-\subsection{Évaluation de la non-vacuité du coeur}
+Les tests appliquent le modèle sur fenêtre des
+Sous-sections~\ref{subsec:fenetre_decision}
+et~\ref{subsec:optimisation_fenetre}. Le même ensemble de gardiens est donc
+conservé sur \(H\), tandis que le trafic est réparti à chaque heure. Les
+bornes \(h_{\mathrm{start}}\) et \(h_{\mathrm{end}}\) seront fixées à partir
+du trafic avant l'analyse de stabilité.
 
-Pour chaque heure \(h\) et chaque coalition non vide \(Q\), le coût
-\(C_h^*(Q)\) est calculé exactement par énumération des ensembles de
-gardiens faisables, puis allocation du trafic par coût marginal croissant.
-Les coûts sont agrégés avant de construire le jeu :
-\[
-    C_H^*(Q)=\sum_{h\in H}C_h^*(Q),
+\subsection{Test 1 : validation du modèle de puissance}
+
+Pour chaque antenne, le modèle actif est
+\begin{equation}
+    P(d)=\widetilde F+\widetilde\gamma d.
+    \label{eq:modele_puissance_affine}
+\end{equation}
+Une validation leave-one-day-out ajuste le modèle sur toutes les journées
+complètes sauf une, puis prédit la journée exclue. La précision est mesurée
+par la MAE, la RMSE et une erreur normalisée ; les résidus sont examinés selon
+l'heure et le trafic. Le modèle affine est comparé à un modèle constant. Une
+forme quadratique n'est considérée que si elle améliore nettement la
+prédiction hors échantillon.
+
+La veille étant supposée consommer \(0\ \mathrm{W}\), les paramètres
+monétaires horaires sont
+\begin{equation}
+    F_i=\frac{p_e}{1000}\widetilde F_i,
     \qquad
-    v_H(Q)=\sum_{i\in Q}C_H^*(\{i\})-C_H^*(Q).
-\]
-La non-vacuité est testée par le programme linéaire de faisabilité
-\eqref{eq:lp_faisabilite_coeur}, en imposant les contraintes de toutes les
-coalitions. Lorsqu'il est infaisable, le programme dual
-\eqref{eq:lp_bondareva_shapley} fournit un certificat de Bondareva--Shapley.
-Deux fenêtres sont étudiées : la journée complète
-\(H=\{0,\ldots,23\}\), puis les heures nocturnes de \(1\) h à \(6\) h
-incluses. Dans ce second calcul, les capacités \(q_i\) restent déterminées
-par le maximum des \(24\) heures.
+    \gamma_i=\frac{p_e}{1000}\widetilde\gamma_i,
+    \label{eq:calibration_actif_veille}
+\end{equation}
+où \(p_e\) est le prix de l'électricité en euros par kWh.
+
+\subsection{Test 2 : économies et sélection des gardiens}
+
+La solution exacte avec gardiens fixes sur la fenêtre est comparée au fonctionnement sans
+partage, à une politique avec un seul opérateur actif lorsque celle-ci est
+faisable, et à l'activation des équipements par capacité décroissante. La
+solution exacte réoptimisée à chaque heure sert uniquement de borne basse.
+
+Les résultats présentent l'énergie et le coût évités, le nombre et la charge
+des gardiens, ainsi que l'écart entre la solution sur la fenêtre et la
+réoptimisation horaire. Une
+politique qui ne sert pas toute la demande est déclarée infaisable.
+
+\subsection{Test 3 : effet du trafic et de la capacité}
+
+La sensibilité est étudiée en croisant les quatre valeurs de
+\(\rho^{\mathrm{peak}}\) avec les six multiplicateurs de trafic du
+Tableau~\ref{tab:parametres_evaluation}. Les mêmes graphiques donnent
+l'économie relative, le nombre de gardiens, la fréquence de cœur vide et la
+fréquence de Shapley hors du cœur. L'hétérogénéité des profils et le nombre
+d'opérateurs sont examinés séparément.
+
+Les distributions sont résumées par leur médiane, leurs quartiles et leurs
+quantiles 5--95\,\%. Les intervalles bootstrap sont regroupés par antenne
+d'ancrage afin de ne pas traiter ses vingt tirages comme indépendants.
+
+\subsection{Test 4 : stabilité et partage des économies}
+
+Ce test applique au jeu \(v_H\) les critères et règles définis à la
+Section~\ref{sec:jeu_cooperatif}. Les résultats indiquent la fréquence des cœurs vides, l'appartenance
+de Shapley au cœur et les coalitions bloquantes. Ils comparent ensuite Shapley,
+le nucléole et la projection définie par \eqref{eq:projection_shapley} au moyen
+des économies individuelles, des coûts nets et des transferts.
+
+\subsection{Résultats exploratoires préliminaires}
+
+Les résultats déjà disponibles utilisent un ancien protocole : cinq journées
+moyennées heure par heure, trois profils perturbés, les graines 42 et 43, la
+capacité \(q_i=\max_h d_i^h/0{,}75\) et une réoptimisation horaire.
 
 \begin{table}[h]
 \centering
 \begin{tabular}{|l|r|r|r|r|}
 \hline
-Fenêtre & Calculables & Erreurs & Coeur vide & Coeur non vide \\
+Fenêtre & Calculables & Erreurs & Cœur vide & Cœur non vide \\
 \hline
 Journée complète & \(3\,626\) & \(199\) & \(33\) & \(3\,593\) \\
 Nuit, \(1\)--\(6\) h & \(3\,626\) & \(199\) & \(18\) & \(3\,608\) \\
 \hline
 \end{tabular}
-\caption{Résultats obtenus sur les \(3\,825\) antennes.}
+\caption{Résultats exploratoires obtenus avec l'ancien protocole sur
+\(3\,825\) identifiants.}
 \label{tab:coeur_3825_antennes}
 \end{table}
 
-Parmi les instances calculables, la proportion de coeurs vides est donc
-de \(0{,}91\,\%\) sur la journée complète et de \(0{,}50\,\%\) sur la
-fenêtre nocturne. Les \(199\) erreurs interviennent avant le calcul du jeu :
-\(149\) profils ont un trafic moyen constant, ce qui empêche d'identifier
-la pente de la régression, et \(50\) régressions produisent au moins un
-coefficient \(\widetilde F\) ou \(\widetilde\gamma\) non strictement
-positif. Elles ne doivent donc pas être interprétées comme des coeurs
-vides.
-
-Pour les \(33\) coeurs vides sur la journée complète, le certificat
-optimal est la famille équilibrée constituée des quatre coalitions de
-trois opérateurs, chacune affectée du poids \(1/3\). Autrement dit,
-\[
-    \frac{1}{3}\sum_{i\in N}v_H(N\setminus\{i\})>v_H(N),
-\]
-ou, de manière équivalente,
-\[
-    C_H^*(N)>
-    \frac{1}{3}\sum_{i\in N}C_H^*(N\setminus\{i\}).
-\]
-Le même certificat apparaît dans \(17\) des \(18\) cas nocturnes ; le
-dernier est certifié par une autre famille équilibrée, composée d'une
-paire et de deux coalitions de trois opérateurs. Seules trois antennes ont
-un coeur vide dans les deux fenêtres.
+Parmi les \(199\) erreurs, \(149\) profils ont un trafic moyen constant et
+\(50\) ajustements produisent au moins un coefficient non strictement positif.
+Sur la journée, les \(33\) cœurs vides sont certifiés par les quatre
+coalitions de trois opérateurs, chacune de poids \(1/3\). Le même certificat
+apparaît dans \(17\) des \(18\) cas entre \(1\) h et \(6\) h. Ces fréquences
+devront être réestimées avec le protocole principal.

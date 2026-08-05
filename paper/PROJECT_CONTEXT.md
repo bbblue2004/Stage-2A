@@ -4,6 +4,29 @@ L’article étudie le partage opportuniste d’infrastructures RAN entre
 opérateurs mobiles, à l’aide de l’optimisation combinatoire et de la
 théorie des jeux coopératifs.
 
+# Décisions éditoriales et scientifiques au 5 août 2026
+
+- Cible principale : IEEE Transactions on Green Communications and
+  Networking (TGCN).
+- Langue finale : anglais ; traduction seulement après stabilisation du fond.
+- Statut empirique : étude semi-empirique fondée sur des mesures Orange
+  d’Île-de-France, sans observation de quatre opérateurs colocalisés.
+- Message central : l’efficacité énergétique de la coopération ne garantit
+  pas sa stabilité coalitionnelle.
+- Partage : valeur de Shapley si elle appartient au cœur, nucléole sinon.
+- Projection de Shapley : diagnostic secondaire.
+- Veille : puissance supposée nulle ; \(F_i\) est calibré directement à partir
+  de l'intercept actif.
+- Fenêtre numérique : bornes horaires paramétrables, à fixer ultérieurement à
+  partir du trafic et avant l’analyse de stabilité.
+- Politique opérationnelle principale : même ensemble de gardiens sur toute
+  la fenêtre, allocations de trafic horaires.
+- Capacité : paramètre de scénario construit à partir du pic observé et d’un
+  taux de charge au pic explicite ; aucune capacité physique n’est prétendue
+  observée.
+
+Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
+
 # Notations stabilisées
 
 - N : ensemble des opérateurs
@@ -22,6 +45,12 @@ théorie des jeux coopératifs.
   optimale retenue pour N
 - C_i^0 : coût individuel de référence
 - v(S) : économie réalisée par la coalition
+- H : fenêtre finie d'heures
+- d_i^h : demande de l'opérateur i à l'heure h
+- G_H^*(S) : ensemble de gardiens optimal, fixe sur H
+- C_H^*(S) : coût optimal de S sur H avec gardiens fixes
+- \underline C_H^*(S) : borne obtenue en choisissant les gardiens à chaque heure
+- v_H(S) : jeu des économies construit à partir de C_H^*
 - z_i : part de la cagnotte attribuée à l’opérateur
 - y_i : coût net final supporté par l’opérateur
 - tau_i : transfert net total reçu par l’opérateur
@@ -60,5 +89,6 @@ théorie des jeux coopératifs.
 - usure induite par une allocation déterministe répétée ;
 - équité temporelle entre gardiens ;
 - conditions de non-vacuité du cœur ;
-- protocole des résultats numériques ;
+- choix définitif des bornes de la fenêtre temporelle ;
+- validation puis exécution du protocole numérique gelé ;
 - cohérence entre optimisation opérationnelle et répartition des économies de coopération.

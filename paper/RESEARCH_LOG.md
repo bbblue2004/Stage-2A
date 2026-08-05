@@ -14,3 +14,57 @@
 - L’usure et la rotation des gardiens seront soit une extension, soit une
   limite discutée explicitement.
 - Ne plus modifier les notations fondamentales sans nécessité scientifique.
+
+## 4 août 2026 — Jour 1
+
+- IEEE TGCN retenue comme cible principale ; le passage au template IEEE est
+  reporté à la phase de rédaction finale.
+- Message central gelé : économies énergétiques et stabilité coalitionnelle
+  doivent être étudiées conjointement.
+- Quatre contributions et cinq questions de recherche initialement formulées.
+- Nucléole initialement retenu comme règle principale orientée stabilité ;
+  choix révisé le 5 août.
+- Étude qualifiée de semi-empirique ; provenance détaillée des données laissée
+  à compléter.
+- Abandon du profil principal obtenu par trois copies faiblement bruitées : le
+  scénario principal tirera trois profils Orange distincts autour d’une
+  antenne d’ancrage, sur vingt graines.
+- Capacité traitée comme paramètre de sensibilité au moyen du taux de charge
+  au pic, et non comme valeur physique estimée par la constante 0,75.
+- Une sensibilité à la consommation de veille avait initialement été prévue ;
+  elle est abandonnée dans la révision du 5 août.
+- Les bornes de la fenêtre restent paramétrables et seront choisies plus tard
+  à partir du trafic, avant l’étude de stabilité.
+- Politique principale : un même ensemble de gardiens pendant toute la
+  fenêtre, avec allocation du trafic variable par heure. L’optimum horaire
+  indépendant devient une borne basse.
+- Baselines gelées : aucun partage, R-to-1, heuristique de capacité, optimum
+  persistant exact ; l’optimum horaire est une borne idéale.
+- L’ordre de priorité mathématique est confirmé : conserver le cas homogène,
+  conserver le certificat leave-one-out dans le sens écrit dans le bilan, et
+  ajouter au jour 2 un contre-exemple montrant que le très faible trafic ne
+  garantit pas l’appartenance de Shapley au cœur en présence d’hétérogénéité.
+- Le code sélectionnait alors le nucléole par défaut ; cette décision est
+  révisée le 5 août.
+- Protocole complet consigné dans `NUMERICAL_PROTOCOL.md`.
+
+## 5 août 2026 — Révision du jour 1
+
+- Puissance de veille fixée à \(0\ \mathrm{W}\) ; suppression de la sensibilité
+  au paramètre de veille.
+- Règle de partage principale révisée : Shapley lorsqu'elle appartient au
+  cœur, nucléole sinon. Le nucléole reste stable lorsque le cœur est non vide ;
+  si le cœur est vide, aucune allocation parfaitement stable n'existe.
+- La section numérique adopte la structure de Bousia et Koutitas : scénario,
+  validation, économies, sensibilité, puis stabilité et partage. Les questions
+  de recherche explicites et les identifiants d'implémentation sont retirés de
+  la rédaction scientifique.
+- L'extension temporelle est déplacée dans les Sections 3--5 : définition de
+  \(H\) et des gardiens fixes en Section 3, coût \(C_H^*\) en Section 4 et jeu
+  \(v_H\) en Section 5. La Section 6 ne redéfinit plus ces objets.
+- L'expression « coût persistant » est abandonnée dans le texte : \(C_H^*\)
+  est simplement le coût optimal sur la fenêtre, sous la contrainte de
+  conserver les mêmes gardiens.
+- La projection normalisée de Shapley est définie en Section 5 et n'est pas
+  qualifiée de \emph{fairest core}, faute de propriété axiomatique justifiant
+  ce terme.

@@ -42,12 +42,12 @@ par la suite \emph{période de décision}.
     variable modélisé. Les capacités sont ainsi additives et toute la
     demande doit être satisfaite.
 
-    \item \textbf{Décision statique en information complète.}
-    Les demandes, les capacités et les paramètres de coût sont constants
-    et connus pendant la période de décision. Les périodes successives
-    sont optimisées indépendamment : le modèle ne comporte ni incertitude
-    intrapériode ni variable d'état décrivant l'historique d'utilisation
-    des équipements.
+    \item \textbf{Information complète.}
+    Les demandes, les capacités et les paramètres de coût sont connus pendant
+    la période de décision. Le modèle est d'abord défini pour une période
+    élémentaire, puis étendu ci-dessous à une fenêtre de plusieurs heures. Il
+    ne comporte ni incertitude ni variable d'état décrivant l'historique
+    d'utilisation des équipements.
 
     \item \textbf{États opérationnels binaires.}
     Chaque équipement est soit actif et susceptible d'acheminer du
@@ -56,7 +56,8 @@ par la suite \emph{période de décision}.
     période de décision suffisamment longue devant les temps de
     commutation. Seuls les coûts opérationnels évitables sont modélisés ;
     les coûts structurels supportés indépendamment de l'état de
-    l'équipement sont exclus.
+    l'équipement sont exclus. Dans cette étude, l'état de veille est supposé
+    consommer \(0\ \mathrm{W}\).
 
     \item \textbf{Coût opérationnel affine en taux de charge.}
     Lorsqu'un équipement est actif, son coût opérationnel évitable est
@@ -123,9 +124,11 @@ Pour tout opérateur \(i\in N\), les paramètres primitifs du modèle sont :
 Seuls les coûts qui dépendent de la décision opérationnelle sont retenus.
 Les charges supportées indépendamment de l'état de l'équipement sont
 identiques dans toutes les solutions d'une même coalition et peuvent donc
-être omises. Le coût différentiel de la veille est ainsi normalisé à zéro,
-tandis que celui de l'état actif au taux de charge
+être omises. Le coût de la veille est nul, tandis que celui de l'état actif au taux de charge
 \(\rho\in[0,1]\) vaut \(F_i+\beta_i\rho\).
+Par conséquent, lorsqu'un modèle de puissance actif est ajusté sous la forme
+\(\widetilde F_i+\widetilde\gamma_i d_i\), le paramètre \(F_i\) est donc
+calibré directement à partir de l'intercept actif.
 
 Le fonctionnement autonome est supposé réalisable :
 \[
@@ -263,6 +266,43 @@ Pour tout opérateur $i\in N$, l'unique ensemble de gardiens admissible pour la 
 C^*(\{i\})=F_i+\gamma_i d_i=C_i^0.
 \]
 \end{remarque}
+
+\subsection{Extension à une fenêtre de décision}
+\label{subsec:fenetre_decision}
+
+Soit \(H=H(h_{\mathrm{start}},h_{\mathrm{end}})\) un ensemble fini d'heures
+consécutives. La demande de l'opérateur \(i\) à l'heure \(h\in H\) est notée
+\(d_i^h\), et
+\[
+    d^h(S):=\sum_{i\in S}d_i^h.
+\]
+Le fonctionnement autonome est réalisable à chaque heure :
+\[
+    d_i^h\leqslant q_i,
+    \qquad \forall i\in N,\ \forall h\in H.
+\]
+Les capacités \(q_i\) et les paramètres de coût \(F_i,\gamma_i\) sont supposés
+constants sur \(H\). À chaque heure, les définitions précédentes s'appliquent
+en remplaçant \(d_i\) par \(d_i^h\) ; les ensembles admissibles et le coût
+horaire sont notés \(\mathcal T_h(S,G)\) et
+\(C_h(S,G,\mathbf t^h)\).
+
+Afin d'éviter des changements répétés d'état, le même ensemble de gardiens
+est conservé pendant toute la fenêtre. Les ensembles admissibles sont donc
+\[
+    \mathcal G_H(S)
+    :=
+    \left\{
+        \varnothing\neq G\subseteq S
+        \ \middle|\
+        d^h(S)\leqslant q(G),\ \forall h\in H
+    \right\}.
+\]
+Une solution sur \(H\) est formée d'un ensemble
+\(G\in\mathcal G_H(S)\) et d'une répartition
+\(\mathbf t^h\in\mathcal T_h(S,G)\) pour chaque heure. Les gardiens sont
+fixes sur la fenêtre, mais les volumes qu'ils acheminent peuvent varier avec
+la demande.
 
 Le modèle associe ainsi à chaque coalition un ensemble de décisions
 opérationnelles admissibles et un coût minimal à déterminer. La section

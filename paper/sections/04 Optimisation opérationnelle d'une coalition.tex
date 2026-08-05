@@ -300,6 +300,44 @@ d'être exacte, transparente et indépendante des tolérances d'un solveur
 MILP.
 \end{remarque}
 
+\subsection{Optimisation sur une fenêtre}
+\label{subsec:optimisation_fenetre}
+
+Considérons la fenêtre \(H\) définie à la
+Sous-section~\ref{subsec:fenetre_decision}. Pour un ensemble
+\(G\in\mathcal G_H(S)\) fixé, la Proposition~\ref{pro:opt} s'applique
+séparément à chaque heure. En notant \(\mathbf t^{g,h}(S,G)\) la répartition
+gloutonne correspondante, le coût optimal de la coalition sur la fenêtre est
+\begin{equation}
+\begin{aligned}
+    C_H^*(S)
+    &:=
+    \min_{G\in\mathcal G_H(S)}
+    \sum_{h\in H}
+    C_h\bigl(S,G,\mathbf t^{g,h}(S,G)\bigr).
+    \label{eq:cout_persistant}
+\end{aligned}
+\end{equation}
+Cette expression n'ajoute aucune composante au coût \(C\) : elle somme les
+coûts horaires sous la contrainte que \(G\) reste inchangé. Un représentant
+optimal est noté \(G_H^*(S)\), et les répartitions associées sont notées
+\(\mathbf t^{h,*}(S)\).
+
+À titre de comparaison, autoriser un nouvel ensemble de gardiens à chaque
+heure donne
+\begin{equation}
+    \underline C_H^*(S)
+    :=
+    \sum_{h\in H}C_h^*(S)
+    \leqslant C_H^*(S).
+    \label{eq:cout_horaire_borne}
+\end{equation}
+Cette borne inférieure décrit une politique différente, avec réoptimisation
+horaire. L'énumération exacte de \(C_H^*(S)\) procède comme précédemment :
+chaque \(G\subseteq S\) est testé sur toutes les heures, puis son coût horaire
+optimal est sommé. Sa complexité est
+\(O(|H|\,n\,3^n)\) pour l'ensemble des coalitions.
+
 % \subsection{Cas particulier des capacités égales}
 
 % Dans le cas particulier où les capacités sont égales, le problème de sélection optimale des gardiens se résout en temps polynomial, comme le montre la proposition suivante.
