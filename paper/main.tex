@@ -8,6 +8,7 @@
 \usepackage{amsmath,amssymb,amsfonts, amsthm}
 \usepackage{dsfont}
 \usepackage{graphicx}
+\usepackage{placeins}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage[margin=3cm]{geometry} % Définit une marge uniforme de 3cm tout autour
@@ -36,8 +37,9 @@
 
 \begin{document}
 
-% Titre de l'article
-\title{TITLE}
+% Titre provisoire de l'article
+\title{Partage multi-opérateur du RAN économe en énergie :
+optimisation exacte et stabilité coalitionnelle}
 
 % Auteurs
 \author{
@@ -50,13 +52,35 @@ Institution
 
 % Résumé
 \begin{abstract}
-
+Le partage opportuniste des infrastructures de réseau d'accès radio (RAN)
+permet aux opérateurs mobiles de mettre en veille des équipements
+sous-utilisés et de reporter leur trafic sur les équipements demeurés actifs.
+Toutefois, une configuration collectivement efficace ne garantit pas qu'une
+répartition de ses économies soit acceptable pour toutes les coalitions
+d'opérateurs. Nous étudions ce problème sur un site et une fenêtre de décision
+finie, avec des activations binaires, des capacités contraintes, des coûts
+fixes et variables, un ensemble de gardiens commun à la fenêtre et des
+allocations de trafic horaires. Pour chaque coalition, l'allocation optimale à
+gardiens fixés est obtenue par une procédure gloutonne, tandis que leur
+sélection est résolue exactement. Les coûts optimaux définissent un jeu
+coopératif à utilité transférable. Nous montrons que ce jeu est superadditif,
+mais que son cœur peut être vide, y compris dans un cadre parfaitement
+homogène, en raison des seuils d'activation et de capacité. Nous caractérisons
+le cas homogène, construisons une famille paramétrique de jeux à cœur vide,
+établissons un certificat \emph{leave-one-out} et donnons une condition de
+capacité suffisante pour la non-vacuité du cœur. Une évaluation semi-empirique
+fondée sur des mesures de trafic et de puissance d'un réseau opérationnel
+examine ensuite les économies, la sélection des gardiens, la robustesse du
+partage et la fréquence des instabilités coalitionnelles sur des sites
+multi-opérateurs construits de manière contrôlée. Ce cadre relie ainsi
+l'efficacité énergétique du partage du RAN aux conditions économiques
+nécessaires à une coopération stable.
 \end{abstract}
 
 % Mots-clés
-% \begin{IEEEkeywords}
-
-% \end{IEEEkeywords}
+\noindent\textbf{Mots-clés---}Partage du RAN, efficacité énergétique,
+mise en veille des stations de base, jeux coopératifs, cœur, stabilité
+coalitionnelle.
 
 \input{sections/01 Introduction}
 
@@ -70,10 +94,183 @@ Institution
 
 \input{sections/06 Performance Evaluation}
 
+\input{sections/07 Conclusion}
+
 
 % Bibliographie
-\begin{thebibliography}{00}
-\bibitem{ref1} A. Auteur, ``Titre de l'article,'' \textit{Nom de la revue}, vol. x, no. x, pp. xxx-xxx, Année.
+\begin{thebibliography}{99}
+
+\bibitem{oh2011}
+E. Oh, B. Krishnamachari, X. Liu, and Z. Niu,
+``Toward dynamic energy-efficient operation of cellular network
+infrastructure,'' \textit{IEEE Communications Magazine}, vol.~49, no.~6,
+pp.~56--61, Jun. 2011, doi: 10.1109/MCOM.2011.5783985.
+
+\bibitem{arnold2010}
+O. Arnold, F. Richter, G. Fettweis, and O. Blume,
+``Power consumption modeling of different base station types in heterogeneous
+cellular networks,'' in \textit{Proc. Future Network and Mobile Summit},
+Florence, Italy, Jun. 2010, pp.~1--8.
+
+\bibitem{auer2011}
+G. Auer, V. Giannini, I. G\'odor, P. Skillermark, M. Olsson, M. A. Imran,
+D. Sabella, M. J. Gonzalez, C. Desset, and O. Blume,
+``Cellular energy efficiency evaluation framework,'' in \textit{Proc. IEEE
+73rd Vehicular Technology Conference (VTC Spring)}, Budapest, Hungary,
+May 2011, pp.~1--6, doi: 10.1109/VETECS.2011.5956750.
+
+\bibitem{lorincz2012}
+J. Lorincz, T. Garma, and G. Petrovic,
+``Measurements and modelling of base station power consumption under real
+traffic loads,'' \textit{Sensors}, vol.~12, no.~4, pp.~4281--4310,
+Apr. 2012, doi: 10.3390/s120404281.
+
+\bibitem{marsan2011}
+M. Ajmone Marsan and M. Meo,
+``Energy efficient wireless Internet access with cooperative cellular
+networks,'' \textit{Computer Networks}, vol.~55, no.~2, pp.~386--398,
+Feb. 2011, doi: 10.1016/j.comnet.2010.10.017.
+
+\bibitem{cano2020}
+L. Cano, A. Capone, and B. Sans\`o,
+``On the evolution of infrastructure sharing in mobile networks: A survey,''
+\textit{ITU Journal on Future and Evolving Technologies}, vol.~1, no.~1,
+pp.~141--157, Dec. 2020, doi: 10.52953/NBQH9604.
+
+\bibitem{militano2013}
+L. Militano, A. Molinaro, A. Iera, and \'{A}. Petkovics,
+``A game theoretic approach to guarantee fairness in cooperation among green
+mobile network operators,'' \textit{International Journal of Business Data
+Communications and Networking}, vol.~9, no.~3, pp.~1--15, 2013,
+doi: 10.4018/jbdcn.2013070101.
+
+\bibitem{hasan2013}
+C. Hasan, E. Altman, and J.-M. Gorce,
+``The coalitional switch-off game of service providers,'' in
+\textit{Proc. IEEE International Conference on Wireless and Mobile Computing,
+Networking and Communications (WiMob)}, 2013, pp.~223--230,
+doi: 10.1109/WIMOB.2013.6673365.
+
+\bibitem{leng2014}
+B. Leng, P. Mansourifard, and B. Krishnamachari,
+``A game-theoretic analysis of infrastructure sharing in mobile communication
+systems,'' in \textit{Proc. IEEE INFOCOM}, 2014, pp.~1132--1140,
+doi: 10.1109/INFOCOM.2014.6848044.
+
+\bibitem{anglano2014}
+C. Anglano, M. Guazzone, and M. Sereno,
+``Optimizing coalition formation in mobile networks,''
+\textit{Computer Networks}, vol.~75, pp.~260--275, Dec. 2014,
+doi: 10.1016/j.comnet.2014.10.003.
+
+\bibitem{antonopoulos2015}
+A. Antonopoulos, E. Kartsakli, A. Bousia, L. Alonso, and C. Verikoukis,
+``Energy-efficient infrastructure sharing in multi-operator mobile networks,''
+\textit{IEEE Communications Magazine}, vol.~53, no.~5, pp.~242--249,
+May 2015, doi: 10.1109/MCOM.2015.7105671.
+
+\bibitem{bousia2016}
+A. Bousia, E. Kartsakli, A. Antonopoulos, L. Alonso, and C. Verikoukis,
+``Game-theoretic infrastructure sharing in multioperator cellular networks,''
+\textit{IEEE Transactions on Vehicular Technology}, vol.~65, no.~5,
+pp.~3326--3341, May 2016, doi: 10.1109/TVT.2015.2445837.
+
+\bibitem{koutitas2016}
+G. Koutitas, G. Iosifidis, B. Lannoo, M. Tahon, S. Verbrugge, P. Ziridis,
+{\L}. Budzisz, M. Meo, M. Ajmone Marsan, and L. Tassiulas,
+``Greening the airwaves with collaborating mobile network operators,''
+\textit{IEEE Transactions on Wireless Communications}, vol.~15, no.~1,
+pp.~794--806, Jan. 2016, doi: 10.1109/TWC.2015.2478786.
+
+\bibitem{oikonomakou2015}
+M. Oikonomakou, A. Antonopoulos, L. Alonso, and C. Verikoukis,
+``Cooperative base station switching off in multi-operator shared
+heterogeneous network,'' in \textit{Proc. IEEE Global Communications
+Conference (GLOBECOM)}, 2015, pp.~1--6,
+doi: 10.1109/GLOCOM.2015.7417231.
+
+\bibitem{oikonomakou2017}
+M. Oikonomakou, A. Antonopoulos, L. Alonso, and C. V. Verikoukis,
+``Evaluating cost allocation imposed by cooperative switching off in
+multioperator shared HetNets,'' \textit{IEEE Transactions on Vehicular
+Technology}, vol.~66, no.~12, pp.~11352--11365, Dec. 2017,
+doi: 10.1109/TVT.2017.2719404.
+
+\bibitem{vincenzi2017}
+M. Vincenzi, A. Antonopoulos, E. Kartsakli, J. S. Vardakas, L. Alonso,
+and C. V. Verikoukis,
+``Cooperation incentives for multi-operator C-RAN energy efficient sharing,''
+in \textit{Proc. IEEE International Conference on Communications (ICC)},
+2017, pp.~1--6, doi: 10.1109/ICC.2017.7997131.
+
+\bibitem{hossain2019}
+M. F. Hossain, K. S. Munasinghe, and A. Jamalipour,
+``Multi-operator cooperation for green cellular networks with spatially
+separated base stations under dynamic user associations,''
+\textit{IEEE Transactions on Green Communications and Networking}, vol.~3,
+no.~1, pp.~93--107, Mar. 2019, doi: 10.1109/TGCN.2018.2890041.
+
+\bibitem{peesapati2023}
+S. K. G. Peesapati, M. Olsson, S. Andersson, C. Qvarfordt, and A. Dahlen,
+``AI-assisted multi-operator RAN sharing for energy-efficient networks,''
+\textit{Telecom}, vol.~4, no.~2, pp.~334--368, Jun. 2023,
+doi: 10.3390/telecom4020020.
+
+\bibitem{tan2023}
+X. Tan, K. Xiong, B. Gao, P. Fan, and K. B. Letaief,
+``Energy-efficient base station switching-off with guaranteed cooperative
+profit gain of mobile network operators,'' \textit{IEEE Transactions on Green
+Communications and Networking}, vol.~7, no.~3, pp.~1250--1266, Sep. 2023,
+doi: 10.1109/TGCN.2023.3253245.
+
+\bibitem{finarelli2025}
+L. Finarelli, M. Ni, M. Meo, F. Dressler, and G. A. Rizzo,
+``Sharing is caring: Analysis of hybrid network sharing strategies for energy
+efficient multi-operator cellular systems,'' in \textit{Proc. 27th IEEE
+International Conference on Modeling, Analysis and Simulation of Wireless and
+Mobile Systems (MSWiM)}, 2025, pp.~128--133,
+doi: 10.1109/MSWiM67937.2025.11309107.
+
+\bibitem{ukyab2025}
+T. S. Ukyab, L. Suzuki, D. Davis, Z. Luo, S. Fu, S. Hasan, S. Ratnasamy,
+and S. Shenker,
+``Making cellular networks more efficient by roaming-in-place,'' in
+\textit{Proc. ACM SIGCOMM}, 2025, pp.~979--993,
+doi: 10.1145/3718958.3750538.
+
+\bibitem{saad2009}
+W. Saad, Z. Han, M. Debbah, A. Hj{\o}rungnes, and T. Ba\c{s}ar,
+``Coalitional game theory for communication networks: A tutorial,''
+\textit{IEEE Signal Processing Magazine}, vol.~26, no.~5, pp.~77--97,
+Sep. 2009, doi: 10.1109/MSP.2009.933610.
+
+\bibitem{bondareva1963}
+O. N. Bondareva,
+``Some applications of linear programming methods to the theory of
+cooperative games,'' \textit{Problemy Kibernetiki}, vol.~10,
+pp.~119--139, 1963, in Russian.
+
+\bibitem{shapley1967balanced}
+L. S. Shapley, ``On balanced sets and cores,''
+\textit{Naval Research Logistics Quarterly}, vol.~14, no.~4,
+pp.~453--460, 1967, doi: 10.1002/nav.3800140404.
+
+\bibitem{schmeidler1969}
+D. Schmeidler, ``The nucleolus of a characteristic function game,''
+\textit{SIAM Journal on Applied Mathematics}, vol.~17, no.~6,
+pp.~1163--1170, Nov. 1969, doi: 10.1137/0117107.
+
+\bibitem{shapley1953value}
+L. S. Shapley, ``A value for $n$-person games,'' in
+\textit{Contributions to the Theory of Games II}, H. W. Kuhn and
+A. W. Tucker, Eds. Princeton, NJ, USA: Princeton University Press, 1953,
+pp.~307--317.
+
+\bibitem{shapley1971convex}
+L. S. Shapley, ``Cores of convex games,''
+\textit{International Journal of Game Theory}, vol.~1, no.~1,
+pp.~11--26, 1971, doi: 10.1007/BF01753431.
+
 \bibitem{garey-johnson-1979}
 M. R. Garey and D. S. Johnson, \textit{Computers and Intractability:
 A Guide to the Theory of NP-Completeness}. W. H. Freeman, 1979.

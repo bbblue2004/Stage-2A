@@ -1,16 +1,118 @@
-\section{Related Work}
+\section{Travaux connexes}
 
-A FAIRE, AJOUTER DES NOUVELLES REF AU RAPPORT
+\subsection{Mise en veille et partage d'infrastructure}
 
-5 référence du rapport :
-\begin{itemize}
-    \item M. Vincenzi et al., Cooperation Incentives for Multi-Operator C-RAN Energy Efficient Sharing, ICC, 2017.
+La mise en veille de stations de base exploite les variations temporelles du
+trafic pour réduire la consommation résiduelle du RAN
+\cite{oh2011}. Marsan et Meo montrent que la coopération entre réseaux
+cellulaires colocalisés permet d'éteindre des équipements en reportant leur
+trafic sur l'infrastructure restée active \cite{marsan2011}. Ces travaux
+établissent l'intérêt énergétique du mécanisme, mais ne traitent pas la
+stabilité de l'accord entre opérateurs concurrents.
 
-    \item A. Antonopoulos, E. Kartsakli, A. Bousia, L. Alonso, C. Verikoukis, Energy-Efficient Infrastructure Sharing in Multi-Operator Mobile Networks, IEEE Communications Magazine, 2015.
+La quantification de ces économies dépend du modèle de puissance des stations
+de base. Les modèles au niveau équipement distinguent une composante statique,
+présente dès que la station est active, et une composante dynamique dépendant
+de sa charge. Arnold et al. relient ces composantes à l'amplification de
+puissance, au traitement du signal, à l'alimentation et au refroidissement
+pour plusieurs types de stations \cite{arnold2010}. Le cadre EARTH d'Auer et
+al. formalise, pour sa part, le passage de la puissance RF émise à la puissance
+totale appelée par le site \cite{auer2011}. Enfin, Lorincz et al. observent
+simultanément trafic et puissance sur un site cellulaire opérationnel et
+montrent qu'un modèle linéaire peut représenter leur relation pour les
+équipements GSM et UMTS étudiés \cite{lorincz2012}. Ces résultats motivent une
+décomposition affine de premier ordre ; ils n'impliquent pas que ses
+coefficients soient invariants entre technologies, sites ou régimes de charge.
 
-    \item W. Saad, H. Zhu, M. Debbah, A. Hjorungnes, T. Basar, Coalitional Game Theory for Communication Networks : A Tutorial, IEEE Signal Processing Magazine, 2009.
+Les architectures et modèles économiques de partage couvrent un spectre plus
+large, du partage passif à la mutualisation du spectre et du RAN
+\cite{cano2020}. Peesapati et al. combinent partage multi-opérateur,
+mécanismes de veille et allocation des coûts dans une architecture
+\emph{RAN-as-a-Service} \cite{peesapati2023}. Plus récemment, Finarelli et al.
+étudient un partage hybride avec mise en veille, contraintes de qualité de
+service et données françaises \cite{finarelli2025}, tandis que Ukyab et al.
+mettent en œuvre un report dynamique du trafic entre opérateurs par
+\emph{roaming-in-place} \cite{ukyab2025}. Ces contributions quantifient la
+faisabilité ou les gains du partage, mais ne caractérisent pas les contraintes
+d'allocation nécessaires pour empêcher la déviation d'une coalition. En
+outre, leurs décisions dynamiques diffèrent de notre engagement : un même
+ensemble de gardiens est maintenu pendant toute une fenêtre, malgré les
+variations horaires du trafic.
 
-    \item A. Bousia, E. Kartsakli, A. Antonopoulos, L. Alonso, C. Verikoukis, Game-Theoretic InfrastructureSharing in Multioperator Cellular Networks, IEEE Trans. Vehicular Technology, vol. 65, no. 5, 2016.
+\subsection{Décisions stratégiques et mécanismes économiques}
 
-    \item F. E. Salem, A. Gati, Z. Altman, T. Chahed, Advanced Sleep Modes and their impact on flow-level performance of 5G networks, IEEE, 2019.
-\end{itemize}
+Une première famille de travaux modélise l'interaction entre MNO par des jeux
+non coopératifs ou par des mécanismes d'incitation individuels. Leng et al.
+analysent le partage d'infrastructure entre deux opérateurs, en tenant compte
+des capacités, des charges et des paiements \cite{leng2014}. Antonopoulos et
+al. introduisent une stratégie distribuée de mise en veille
+\cite{antonopoulos2015}, ensuite développée sous la forme d'un jeu
+évolutionnaire dynamique par Bousia et al. \cite{bousia2016}. Hossain et al.
+proposent une association dynamique des usagers à des stations séparées
+spatialement, avec contraintes de qualité de service et indicateur d'équité
+\cite{hossain2019}. Tan et al. optimisent conjointement mise en veille,
+itinérance et formation de faisceaux, sous des contraintes garantissant à
+chaque MNO un bénéfice non négatif \cite{tan2023}.
+
+Ces critères de Nash, d'équité ou de rationalité individuelle répondent à des
+questions importantes, mais distinctes de la nôtre. Ils ne comparent pas
+systématiquement l'allocation proposée à la valeur réalisable par chaque
+sous-coalition. Une allocation peut donc être acceptable pour chaque MNO pris
+isolément tout en étant bloquée par un groupe d'opérateurs.
+
+\subsection{Jeux coopératifs, équité et formation des coalitions}
+
+La théorie des jeux coopératifs fournit les notions standard de valeur,
+d'allocation et de stabilité utilisées dans les réseaux de communication
+\cite{saad2009}. Militano et al. appliquent déjà un jeu à utilité transférable
+à la mise en veille multi-opérateur et comparent le nucléole et la valeur de
+Shapley, avec un contrôle du cœur sur les configurations étudiées
+\cite{militano2013}. Hasan et al. formulent un jeu hédonique de mise en veille
+\cite{hasan2013}, et Anglano et al. recherchent des structures de coalitions
+stables pour le partage de stations et d'usagers sous contraintes de qualité
+de service \cite{anglano2014}. La stabilité d'une partition issue d'un
+processus de formation n'est toutefois pas équivalente à la non-vacuité du
+cœur du jeu à utilité transférable associé à la grande coalition.
+
+Koutitas et al. sont les plus proches du présent travail : ils associent
+capacités, décisions de mise en veille, coûts énergétiques et jeu coopératif
+d'économies \cite{koutitas2016}. Leur fonction de coût constitue l'antécédent
+mathématique direct de la nôtre. Pour une station active \(n\), ils écrivent
+la puissance comme une
+fonction affine \(a_n U_n(t)+b_n\) du nombre d'utilisateurs servis, où \(b_n\)
+est la consommation à vide et \(a_n\) le coût marginal d'un utilisateur. Sous
+l'hypothèse d'un trafic moyen identique par utilisateur, le trafic est
+proportionnel au nombre d'utilisateurs, ce qui rend cette puissance affine en
+trafic. L'agrégation des stations d'un opérateur produit alors un coût fixe
+d'ouverture et un coût
+linéaire de service, qui conduisent à une formulation de type
+\emph{facility location}. Nous conservons cette structure à coût fixe, mais
+estimons ses coefficients équipement par équipement à partir de couples de
+trafic et de puissance mesurés sur un réseau opérationnel, sans reconstruire
+un nombre synthétique d'utilisateurs. Koutitas et al. établissent, pour leur
+traitement opérationnel, une structure convexe, un cœur non vide et la
+stabilité de la valeur de Shapley. Leur algorithme autorise toutefois
+l'ouverture d'une infrastructure pendant une fraction du créneau ; notre
+modèle conserve l'indivisibilité exacte de l'activation et ajoute un
+engagement commun des gardiens sur plusieurs heures. Oikonomakou et al.
+étudient également le partage des coûts de mise en veille, d'abord comme un
+jeu de faillite \cite{oikonomakou2015}, puis au moyen de la valeur de Shapley
+et d'indicateurs de satisfaction dans des HetNets partagés
+\cite{oikonomakou2017}. Vincenzi et al. analysent enfin les incitations et le
+cœur pour un partage C-RAN \cite{vincenzi2017}, sans traiter les mêmes seuils
+d'activation de stations de base.
+
+\subsection{Positionnement : efficacité et stabilité coalitionnelle}
+
+Les travaux existants montrent donc que le partage peut réduire l'énergie,
+qu'une règle peut être équitable, ou qu'une coalition peut être stable sous
+un modèle donné. Ils ne permettent pas d'inférer que tout problème de mise en
+veille multi-opérateur produit un jeu équilibré. Notre apport porte sur cette
+limite précise : avec des activations binaires, des capacités contraignantes
+et des gardiens fixes sur la fenêtre, les économies demeurent superadditives
+mais peuvent ne soutenir aucune allocation dans le cœur. Nous isolons ce
+mécanisme par un contre-exemple homogène et des certificats analytiques, puis
+donnons une condition de capacité qui restaure la non-vacuité. Les notions de
+cœur, de valeur de Shapley et de nucléole restent des outils établis ; la
+contribution réside dans les propriétés du jeu induit par ce modèle
+opérationnel.

@@ -62,13 +62,35 @@ par la suite \emph{période de décision}.
     \item \textbf{Coût opérationnel affine en taux de charge.}
     Lorsqu'un équipement est actif, son coût opérationnel évitable est
     la somme d'une composante fixe et d'une composante proportionnelle à
-    son taux de charge. Cette approximation affine représente le coût de
-    fonctionnement incompressible d'un équipement actif et
-    l'accroissement de coût associé au trafic. Elle constitue une
-    approximation de premier ordre adaptée au régime de faible trafic
-    étudié. La pertinence empirique de cette approximation affine est
-    examinée dans la partie consacrée à l'évaluation numérique, à partir
-    de mesures opérationnelles et d'un ajustement linéaire.
+    son taux de charge. Cette structure reprend les modèles de puissance
+    séparant une consommation active à vide d'une contribution dépendant de
+    la charge \cite{arnold2010,auer2011,lorincz2012}. La composante fixe
+    représente notamment l'alimentation, le refroidissement et le traitement
+    maintenus lorsque l'équipement est actif sans acheminer de trafic ; la
+    composante variable représente l'accroissement de puissance associé aux
+    ressources radio et de traitement effectivement mobilisées.
+
+    Koutitas et al. emploient précisément une puissance active de la forme
+    \(a_nU_n(t)+b_n\) pour une station \(n\), où \(U_n(t)\) est le nombre
+    d'utilisateurs servis \cite{koutitas2016}. Ils obtiennent la dépendance
+    linéaire entre \(U_n(t)\) et la puissance RF par simulation de la
+    propagation et des ressources requises, puis la composent avec un modèle
+    affine reliant puissance RF et puissance d'alimentation. Leur hypothèse
+    de trafic homogène par utilisateur transforme enfin cette relation en une
+    fonction affine du trafic agrégé. Notre fonction de coût reprend cette
+    structure mathématique à coût fixe et coût marginal, mais sa variable de
+    charge et ses coefficients ne sont pas empruntés à leurs simulations.
+
+    Dans la présente étude, le volume descendant horaire observé sur le réseau
+    opérationnel est utilisé comme proxy de la charge effectivement servie.
+    Pour chaque équipement, l'intercept et la pente sont estimés directement
+    à partir des couples mesurés de trafic et de puissance. Ce choix ne
+    suppose pas que le volume en gigaoctets reconstruise exactement le nombre
+    d'utilisateurs, les blocs de ressources ou la puissance RF ; il pose que,
+    sur le domaine de charge observé, leur effet agrégé sur la puissance active
+    est représentable au premier ordre par une fonction affine. Cette
+    hypothèse empirique est évaluée hors échantillon et comparée à des formes
+    concurrentes dans la Section~\ref{sec:simulations_numeriques}.
 
     \item \textbf{Neutralité des revenus et utilité transférable.}
     Toute solution opérationnelle admissible sert la même demande totale. Les
@@ -129,6 +151,11 @@ identiques dans toutes les solutions d'une même coalition et peuvent donc
 Par conséquent, lorsqu'un modèle de puissance actif est ajusté sous la forme
 \(\widetilde F_i+\widetilde\gamma_i d_i\), le paramètre \(F_i\) est donc
 calibré directement à partir de l'intercept actif.
+Cette identification repose sur l'hypothèse explicite d'une puissance de
+veille nulle : avec une veille non nulle, la composante fixe évitable devrait
+être calibrée sur l'écart entre la puissance active à vide et la puissance de
+veille. Les coûts structurels indépendants de l'état restent exclus dans les
+deux cas.
 
 Le fonctionnement autonome est supposé réalisable :
 \[

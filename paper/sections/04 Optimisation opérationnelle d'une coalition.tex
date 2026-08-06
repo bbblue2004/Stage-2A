@@ -116,6 +116,12 @@ exister. Ce résultat vaut pour un ensemble de gardiens fixé et ne préjuge
 ni de leur sélection, étudiée ci-dessous, ni de la répartition des économies
 de coopération entre opérateurs.
 
+En particulier, si tous les gardiens de \(G\) ont le même coût variable
+unitaire \(\gamma\), l'objectif variable vaut \(\gamma d(S)\) pour toute
+répartition admissible : chaque élément de \(\mathcal T(S,G)\) est donc
+optimal. La règle de départage déterministe sélectionne seulement un
+représentant opérationnel, sans modifier le coût minimal de la coalition.
+
 Une fois les gardiens ordonnés, un parcours de la liste construit la
 répartition gloutonne en $O(|G|)$. Si cet ordre doit être calculé, le tri
 coûte en outre $O(|G|\log |G|)$ ; un tri global préalable des opérateurs

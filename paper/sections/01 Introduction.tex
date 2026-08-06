@@ -1,117 +1,95 @@
 \section{Introduction}
 
 Les réseaux d'accès radio sont dimensionnés pour absorber les pointes de
-trafic et garantir la continuité du service. La charge qu'ils supportent varie
-cependant fortement au cours du temps. Pendant les périodes creuses, une part
-importante de la capacité déployée demeure inutilisée, alors que les
-équipements radio restent actifs et continuent d'engendrer des coûts
-opérationnels. Réduire cette consommation résiduelle constitue ainsi un enjeu
-à la fois économique pour les opérateurs et environnemental pour le secteur
-des télécommunications.
+trafic, alors que leur charge varie fortement au cours de la journée. Une
+station de base faiblement chargée conserve pourtant une consommation
+importante, ce qui motive sa mise en veille lorsque la couverture et la
+qualité de service peuvent être préservées
+\cite{oh2011,marsan2011}. Dans une zone desservie par plusieurs opérateurs de
+réseau mobile (\emph{mobile network operators}, MNO), cette mise en veille peut
+s'appuyer sur la redondance des infrastructures : certains équipements restent
+actifs et prennent en charge le trafic des autres opérateurs.
 
-La présence de plusieurs opérateurs sur une même zone ouvre une possibilité
-supplémentaire. Lorsque le trafic est suffisamment faible, tous les
-équipements disponibles ne sont pas nécessaires pour servir la demande. Les
-opérateurs peuvent alors mettre temporairement en commun leurs capacités,
-laisser actifs certains équipements et placer les autres en veille. Les
-équipements maintenus en fonctionnement, qualifiés de \emph{gardiens}, prennent
-en charge le trafic des opérateurs qui s'éteignent. Ce partage opportuniste du
-RAN transforme ainsi la redondance des infrastructures en une source
-potentielle d'économies.
+Le partage d'infrastructure transforme ainsi une surcapacité locale en
+économies potentielles, mais ajoute une question d'incitation à la question
+technique. Les modèles de partage distinguent notamment les ressources
+mutualisées, l'horizon de décision et le degré de coordination entre
+opérateurs \cite{cano2020}. Or un MNO rationnel ne compare pas seulement
+l'accord commun à son fonctionnement isolé : il peut aussi préférer une
+coopération avec un sous-ensemble des participants. Une configuration qui
+minimise le coût total ne suffit donc pas à garantir qu'une répartition de ses
+gains résiste aux déviations de toutes les coalitions.
 
-Cette possibilité technique ne suffit toutefois pas à rendre la coopération
-acceptable. Les opérateurs restent des acteurs autonomes et concurrents. Ceux
-qui maintiennent leurs équipements actifs supportent directement les coûts de
-la configuration commune, tandis que ceux qui les placent en veille en
-retirent immédiatement le bénéfice. Une solution collectivement avantageuse
-peut donc être refusée si les efforts et les économies qu'elle engendre sont
-mal répartis. Le mécanisme doit à la fois déterminer une organisation
-opérationnelle efficace et fournir à chaque opérateur des raisons suffisantes
-pour y participer.
+Cette distinction est partiellement masquée dans la littérature. Les travaux
+sur la mise en veille coopérative ont déjà étudié la valeur de Shapley, le
+nucléole et le cœur \cite{militano2013}, la formation de coalitions stables
+\cite{hasan2013,anglano2014}, ou encore des jeux de partage avec capacités et
+coûts fixes \cite{koutitas2016}. D'autres approches imposent un gain individuel
+à chaque opérateur sans tester les déviations de groupes
+\cite{tan2023}. Le modèle de Koutitas et al. est le plus proche du nôtre :
+il associe décisions d'activation, capacités et jeu coopératif, puis obtient
+un jeu convexe et un cœur non vide. Sa procédure opérationnelle admet cependant
+qu'un équipement ne soit ouvert que pendant une fraction du créneau
+\cite{koutitas2016}. Cette divisibilité lisse précisément les seuils que
+produisent des activations strictement binaires.
 
-Ce travail étudie la possibilité de faire coopérer, sur un site et pendant une
-période de faible trafic, l'ensemble des opérateurs qui y sont présents. Il
-s'agit d'abord de déterminer quels équipements doivent rester actifs et
-comment le trafic doit être acheminé afin de réduire le coût total. Il faut
-ensuite établir si la coopération de tous les opérateurs est collectivement
-préférable à leur fonctionnement séparé. Enfin, les économies obtenues doivent
-être réparties de façon à tenir compte des contributions de chacun et à
-préserver l'accord commun.
+La question scientifique examinée ici est donc la suivante :
+\emph{à quelles conditions une coopération énergétiquement efficace entre MNO
+est-elle aussi stable vis-à-vis de toutes les coalitions ?} Nous considérons
+un site en information complète sur une fenêtre horaire finie. Le même
+ensemble d'équipements gardiens doit rester actif pendant toute la fenêtre,
+alors que les demandes et l'allocation du trafic varient d'une heure à
+l'autre. Chaque gardien supporte un coût fixe d'activation, un coût variable
+et une contrainte de capacité ; son activation demeure indivisible.
 
-Bien que l'accord recherché réunisse tous les opérateurs, son analyse ne peut
-ignorer les groupes plus petits. Un groupe qui s'estimerait insuffisamment
-rémunéré pourrait préférer quitter l'accord et organiser seul le partage de
-ses équipements. Ce qu'il serait capable d'économiser de son côté constitue
-donc une option de repli crédible dans la négociation. La théorie des jeux
-coopératifs fournit précisément un cadre pour comparer ces possibilités et
-étudier la répartition de l'économie commune. Elle permet en particulier de
-distinguer deux questions : la coopération globale crée-t-elle le plus
-d'économies au total, et existe-t-il une répartition qui dissuade tout groupe
-de faire défection ? La première propriété ne garantit pas, à elle seule, la
-seconde.
+Pour chaque coalition, nous résolvons d'abord le choix des gardiens et
+l'acheminement horaire, puis définissons sa valeur comme l'économie par rapport
+au fonctionnement séparé. La réunion de coalitions disjointes ne réduit pas
+leurs économies : le jeu est superadditif et la grande coalition est donc
+efficace au sens du surplus total. Ce résultat ne suffit pas à la stabilité.
+Les coûts fixes et les seuils de capacité peuvent rendre le jeu non équilibré,
+jusqu'à produire un cœur vide. La valeur de Shapley, le nucléole, le cœur et le
+moindre cœur sont employés comme outils classiques d'allocation ou de
+diagnostic ; leur emploi n'est pas revendiqué comme une nouveauté.
 
-Nous développons pour cela un modèle en information complète, appliqué à un
-site et à une fenêtre de décision fixée. Les demandes horaires, les capacités
-et les paramètres de coût sont connus. Le coût d'un équipement actif comporte
-une part fixe et une part liée au trafic qu'il achemine. Nous formulons le
-choix des gardiens, commun à toute la fenêtre, et la répartition horaire du
-trafic comme un problème d'optimisation. À gardiens fixés, chaque répartition
-horaire est obtenue par une procédure gloutonne. La sélection des gardiens
-reste combinatoire, mais peut être résolue exactement lorsque seuls quelques
-opérateurs sont présents sur un site.
-
-Les coûts coopératifs ainsi obtenus servent ensuite à mesurer les économies
-accessibles à chaque groupe d'opérateurs. Nous étudions la propriété selon
-laquelle la réunion de groupes disjoints ne diminue pas l'économie totale, ce
-qui justifie de viser la coopération de tous les opérateurs. Nous examinons
-ensuite si cette économie globale admet une répartition stable. La valeur de
-Shapley et le nucléole sont mobilisés comme deux règles de référence
-classiques, fondées respectivement sur les contributions marginales et sur la
-minimisation lexicographique des objections coalitionnelles. Leur utilisation
-ne constitue pas, en elle-même, une contribution de ce travail.
-
-Le message central de l'article est que l'efficacité énergétique de la
-coopération ne garantit pas sa stabilité coalitionnelle. Dans notre modèle,
-les activations discrètes et les contraintes de capacité produisent des
-économies par paliers : le jeu peut être superadditif tout en ayant un coeur
-vide. Nous ne prétendons pas caractériser complètement ce phénomène. Les
-contributions de ce travail sont les suivantes :
+Les contributions de l'article sont les suivantes :
 \begin{enumerate}
-    \item nous formulons exactement le partage opportuniste avec coûts fixes,
-    capacités et coûts variables, puis démontrons l'optimalité de l'allocation
-    gloutonne à gardiens fixés et caractérisons la complexité de leur
-    sélection ;
-    \item nous imposons un même ensemble de gardiens sur toute la fenêtre,
-    tout en autorisant des allocations de trafic horaires, et distinguons
-    cette politique d'une relaxation permettant de changer les équipements
-    actifs à chaque heure ; son surcoût éventuel reste à quantifier ;
-    \item nous établissons la superadditivité du jeu d'économies, puis montrons
-    par un contre-exemple homogène explicite qu'elle n'empêche pas la vacuité
-    du coeur ; nous donnons également une condition suffisante de non-vacuité
-    et des outils pour mesurer les violations coalitionnelles ;
-    \item nous définissons un protocole d'évaluation semi-empirique fondé sur
-    des profils de trafic et de puissance de terrain, afin de relier capacité,
-    charge, économies et stabilité sans assimiler les scénarios construits à
-    des observations multi-opérateurs réelles.
+    \item nous formulons exactement l'exploitation d'une coalition sur une
+    fenêtre, avec activations binaires, capacités et coûts hétérogènes, en
+    imposant un ensemble de gardiens fixe mais des allocations de trafic
+    horaires ; nous établissons l'optimalité d'une allocation gloutonne à
+    gardiens fixés et situons le coût de cette politique par rapport à une
+    relaxation reconfigurable heure par heure ;
+    \item nous établissons la superadditivité du jeu d'économies, puis
+    construisons un contre-exemple homogène minimal à cœur vide ; nous
+    caractérisons en outre le cas homogène, exhibons une famille paramétrique
+    de jeux à cœur vide et proposons un certificat \emph{leave-one-out} ainsi
+    qu'une borne sur le moindre cœur ;
+    \item nous donnons une condition de capacité suffisante pour que le cœur
+    soit non vide, accompagnée d'une allocation explicite, puis étendons cette
+    garantie à la fenêtre temporelle. Nous montrons toutefois, par un
+    contre-exemple à quatre opérateurs, que ce régime de très faible trafic ne
+    garantit pas l'appartenance de la valeur de Shapley au cœur, puis
+    rétablissons cette propriété sous homogénéité des coûts fixes et variables.
 \end{enumerate}
 
-Les données disponibles n'observent pas plusieurs opérateurs colocalisés sur
-un même site. La partie numérique constitue donc une étude semi-empirique :
-les profils élémentaires sont mesurés, tandis que les sites multi-opérateurs
-sont construits de manière contrôlée et répétés sur plusieurs tirages.
+L'évaluation numérique est conçue comme une étude semi-empirique : les profils
+élémentaires de trafic et de puissance proviennent de mesures de terrain, mais
+les sites multi-opérateurs sont construits de manière contrôlée, car les
+données disponibles n'observent pas plusieurs MNO colocalisés sur un même
+site. Elle vise à éprouver le protocole et les indicateurs dérivés de
+l'analyse, sans être présentée comme une observation directe d'accords
+multi-opérateurs.
 
-Le modèle ne décrit pas un processus dynamique de formation des coalitions.
-Les groupes autres que la coalition globale interviennent comme des scénarios
-de comparaison, nécessaires pour évaluer les incitations des opérateurs. De
-même, l'analyse se concentre sur une période en information complète et
-n'intègre pas encore l'incertitude sur le trafic, les transitions répétées
-entre veille et activité ou les interactions entre plusieurs sites.
+Le modèle ne décrit ni un processus dynamique de formation des coalitions, ni
+l'incertitude sur le trafic, ni les transitions répétées entre veille et
+activité. Les sous-coalitions représentent des options de déviation crédibles
+utilisées pour tester la stabilité de l'accord global. L'analyse est locale à
+un site et à une fenêtre de décision.
 
-La suite de l'article est organisée comme suit. La section 2 présente les
-travaux connexes sur le partage d'infrastructures et les approches issues de la
-théorie des jeux. La section 3 formalise le système, ses hypothèses et les
-solutions opérationnelles admissibles. La section 4 résout le problème de
-sélection des gardiens et de répartition du trafic. La section 5 construit le
-jeu coopératif à partir des économies réalisables et étudie l'efficacité et la
-stabilité de la coopération globale. La section 6 est consacrée à l'évaluation
-numérique du modèle.
+La suite de l'article est organisée comme suit. La section~2 situe le travail
+par rapport à la mise en veille multi-opérateur et aux mécanismes
+économiques. La section~3 formalise le système. La section~4 résout le problème
+opérationnel de chaque coalition. La section~5 construit le jeu d'économies et
+analyse son efficacité et sa stabilité. La section~6 décrit l'évaluation
+numérique, puis la section~7 conclut.

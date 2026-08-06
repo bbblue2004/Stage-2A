@@ -36,6 +36,26 @@ Le maximum porte sur toute la période disponible. Toute la demande doit être
 servie sans dépasser les capacités ; le débit utilisateur, la latence et la
 couverture ne sont pas modélisés.
 
+Dans l'analyse de sensibilité, un multiplicateur \(\alpha\) modifie la demande
+mais pas la capacité calibrée :
+\begin{equation}
+    d_{i,\alpha}^h=\alpha d_i^h,
+    \qquad
+    \alpha\in\{0{,}50,0{,}75,1,1{,}25,1{,}50,2\}.
+    \label{eq:multiplicateur_trafic}
+\end{equation}
+Par \eqref{eq:capacite_scenario}, la charge maximale sur la période disponible
+vaut exactement \(\alpha\rho_i^{\mathrm{peak}}\). Un couple de paramètres
+n'est donc simulé que s'il satisfait
+\begin{equation}
+    \alpha\rho_i^{\mathrm{peak}}\leqslant1,
+    \qquad \forall i\in N.
+    \label{eq:admissibilite_multiplicateur_trafic}
+\end{equation}
+Cette condition garantit en particulier \(d_{i,\alpha}^h\leqslant q_i\) sur
+toute fenêtre \(H\). La demande n'est jamais tronquée et \(q_i\) n'est pas
+recalculée après multiplication.
+
 Les principaux paramètres sont résumés dans le
 Tableau~\ref{tab:parametres_evaluation}.
 \begin{table}[h]
@@ -47,7 +67,8 @@ Paramètre & Valeurs \\
 Nombre d'opérateurs & \(4\) ; extension de \(2\) à \(6\) \\
 Tirages par antenne & \(20\) \\
 Charge au pic \(\rho^{\mathrm{peak}}\) & \(0{,}30;0{,}50;0{,}70;0{,}90\) \\
-Multiplicateur de trafic & \(0{,}50;0{,}75;1;1{,}25;1{,}50;2\) \\
+Multiplicateur candidat \(\alpha\) & \(0{,}50;0{,}75;1;1{,}25;1{,}50;2\) \\
+Couples retenus & \(\alpha\rho^{\mathrm{peak}}\leqslant1\) \\
 Fenêtre & \(H(h_{\mathrm{start}},h_{\mathrm{end}})\) \\
 Puissance de veille & \(0\ \mathrm{W}\) \\
 \hline
@@ -55,6 +76,11 @@ Puissance de veille & \(0\ \mathrm{W}\) \\
 \caption{Paramètres de la campagne numérique.}
 \label{tab:parametres_evaluation}
 \end{table}
+
+La grille effective retient tous les multiplicateurs candidats pour
+\(\rho^{\mathrm{peak}}\in\{0{,}30,0{,}50\}\), seulement
+\(\{0{,}50,0{,}75,1,1{,}25\}\) pour \(\rho^{\mathrm{peak}}=0{,}70\), et
+\(\{0{,}50,0{,}75,1\}\) pour \(\rho^{\mathrm{peak}}=0{,}90\).
 
 Les tests appliquent le modèle sur fenêtre des
 Sous-sections~\ref{subsec:fenetre_decision}
@@ -81,34 +107,238 @@ maximale entre formulations et le nombre de contradictions observées. Ces
 contrôles valident l'implémentation des résultats théoriques ; ils ne se
 substituent pas aux preuves.
 
-\subsection{Test 2 : validation du modèle de puissance}
+La suite de validation inclut en particulier l'instance à quatre opérateurs de
+la Proposition~\ref{prop:shapley_hors_coeur_tres_faible_trafic}. Elle vérifie
+simultanément la formule fermée de \(C^*(S)\), la valeur
+\(\phi(v)=(3/2,3/2,3,3)\), la non-vacuité du cœur et la violation produite par
+\(Q=\{1,3,4\}\).
 
-Pour chaque antenne, le modèle actif est
+\subsection{Test 2 : validation empirique du modèle de puissance}
+\label{subsec:validation_modele_puissance}
+
+\paragraph{Données et règles de sélection.}
+Le jeu de données contient \(642\,600\) couples horaires de trafic
+descendant et de puissance moyenne pour \(3\,825\) identifiants radio
+d'Île-de-France, du 20 au 26 mars 2023. Une ligne terminale vide est ignorée ;
+aucune valeur finie n'est négative et aucun doublon identifiant--heure n'est
+présent. Deux heures, le 26 mars à 02 h et 04 h, ont simultanément un trafic
+et une puissance nuls pour les \(3\,825\) identifiants. Cette coïncidence
+réseau ne pouvant représenter un état physique propre à chaque équipement,
+ces \(7\,650\) lignes sont traitées comme une interruption globale de collecte
+et exclues avant tout ajustement. Chaque identifiant conserve ainsi au plus
+\(166\) créneaux répartis en sept blocs journaliers.
+
+La relation affine étudiée décrivant uniquement l'état
+actif, les \(26\,206\) créneaux locaux tels que \((P,d)=(0,0)\) sont
+comptabilisés comme non actifs et ne sont pas utilisés pour son estimation.
+Les \(3\,238\) créneaux tels que \(P=0\) et \(d>0\), incompatibles avec une
+relation puissance--trafic active pour le même identifiant, sont également
+exclus de l'ajustement. Les observations à trafic nul mais à puissance
+strictement positive sont, elles, conservées car elles identifient la
+consommation active à vide. Au moins cinq jours comportant une observation
+active sont exigés.
+
+Le Tableau~\ref{tab:selection_validation_puissance} applique successivement
+les motifs d'exclusion. Ses deux dernières lignes partitionnent ensuite les
+profils analysables selon le signe des coefficients. Un profil est dit
+\emph{analysable} si le trafic et la puissance varient et si chaque pli de
+validation permet d'identifier une pente. L'estimation physique exige en
+outre \(\widetilde F>0\) et \(\widetilde\gamma>0\).
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lr}
+\hline
+Catégorie & Nombre \\
+\hline
+Identifiants disponibles & \(3\,825\) \\
+Moins de cinq jours actifs & \(173\) \\
+Trafic actif constant & \(9\) \\
+Pli d'apprentissage non identifiable & \(5\) \\
+Profils statistiquement analysables & \(3\,638\) \\
+Pente OLS non positive & \(31\) \\
+Profils physiquement admissibles & \(3\,607\) \\
+\hline
+\end{tabular}
+\caption{Sélection des profils pour la validation du modèle de puissance.}
+\label{tab:selection_validation_puissance}
+\end{table}
+
+\paragraph{Protocole hors échantillon.}
+Pour l'antenne \(i\), notons \(\mathcal L_i\) ses jours observés et
+\(\mathcal T_{i\ell}\) les heures valides du jour \(\ell\). Le modèle actif
+est
 \begin{equation}
-    P(d)=\widetilde F+\widetilde\gamma d.
+    P_i(d)=\widetilde F_i+\widetilde\gamma_i d.
     \label{eq:modele_puissance_affine}
 \end{equation}
-Une validation leave-one-day-out ajuste le modèle sur toutes les journées
-complètes sauf une, puis prédit la journée exclue. La précision est mesurée
-par la MAE, la RMSE et une erreur normalisée ; les résidus sont examinés selon
-l'heure et le trafic. Le modèle affine est comparé à un modèle constant. Une
-forme quadratique n'est considérée que si elle améliore nettement la
-prédiction hors échantillon.
+Dans le pli où le jour \(\ell\) est exclu, les coefficients OLS sont calculés
+uniquement sur les autres jours :
+\begin{equation}
+ (\widehat F_i^{(-\ell)},\widehat\gamma_i^{(-\ell)})
+ \in\underset{(F,\gamma)\in\mathbb R^2}{\operatorname{arg\,min}}
+ \sum_{k\in\mathcal L_i\setminus\{\ell\}}
+ \sum_{t\in\mathcal T_{ik}}
+ \left(P_{it}-F-\gamma d_{it}\right)^2.
+ \label{eq:ols_leave_one_day_out}
+\end{equation}
+La prédiction de test est
+\(\widehat P_{it}^{(-\ell)}=\widehat F_i^{(-\ell)}
++\widehat\gamma_i^{(-\ell)}d_{it}\). La référence constante
+\(\widehat P_{it,0}^{(-\ell)}\) est la puissance moyenne des seuls jours
+d'apprentissage ; elle n'utilise donc aucune information du jour test.
 
-Les résultats comprennent les distributions de \(R^2\), de
-\(\widetilde F\), de \(\widetilde\gamma\) et des erreurs de test, un ajustement
-représentatif accompagné de ses résidus, ainsi qu'un tableau des motifs
-d'exclusion.
+En concaténant une fois chacune des observations de test, on définit
+\(\mathrm{SSE}_{i,m}=\sum_{\ell,t}
+(P_{it}-\widehat P_{it,m}^{(-\ell)})^2\), puis
+\begin{align}
+ R^2_{\mathrm{CV},i}
+ &=1-\frac{\mathrm{SSE}_{i,\mathrm{aff}}}
+ {\mathrm{SSE}_{i,0}},
+ &
+ \mathrm{NRMSE}_i
+ &=\frac{\sqrt{\mathrm{SSE}_{i,\mathrm{aff}}/n_i}}{\overline P_i},
+ \label{eq:metriques_cv_puissance}\\
+ G_i
+ &=1-\frac{\mathrm{RMSE}_{i,\mathrm{aff}}}
+ {\mathrm{RMSE}_{i,0}}.
+ \label{eq:gain_rmse_puissance}
+\end{align}
+où \(n_i\) est le nombre total d'observations actives de l'antenne et
+\(\overline P_i\) leur puissance moyenne.
+Ainsi, \(R^2_{\mathrm{CV},i}<0\) et \(G_i<0\) signalent explicitement qu'un
+ajustement prédit moins bien que la moyenne d'apprentissage. La MAE et la RMSE
+sont également exportées. Toute observation test située hors de l'intervalle
+de trafic du pli d'apprentissage est marquée comme extrapolation, sans être
+retirée du calcul.
+
+Deux analyses de sensibilité sont ajustées dans les mêmes plis : l'affine
+contraint par \(F,\gamma\geqslant0\), et le quadratique
+\(F+\gamma d+\eta d^2\), estimé après centrage et réduction du trafic. Les
+coefficients utilisés ensuite dans le modèle d'optimisation sont les OLS
+affines réestimés sur toutes les observations actives des profils physiquement
+admissibles. Les intervalles à 95\,\% sont des intervalles percentile obtenus
+par \(2\,000\) rééchantillonnages non paramétriques de l'unité statistique
+\emph{antenne}, avec la graine \(20260806\).
+
+\paragraph{Résultats.}
+Sur les \(3\,638\) profils analysables, la médiane du \(R^2\) d'ajustement
+vaut \(0{,}743\), contre \(0{,}730\) hors échantillon
+(IC à 95\,\% de la médiane : \([0{,}724;0{,}738]\)). La NRMSE affine médiane
+est \(8{,}69\,\%\) (IC : \([8{,}51;8{,}87]\,\%\)) et le gain de RMSE médian
+sur le modèle constant atteint \(48{,}08\,\%\)
+(IC : \([47{,}39;48{,}79]\,\%\)). Le gain est strictement positif pour
+\(97{,}53\,\%\) des antennes (IC : \([97{,}00;98{,}02]\,\%\)). Le faible
+écart entre les médianes d'ajustement et de validation indique que la qualité
+centrale ne provient pas seulement d'un ajustement dans l'échantillon.
+
+\begin{table}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\hline
+Modèle & \(R^2_{\rm CV}\) médian [IQR]
+& NRMSE médiane [IQR] & \(G\) médian [IQR]
+& \(\Pr(G>0)\) & \(q_{1\%}(G)\) \\
+\hline
+Affine libre
+& \(0{,}730\ [0{,}550;0{,}851]\)
+& \(8{,}69\ [5{,}36;11{,}92]\,\%\)
+& \(48{,}08\ [32{,}92;61{,}35]\,\%\)
+& \(97{,}53\,\%\) & \(-3{,}12\,\%\) \\
+Affine, \(F,\gamma\geqslant0\)
+& \(0{,}730\ [0{,}550;0{,}851]\)
+& \(8{,}69\ [5{,}36;11{,}92]\,\%\)
+& \(48{,}08\ [32{,}91;61{,}35]\,\%\)
+& \(97{,}22\,\%\) & \(-2{,}02\,\%\) \\
+Quadratique
+& \(0{,}800\ [0{,}657;0{,}887]\)
+& \(7{,}49\ [4{,}80;10{,}35]\,\%\)
+& \(55{,}27\ [41{,}45;66{,}46]\,\%\)
+& \(95{,}22\,\%\) & \(-251{,}01\,\%\) \\
+\hline
+\end{tabular}}
+\caption{Comparaison hors échantillon sur les \(3\,638\) profils
+analysables. L'IQR est l'intervalle interquartile et \(G\) est défini par
+\eqref{eq:gain_rmse_puissance}.}
+\label{tab:comparaison_modeles_puissance}
+\end{table}
+
+La contrainte de positivité laisse donc les médianes inchangées ; sur
+l'ajustement complet, \(3\,607/3\,638=99{,}15\,\%\) des profils ont directement
+un intercept et une pente strictement positifs. Dans cette population, les
+médianes de \(\widetilde F\), \(\widetilde\gamma\) et de la part fixe
+\(\widetilde F/(\widetilde F+\widetilde\gamma\overline d)\) sont
+respectivement \(907{,}0\ \mathrm{W}\),
+\(25{,}90\ \mathrm{W}/(\mathrm{Go}/\mathrm{h})\) et \(71{,}19\,\%\).
+L'intervalle interquartile de \(\widetilde F\) est
+\([459{,}2;1\,261{,}3]\ \mathrm{W}\). Celui de \(\widetilde\gamma\) est
+\([14{,}14;35{,}52]\ \mathrm{W}/(\mathrm{Go}/\mathrm{h})\), et celui de la
+part fixe est \([59{,}36;88{,}79]\,\%\).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/power_validation/power_model_representative.pdf}
+    \caption{Validation de l'antenne représentative \texttt{00015697W3},
+    choisie comme médoïde robuste de
+    \((R^2_{\rm CV},\mathrm{NRMSE},\text{part fixe})\) après mise à l'échelle
+    par les intervalles interquartiles. (a) Observations et ajustement complet ;
+    la bande ponctuelle à 95\,\% rééchantillonne les jours.
+    (b) Résidus strictement hors échantillon par décile de trafic ; les croix
+    repèrent les extrapolations.}
+    \label{fig:validation_puissance_representative}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/power_validation/power_model_cross_validation.pdf}
+    \caption{(a) Puissances observées et prédites hors échantillon,
+    normalisées par la puissance moyenne de chaque antenne ; l'affichage est
+    limité aux quantiles \(0{,}5\)--\(99{,}5\,\%\).
+    (b) Fonctions de répartition empiriques appariées du gain de RMSE ; l'axe
+    est limité aux quantiles \(1\)--\(99\,\%\), mais les statistiques du
+    Tableau~\ref{tab:comparaison_modeles_puissance} utilisent tous les points.}
+    \label{fig:validation_puissance_cv}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/power_validation/power_model_population.pdf}
+    \caption{Validation à l'échelle de la population : distributions du
+    \(R^2\) d'ajustement et du \(R^2_{\rm CV}\), part fixe des profils
+    physiquement admissibles et structure du résidu hors échantillon selon
+    l'heure et le décile de trafic intra-antenne. Les axes de \(R^2_{\rm CV}\)
+    sont limités aux quantiles \(1\)--\(99\,\%\).}
+    \label{fig:validation_puissance_population}
+\end{figure}
+
+Le quadratique réduit la RMSE de l'affine pour \(87{,}88\,\%\) des antennes
+(IC : \([86{,}78;88{,}95]\,\%\)) et confirme la courbure visible dans certains
+résidus. Ce gain central ne justifie toutefois pas son emploi comme modèle
+opérationnel : il bat moins souvent la référence constante et sa queue
+d'erreur est fortement instable, avec un quantile 1\,\% de gain à
+\(-251{,}01\,\%\), contre \(-3{,}12\,\%\) pour l'affine. Cette fragilité est
+particulièrement problématique lorsque même un scénario admissible augmente le
+trafic au-delà du support empirique observé. Dans la validation principale, la proportion
+médiane de points extrapolés n'est que de \(1{,}29\,\%\) par antenne
+(IQR : \([1{,}20;1{,}81]\,\%\)), mais aucun de ces points n'a été masqué.
+Nous retenons donc l'affine comme approximation de premier ordre,
+interprétable et plus robuste, tout en conservant la structure des résidus et
+le quadratique comme diagnostics explicites de non-linéarité.
 
 La veille étant supposée consommer \(0\ \mathrm{W}\), les paramètres
-monétaires horaires sont
+monétaires horaires sont finalement
 \begin{equation}
     F_i=\frac{p_e}{1000}\widetilde F_i,
     \qquad
     \gamma_i=\frac{p_e}{1000}\widetilde\gamma_i,
     \label{eq:calibration_actif_veille}
 \end{equation}
-où \(p_e\) est le prix de l'électricité en euros par kWh.
+où \(p_e\) est le prix de l'électricité en euros par kWh. Cette conversion ne
+valide pas empiriquement la puissance de veille nulle : elle applique
+l'hypothèse de scénario énoncée dans le modèle du système.
+
+\FloatBarrier
 
 \subsection{Test 3 : économies et sélection des gardiens}
 
@@ -128,9 +358,11 @@ demande est déclarée infaisable.
 
 \subsection{Test 4 : sensibilité aux paramètres}
 
-La sensibilité est étudiée en croisant les quatre valeurs de
-\(\rho^{\mathrm{peak}}\) avec les six multiplicateurs de trafic du
-Tableau~\ref{tab:parametres_evaluation}. Les mêmes graphiques donnent
+La sensibilité est étudiée sur les seuls couples
+\((\rho^{\mathrm{peak}},\alpha)\) qui satisfont
+\eqref{eq:admissibilite_multiplicateur_trafic}. Les cellules rejetées de la
+grille sont indiquées comme hors domaine du modèle et ne sont pas agrégées aux
+scénarios faisables. Les mêmes graphiques donnent
 l'économie relative, le nombre de gardiens, la fréquence de cœur vide et la
 fréquence de Shapley hors du cœur. Des analyses secondaires examinent la part
 fixe du coût, la dispersion de \(F_i,\gamma_i,q_i\), la corrélation des
@@ -149,6 +381,13 @@ rapportent également l'excès maximal de Shapley, la valeur du moindre cœur, l
 gap leave-one-out de \eqref{eq:gap_leave_one_out}, les certificats de
 Bondareva--Shapley et la fréquence de la condition suffisante du
 Corollaire~\ref{cor:capacite_coeur_agrege}.
+
+L'appartenance de Shapley au cœur est testée explicitement, y compris dans les
+scénarios de très faible trafic, au moyen de \(E_{\mathrm{Sh}}(N)\) et du
+critère \eqref{eq:test_shapley_coeur}. Le contre-exemple de la
+Proposition~\ref{prop:shapley_hors_coeur_tres_faible_trafic} fournit la cible
+de validation \(E_{\mathrm{Sh}}(N)=1/2\), atteinte notamment par
+\(Q=\{1,3,4\}\), alors même que le cœur est non vide.
 
 Shapley, le nucléole et la projection définie par
 \eqref{eq:projection_shapley} sont comparés sur la population puis sur une

@@ -1148,3 +1148,172 @@ Ainsi, \(\sum_{i\in Q}y_{i,H}\leqslant C_H^*(Q)\) et
 Proposition~\ref{prop:translation_coeur}, appliquée aux quantités sur
 \(H\), conclut.
 \end{proof}
+
+\subsection{Très faible trafic et stabilité de la valeur de Shapley}
+\label{subsec:shapley_tres_faible_trafic}
+
+Le Théorème~\ref{thm:capacite_coeur_non_vide} montre que la condition de très
+faible trafic
+\[
+    d(N)\leqslant\min_{i\in N}q_i
+\]
+garantit la non-vacuité du cœur. Sa preuve établit en outre que, pour toute
+coalition non vide \(S\subseteq N\),
+\begin{equation}
+    C^*(S)=\min_{i\in S}\left\{F_i+\gamma_i d(S)\right\}.
+    \label{eq:cout_tres_faible_trafic}
+\end{equation}
+Cette réduction à un gardien unique ne garantit cependant pas que la valeur
+de Shapley appartienne au cœur.
+
+\begin{proposition}[Shapley peut être instable en très faible trafic]
+\label{prop:shapley_hors_coeur_tres_faible_trafic}
+Considérons \(N=\{1,2,3,4\}\) et, pour tout \(i\in N\),
+\[
+    d_i=1,\qquad q_i=10,\qquad \gamma_i=1,
+\]
+avec
+\[
+    F_1=F_2=1,
+    \qquad
+    F_3=F_4=4.
+\]
+Le cœur de \((N,v)\) est non vide, mais
+\[
+    \phi(v)=\left(\frac32,\frac32,3,3\right)
+    \notin\mathcal C(N,v).
+\]
+\end{proposition}
+
+\begin{proof}
+On a \(d(N)=4<10=q_i\) pour tout \(i\in N\) : chaque équipement peut donc
+servir seul la demande de la grande coalition. Les coûts autonomes sont
+\[
+    (C_1^0,C_2^0,C_3^0,C_4^0)=(2,2,5,5).
+\]
+Comme \(d(S)=|S|\) et que tous les coûts variables unitaires valent un,
+\eqref{eq:cout_tres_faible_trafic} donne, pour tout \(S\neq\varnothing\),
+\[
+    C^*(S)=|S|+\min_{i\in S}F_i,
+    \qquad
+    v(S)=\sum_{i\in S}F_i-\min_{i\in S}F_i.
+\]
+En particulier,
+\[
+    v(N)=9,
+    \qquad
+    v(\{1,3,4\})=8.
+\]
+
+Les opérateurs 1 et 2 sont symétriques, de même que les opérateurs 3 et 4.
+Pour l'opérateur 3, la contribution marginale est nulle lorsqu'il arrive en
+premier et vaut \(4\) dès qu'une coalition non vide le précède. Il vient donc
+\[
+    \phi_3(v)=\phi_4(v)=\frac34\,4=3.
+\]
+Pour l'opérateur 1, trois événements disjoints suffisent. Il arrive en premier
+avec probabilité \(1/4\), auquel cas sa contribution est nulle ; l'opérateur 2
+le précède avec probabilité \(1/2\), auquel cas sa contribution vaut \(1\) ;
+enfin, il précède l'opérateur 2 sans arriver en premier avec probabilité
+\(1/2-1/4=1/4\), auquel cas une coalition formée uniquement d'opérateurs à
+coût fixe élevé le précède et sa contribution vaut \(4\). Par conséquent,
+\[
+    \phi_1(v)=\phi_2(v)
+    =\frac14\,0+\frac12\,1+\frac14\,4
+    =\frac32.
+\]
+L'efficacité est vérifiée puisque \(2(3/2)+2(3)=9=v(N)\). Pour
+\(Q=\{1,3,4\}\),
+\[
+    \sum_{i\in Q}\phi_i(v)
+    =\frac32+3+3
+    =\frac{15}{2}
+    <8
+    =v(Q).
+\]
+La contrainte du cœur associée à \(Q\) est donc violée et
+\(\phi(v)\notin\mathcal C(N,v)\).
+
+Le cœur n'est pourtant pas vide. L'allocation du
+Théorème~\ref{thm:capacite_coeur_non_vide} vaut ici
+\[
+    z^{\mathrm{core}}
+    =\left(\frac34,\frac34,\frac{15}{4},\frac{15}{4}\right),
+    \qquad
+    z^{\mathrm{core}}(N)=9=v(N).
+\]
+Pour vérifier toutes ses contraintes, posons
+\(a:=|S\cap\{1,2\}|\) et \(b:=|S\cap\{3,4\}|\). Si \(a\geqslant1\), alors
+\[
+    z^{\mathrm{core}}(S)-v(S)
+    =\frac{3a+15b}{4}-(a+4b-1)
+    =\frac{4-|S|}{4}
+    \geqslant0.
+\]
+Si \(a=0\) et \(b\geqslant1\), alors
+\[
+    z^{\mathrm{core}}(S)-v(S)
+    =\frac{15b}{4}-4(b-1)
+    =4-\frac b4
+    >0.
+\]
+Ainsi \(z^{\mathrm{core}}\in\mathcal C(N,v)\), ce qui distingue bien la
+non-appartenance de Shapley de la non-vacuité du cœur.
+\end{proof}
+
+Le corollaire suivant prolonge la spécialisation à très faible trafic de la
+Proposition~\ref{prop:coeur_cas_homogene} : l'homogénéité des demandes et des
+capacités n'est pas nécessaire dès lors que chaque équipement peut servir la
+demande totale.
+
+\begin{corollaire}[Stabilité de Shapley sous homogénéité des coûts]
+\label{cor:shapley_coeur_tres_faible_trafic_homogene}
+Supposons que
+\[
+    F_i=F,
+    \qquad
+    \gamma_i=\gamma,
+    \qquad \forall i\in N,
+\]
+avec \(F>0\), et que
+\(d(N)\leqslant\min_{i\in N}q_i\). Alors
+\[
+    v(S)=F(|S|-1),
+    \qquad \forall S\neq\varnothing,
+\]
+et \(\phi(v)\in\mathcal C(N,v)\).
+\end{corollaire}
+
+\begin{proof}
+Par \eqref{eq:cout_tres_faible_trafic},
+\(C^*(S)=F+\gamma d(S)\) pour toute coalition non vide \(S\). Comme
+\(C_i^0=F+\gamma d_i\),
+\[
+    v(S)
+    =\sum_{i\in S}(F+\gamma d_i)-F-\gamma d(S)
+    =F(|S|-1).
+\]
+Le jeu ne dépend que du cardinal des coalitions. Par symétrie et efficacité,
+si \(n=|N|\),
+\[
+    \phi_i(v)=\frac{v(N)}{n}=\frac{F(n-1)}{n},
+    \qquad \forall i\in N.
+\]
+Pour toute coalition \(Q\) de cardinal \(k\),
+\[
+    \sum_{i\in Q}\phi_i(v)-v(Q)
+    =\frac{kF(n-1)}{n}-F(k-1)
+    =\frac{F(n-k)}{n}
+    \geqslant0.
+\]
+L'efficacité de la valeur de Shapley et les contraintes précédentes donnent
+\(\phi(v)\in\mathcal C(N,v)\).
+\end{proof}
+
+En régime de très faible trafic, les seuils de capacité deviennent inactifs :
+les économies proviennent principalement de l'extinction des équipements
+redondants. Cette simplification garantit ici un cœur non vide, mais
+l'hétérogénéité des coûts fixes peut encore rendre la moyenne des
+contributions marginales attribuée par Shapley insuffisante pour une coalition
+particulière. L'homogénéité des coûts fixes et variables restaure cette
+stabilité.

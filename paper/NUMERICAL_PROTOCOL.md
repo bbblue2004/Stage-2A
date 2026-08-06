@@ -147,6 +147,28 @@ la fenêtre de décision. La grille principale est
 `rho_peak in {0.30, 0.50, 0.70, 0.90}`. La valeur historique `0.75` est
 conservée seulement pour reproduire les résultats exploratoires.
 
+Dans l'analyse de sensibilité, un multiplicateur `alpha` agit uniquement sur
+la demande :
+
+```text
+d_i_alpha[h] = alpha * d_i[h].
+```
+
+La capacité `q_i` reste celle calibrée sur le profil non multiplié. Elle ne
+doit être ni recalculée, ni augmentée avec `alpha`. La charge maximale sur la
+période disponible vaut alors exactement `alpha * rho_peak_i`. Un couple de
+paramètres n'est admissible que si
+
+```text
+alpha * rho_peak_i <= 1, pour tout opérateur i.
+```
+
+Avant chaque simulation, le code doit en outre vérifier directement
+`alpha * d_i[h] <= q_i` pour tout `i` et tout `h` de la fenêtre. Une violation
+arrête le scénario et le classe `outside_model_domain` : le trafic n'est pas
+tronqué et la capacité n'est pas recalibrée pour rendre le cas artificiellement
+faisable.
+
 Toute la demande doit être acheminée et aucune capacité ne peut être dépassée.
 Cette contrainte exprime une satisfaction intégrale du trafic, mais ne permet
 pas d'affirmer une QoS maximale en débit, latence ou couverture, qui ne sont
@@ -182,14 +204,26 @@ abandonnée pour la rendre artificiellement comparable.
 
 ## 10. Analyse de sensibilité structurée
 
-La figure causale centrale est une grille
+La figure causale centrale est une grille masquée
 
 ```text
 rho_peak x traffic_multiplier
 ```
 
-avec `traffic_multiplier` dans `{0.50, 0.75, 1.00, 1.25, 1.50, 2.00}`.
-Pour une même grille, trois cartes sont produites :
+Les multiplicateurs candidats sont
+`{0.50, 0.75, 1.00, 1.25, 1.50, 2.00}`, mais seuls les couples satisfaisant
+`traffic_multiplier * rho_peak <= 1` sont simulés. La grille effective est :
+
+| `rho_peak` | `traffic_multiplier` admissibles |
+|---:|:---|
+| `0.30` | `0.50, 0.75, 1.00, 1.25, 1.50, 2.00` |
+| `0.50` | `0.50, 0.75, 1.00, 1.25, 1.50, 2.00` |
+| `0.70` | `0.50, 0.75, 1.00, 1.25` |
+| `0.90` | `0.50, 0.75, 1.00` |
+
+Les cellules rejetées sont affichées comme « hors domaine du modèle » et ne
+sont jamais agrégées avec les scénarios faisables. Pour cette grille masquée,
+trois cartes sont produites :
 
 - économie énergétique relative ;
 - nombre de gardiens actifs sur la fenêtre ;
@@ -230,4 +264,6 @@ indépendantes.
 - tests de cohérence théorique et algorithmique terminés ;
 - listes des antennes, partenaires et graines exportées ;
 - chaque configuration entièrement déterminée par un fichier de paramètres ;
+- chaque couple `(rho_peak, traffic_multiplier)` satisfait la contrainte de
+  charge et le contrôle direct `d_i[h] <= q_i` ;
 - résultats pilotes reproduits à l'identique à graine fixée.
