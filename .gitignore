@@ -10,6 +10,7 @@ venv/
 .DS_Store
 data/
 .vscode/
+bilan.md
 
 # LaTeX generated files
 paper/main.pdf

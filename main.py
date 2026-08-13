@@ -53,8 +53,8 @@ def main() -> None:
         choices=ALLOCATION_PRIORITIES,
         default="contribution",
         help=(
-            "choose the Shapley-nearest stable allocation, or the nucleolus "
-            "when Shapley is outside the core (default: contribution)"
+            "use Shapley when stable and the nucleolus otherwise, or force "
+            "the nucleolus (default: contribution)"
         ),
     )
     parser.add_argument(

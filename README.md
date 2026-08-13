@@ -11,8 +11,8 @@ game developed in Sections 3--5 of the report:
 - Shapley value, Shapley projection, least core and nucleolus;
 - physical costs, final net costs, and budget-balanced internal transfers.
 
-The feasibility LP is only used to test the core. The final allocation is
-selected by an explicit contribution-or-robustness rule.
+The feasibility LP is only used to test the core. By default, the final
+allocation is Shapley when it belongs to the core and the nucleolus otherwise.
 
 ## Setup
 
@@ -59,7 +59,7 @@ python main.py 4 --plot-weekly-traffic
 # Change the electricity price used to convert W into period costs
 python main.py 1 --price-per-kwh 0.18
 
-# Prefer the nucleolus when Shapley is outside the core
+# Force the nucleolus even when Shapley belongs to the core
 python main.py 1 --allocation-priority robustness
 
 # Change the acceptable relative least-core instability threshold
@@ -83,15 +83,16 @@ profile.
 ## Allocation rule
 
 The program always computes Shapley, its core membership, the least core and
-the nucleolus. If Shapley belongs to the core, it is selected. Otherwise,
-`--allocation-priority contribution` selects the normalized Euclidean
-projection of Shapley on the core, or on the optimal least core when the core
-is empty. With `--allocation-priority robustness`, the nucleolus is selected.
+the nucleolus. By default, `--allocation-priority contribution` selects
+Shapley when it belongs to the core and the nucleolus otherwise. The optional
+`--allocation-priority robustness` always selects the nucleolus. The
+normalized Euclidean projection of Shapley on the core, or on the optimal
+least core when the core is empty, remains a diagnostic candidate.
 An empty-core allocation is flagged as operationally unacceptable when its
 relative least-core epsilon exceeds `--max-instability-ratio`.
 
-The regression graph and console report use only
-`P_conso = F_tilde + gamma_tilde d` and its coefficient of determination.
+The regression graph and console report use
+`P_conso = F_tilde + gamma_tilde d`, with zero sleep power.
 
 ## Module map
 

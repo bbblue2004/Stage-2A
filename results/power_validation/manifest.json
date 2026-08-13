@@ -1,0 +1,65 @@
+{
+  "input_path": "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\data\\raw\\radio_sites.csv",
+  "input_sha256": "1355cfdf016f1fbe14420467c60b2cd9204395cd8a36555a31b0dc1d8228a23e",
+  "parameters": {
+    "min_complete_days": 5,
+    "bootstrap_replicates": 2000,
+    "bootstrap_unit": "antenna",
+    "seed": 20260806,
+    "cross_validation_unit": "complete_day",
+    "global_outage_rule": "exclude timestamps with joint zero traffic and power for every antenna",
+    "active_state_rule": "fit only observations with strictly positive power; retain zero-power rows in the audit"
+  },
+  "software": {
+    "numpy": "2.4.6"
+  },
+  "audit": {
+    "total_rows": 642601,
+    "parsed_rows": 642600,
+    "invalid_rows": 1,
+    "negative_rows": 0,
+    "duplicate_rows": 0,
+    "antenna_count": 3825,
+    "first_timestamp": "2023-03-20 00:00:00",
+    "last_timestamp": "2023-03-26 23:00:00",
+    "global_outage_timestamps": [
+      "2023-03-26 02:00:00",
+      "2023-03-26 04:00:00"
+    ],
+    "globally_excluded_rows": 7650,
+    "inactive_state_rows": 26206,
+    "inconsistent_zero_power_rows": 3238
+  },
+  "selection": {
+    "included": 3607,
+    "insufficient_active_days": 173,
+    "unidentifiable_training_fold": 5,
+    "constant_traffic": 9,
+    "nonpositive_slope": 31,
+    "total": 3825,
+    "statistically_analyzable": 3638,
+    "operationally_admissible": 3607
+  },
+  "representative_antenna_id": "00015697W3",
+  "outputs": {
+    "antenna_validation": "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\results\\power_validation\\antenna_validation.csv",
+    "fold_validation": "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\results\\power_validation\\fold_validation.csv",
+    "cross_validated_predictions": "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\results\\power_validation\\cross_validated_predictions.csv.gz",
+    "population_summary": "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\results\\power_validation\\population_summary.csv",
+    "selection_summary": "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\results\\power_validation\\selection_summary.csv",
+    "figures": {
+      "representative": [
+        "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\figures\\power_validation\\power_model_representative.pdf",
+        "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\figures\\power_validation\\power_model_representative.png"
+      ],
+      "cross_validation": [
+        "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\figures\\power_validation\\power_model_cross_validation.pdf",
+        "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\figures\\power_validation\\power_model_cross_validation.png"
+      ],
+      "population": [
+        "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\figures\\power_validation\\power_model_population.pdf",
+        "D:\\Documents\\Polytechnique\\2A\\Stage 2A\\RAN sharing\\figures\\power_validation\\power_model_population.png"
+      ]
+    }
+  }
+}

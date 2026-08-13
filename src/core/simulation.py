@@ -147,25 +147,27 @@ def evaluate_period(
             ),
         }
 
-    if shapley_check.in_core:
-        selected_key = "shapley"
-        selection_reason = "Shapley belongs to the core."
-    elif allocation_priority == "contribution":
-        selected_key = "fair_stable"
-        selection_reason = (
-            "Contribution priority: closest core allocation to Shapley."
-            if core.feasible
-            else (
-                "Contribution priority: closest optimal least-core "
-                "allocation to Shapley."
-            )
-        )
-    else:
+    if allocation_priority == "robustness":
         selected_key = "nucleolus"
         selection_reason = (
             "Robustness priority: lexicographic minimisation of objections."
         )
-
+    elif shapley_check.in_core:
+        selected_key = "shapley"
+        selection_reason = (
+            "Shapley belongs to the core: contributive fairness and "
+            "coalitional stability."
+        )
+    else:
+        selected_key = "nucleolus"
+        selection_reason = (
+            "Shapley is outside the core; the nucleolus belongs to the core."
+            if core.feasible
+            else (
+                "The core is empty; the nucleolus lexicographically "
+                "minimises coalition objections."
+            )
+        )
     selected_allocation = candidates[selected_key]["allocation"]
     settlement = build_settlement(
         players,

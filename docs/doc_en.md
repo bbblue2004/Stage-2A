@@ -57,4 +57,7 @@ tau_i = C_i^*(N) - y_i.
 A positive `tau_i` is received and a negative `tau_i` is paid. Efficiency of
 `z` implies `sum_i tau_i = 0`.
 
-The least-core implementation is outside the current scope and is not executed.
+The program computes Shapley, the least core and the nucleolus. By default it
+selects Shapley when Shapley belongs to the core, and the nucleolus otherwise.
+The robustness priority always selects the nucleolus; the Shapley projection
+is retained only as a diagnostic candidate.
