@@ -106,6 +106,10 @@ paramètres. Le tableau de validation rapporte le nombre d'instances, l'erreur
 maximale entre formulations et le nombre de contradictions observées. Ces
 contrôles valident l'implémentation des résultats théoriques ; ils ne se
 substituent pas aux preuves.
+Les temps nécessaires au calcul de la fonction caractéristique, au test de
+faisabilité du coeur et au programme de Bondareva--Shapley sont rapportés
+séparément, afin de documenter le coût effectif de ces opérations pour les
+valeurs de \(n\) étudiées.
 
 La suite de validation inclut en particulier l'instance à quatre opérateurs de
 la Proposition~\ref{prop:shapley_hors_coeur_tres_faible_trafic}. Elle vérifie
@@ -334,7 +338,7 @@ monétaires horaires sont finalement
     \gamma_i=\frac{p_e}{1000}\widetilde\gamma_i,
     \label{eq:calibration_actif_veille}
 \end{equation}
-où \(p_e\) est le prix de l'électricité en euros par kWh. Cette conversion ne
+où \(p_e\) est le prix de l'électricité en \(\text{€}/\mathrm{kWh}\). Cette conversion ne
 valide pas empiriquement la puissance de veille nulle : elle applique
 l'hypothèse de scénario énoncée dans le modèle du système.
 
@@ -389,10 +393,11 @@ Proposition~\ref{prop:shapley_hors_coeur_tres_faible_trafic} fournit la cible
 de validation \(E_{\mathrm{Sh}}(N)=1/2\), atteinte notamment par
 \(Q=\{1,3,4\}\), alors même que le cœur est non vide.
 
-Shapley, le nucléole et la projection définie par
-\eqref{eq:projection_shapley} sont comparés sur la population puis sur une
-instance représentative, au moyen des économies individuelles, des coûts nets,
-des transferts et des coalitions bloquantes.
+% Construction secondaire temporairement retirée : la projection de Shapley
+% et sa comparaison numérique avec Shapley et le nucléole.
+Shapley et le nucléole sont comparés sur la population puis sur une instance
+représentative, au moyen des économies individuelles, des coûts nets, des
+transferts et des coalitions bloquantes.
 
 \subsection{Résultats exploratoires préliminaires}
 

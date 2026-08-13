@@ -1,0 +1,349 @@
+\section{Démonstrations techniques}
+\label{app:demonstrations_techniques}
+
+\subsection{NP-difficulté de la sélection des gardiens}
+\label{app:preuve_np_difficulte}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:np_difficulte_gardiens}]
+Considérons une instance de \textsc{Subset Sum}, problème faiblement
+NP-complet \cite{garey-johnson-1979}, composée de $m$ entiers strictement
+positifs $u_1,\ldots,u_m$ et d'une cible $B>0$. Le cas \(m=1\) étant
+trivial, supposons \(m\geqslant2\). Posons
+$U:=\sum_{i=1}^m u_i$ (si $B>U$, la réponse est immédiatement négative)
+et supposons donc $B\leqslant U$.
+
+On fixe une fenêtre réduite à une heure, \(H=\{h\}\), puis on construit
+$N:=\{1,\ldots,m\}$ et la coalition $S:=N$ en posant
+\[
+q_i:=Uu_i,\qquad
+F_i:=u_i,\qquad
+\beta_i:=u_i,\qquad
+d_i^h:=Bu_i.
+\]
+Les paramètres primitifs produits sont entiers, leur taille d'encodage est
+polynomiale, et $\gamma_i=\beta_i/q_i=1/U$ pour tout $i\in N$. De plus,
+$d_i^h\leqslant q_i$ et
+\[
+d^h(S)=\sum_{i\in S}d_i^h=BU.
+\]
+Cette construction s'effectue en temps polynomial dans la taille de
+l'instance initiale.
+
+Pour tout $G\subseteq N$, la configuration est faisable si et seulement si
+\[
+q(G)=U\sum_{i\in G}u_i\geqslant d^h(S)=BU,
+\]
+soit si et seulement si $\sum_{i\in G}u_i\geqslant B$. Comme tous les
+coûts variables unitaires valent $1/U$, toute répartition admissible a
+pour coût variable
+\[
+\sum_{i\in G}\gamma_i t_i^h
+=\frac{1}{U}d^h(S)=B.
+\]
+Par conséquent,
+\[
+C_H^*(S)
+=B+\min\left\{
+\sum_{i\in G}u_i\ \middle|\
+G\subseteq N,\ \sum_{i\in G}u_i\geqslant B
+\right\}.
+\]
+
+Puisque tout ensemble du minimum a une somme au moins égale à $B$,
+\[
+C_H^*(S)\leqslant2B
+\quad\Longleftrightarrow\quad
+\min_{\substack{G\subseteq N\\ \sum_{i\in G}u_i\geqslant B}}
+\sum_{i\in G}u_i=B
+\quad\Longleftrightarrow\quad
+\exists\,G\subseteq N,\ \sum_{i\in G}u_i=B.
+\]
+Un algorithme polynomial pour la sélection optimale des gardiens
+permettrait donc de décider \textsc{Subset Sum} en temps polynomial. Le
+problème de sélection optimale des gardiens est ainsi NP-difficile.
+\end{proof}
+
+\subsection{Complexité de l'énumération exacte}
+\label{app:preuve_complexite_enumeration}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:complexite_enumeration}]
+Après avoir ordonné les membres de \(S\) par coût variable unitaire, une
+coalition de taille \(s\) admet \(2^s-1\) ensembles de gardiens. Pour chacun,
+la faisabilité et la répartition gloutonne sont évaluées aux \(|H|\) heures en
+\(O(|H|s)\). En sommant sur les coalitions, on obtient
+\[
+|H|\sum_{s=1}^{n}\binom ns s(2^s-1)
+=|H|\left(2n\,3^{n-1}-n\,2^{n-1}\right)
+=O(|H|n\,3^n).
+\]
+\end{proof}
+
+\subsection{Caractérisation du cas homogène}
+\label{app:preuve_cas_homogene}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:coeur_cas_homogene}
+et du Corollaire~\ref{cor:partages_cas_homogene}]
+Une coalition de taille \(s\) requiert au moins \(k_{H,s}\) gardiens pour
+rester faisable à toutes les heures, et tout ensemble de \(k_{H,s}\) gardiens
+est faisable. Comme le coût variable total sur la fenêtre vaut toujours
+\(\gamma sD_H\), une solution optimale active exactement \(k_{H,s}\)
+équipements. Les expressions de \(C_H^*(S)\) et de \(v_H(S)\) en découlent.
+
+Si \(z\in\mathcal C(N,v_H)\), la somme des contraintes du coeur sur toutes les
+coalitions de taille \(s\) donne
+\[
+\binom{n-1}{s-1}v_{H,n}
+=
+\sum_{\substack{S\in\mathcal S\\|S|=s}}z(S)
+\geqslant
+\binom{n}{s}v_{H,s},
+\]
+soit \(v_{H,s}/s\leqslant v_{H,n}/n\). Réciproquement, sous ces inégalités,
+l'allocation \(z_i=v_{H,n}/n\) satisfait toutes les contraintes du coeur.
+La symétrie et l'efficacité donnent les expressions de Shapley et du
+nucléole. Enfin, pour toute allocation efficace, l'excès moyen des coalitions
+de taille \(s\) vaut \(v_{H,s}-sv_{H,n}/n\). L'allocation égalitaire rend tous
+ces excès égaux à leur moyenne, ce qui établit la formule du moindre coeur.
+\end{proof}
+
+\subsection{Certificat leave-one-out}
+\label{app:preuve_leave_one_out}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:certificat_leave_one_out}
+et du Corollaire~\ref{cor:borne_leave_one_out}]
+Attribuons le poids \(1/(n-1)\) à chaque coalition
+\(N\setminus\{i\}\), et un poids nul aux autres coalitions. Cette famille est
+équilibrée. En utilisant la définition de \(v_H\), on obtient
+\begin{align*}
+    \frac{1}{n-1}\sum_{i\in N}v_H(N\setminus\{i\})-v_H(N)
+    &=
+    C_H^*(N)
+    -
+    \frac{1}{n-1}
+    \sum_{i\in N}C_H^*(N\setminus\{i\})\\
+    &=
+    \Delta_{\mathrm{LOO},H}(N).
+\end{align*}
+Ainsi, \(\Delta_{\mathrm{LOO},H}(N)>0\) viole la condition de
+Bondareva--Shapley.
+
+Considérons maintenant toute solution admissible \((z,\varepsilon)\) du
+programme \eqref{eq:lp_moindre_coeur}. En sommant ses contraintes pour les
+\(n\) coalitions \(N\setminus\{i\}\), il vient
+\[
+    (n-1)v_H(N)
+    =
+    \sum_{i\in N}z(N\setminus\{i\})
+    \geqslant
+    \sum_{i\in N}v_H(N\setminus\{i\})-n\varepsilon.
+\]
+Par conséquent,
+\[
+    \varepsilon
+    \geqslant
+    \frac{1}{n}
+    \left[
+        \sum_{i\in N}v_H(N\setminus\{i\})-(n-1)v_H(N)
+    \right]
+    =
+    \frac{n-1}{n}\Delta_{\mathrm{LOO},H}(N).
+\]
+Cette borne valant pour toute solution admissible, elle vaut en particulier
+pour \(\varepsilon^*\).
+\end{proof}
+
+\subsection{Capacité individuelle suffisante sur une fenêtre}
+\label{app:preuve_capacite_coeur}
+\label{app:preuve_capacite_fenetre}
+
+\begin{proof}[Démonstration du Théorème~\ref{thm:capacite_coeur_non_vide}]
+Soit \(Q\in\mathcal S\). Sous l'hypothèse de capacité,
+tout \(j\in Q\) peut servir seul \(Q\) à chaque heure. Réciproquement,
+considérons un ensemble persistant de gardiens \(G\subseteq Q\) et choisissons
+\(j\in\operatorname*{arg\,min}_{i\in G}\gamma_i\). Pour toute famille de
+répartitions faisables \((\mathbf t^h)_{h\in H}\),
+\begin{align*}
+    \sum_{h\in H}\sum_{i\in G}\left(F_i+\gamma_i t_i^h\right)
+    &\geqslant
+    |H|F_j+\gamma_j\sum_{h\in H}\sum_{i\in G}t_i^h\\
+    &=|H|F_j+\gamma_jD(Q).
+\end{align*}
+La configuration persistante réduite au gardien \(j\) est faisable. Il en
+résulte
+\[
+    C_H^*(Q)
+    =
+    \min_{j\in Q}
+    \left\{|H|F_j+\gamma_jD(Q)\right\}.
+\]
+Posons \(p_H:=C_H^*(N)/D(N)\) et \(y_{i,H}:=p_HD_i\). Pour tout
+\(Q\in\mathcal S\) et tout \(j\in Q\),
+\[
+    p_H
+    \leqslant
+    \gamma_j+\frac{|H|F_j}{D(N)}
+    \leqslant
+    \gamma_j+\frac{|H|F_j}{D(Q)}.
+\]
+Ainsi, \(\sum_{i\in Q}y_{i,H}\leqslant C_H^*(Q)\) et
+\(\sum_{i\in N}y_{i,H}=C_H^*(N)\). Pour \(Q=\{i\}\), la première inégalité
+donne \(z_i=C_H^*(\{i\})-y_{i,H}\geqslant0\), tandis que
+\(\sum_{i\in N}z_i=v_H(N)\). La
+Proposition~\ref{prop:translation_coeur} permet donc de conclure que
+\(z\in\mathcal C(N,v_H)\).
+\end{proof}
+
+\subsection{Instabilité de Shapley en très faible trafic}
+\label{app:preuve_shapley_instable}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:shapley_hors_coeur_tres_faible_trafic}]
+On a \(d^h(N)=4<10=q_i\) pour tout \(i\in N\) et tout \(h\in H\) :
+chaque équipement peut donc servir seul la demande de la grande coalition à
+chaque heure. Les coûts autonomes sur la fenêtre sont
+\[
+    \bigl(C_H^*(\{1\}),C_H^*(\{2\}),C_H^*(\{3\}),C_H^*(\{4\})\bigr)
+    =|H|(2,2,5,5).
+\]
+Comme \(d^h(S)=|S|\) et que tous les coûts variables unitaires valent un,
+\eqref{eq:cout_tres_faible_trafic} donne, pour tout \(S\in\mathcal S\),
+\[
+    C_H^*(S)=|H|\left(|S|+\min_{i\in S}F_i\right),
+    \qquad
+    v_H(S)=|H|\left(\sum_{i\in S}F_i-\min_{i\in S}F_i\right).
+\]
+En particulier,
+\[
+    v_H(N)=9|H|,
+    \qquad
+    v_H(\{1,3,4\})=8|H|.
+\]
+
+Les opérateurs 1 et 2 sont symétriques, de même que les opérateurs 3 et 4.
+Pour l'opérateur 3, la contribution marginale est nulle lorsqu'il arrive en
+premier et vaut \(4|H|\) dès qu'au moins un opérateur le précède. Il vient donc
+\[
+    \phi_3(v_H)=\phi_4(v_H)=3|H|.
+\]
+Pour l'opérateur 1, trois événements disjoints suffisent. Il arrive en premier
+avec probabilité \(1/4\), auquel cas sa contribution est nulle ; l'opérateur 2
+le précède avec probabilité \(1/2\), auquel cas sa contribution vaut \(|H|\) ;
+enfin, il précède l'opérateur 2 sans arriver en premier avec probabilité
+\(1/2-1/4=1/4\), auquel cas une coalition formée uniquement d'opérateurs à
+coût fixe élevé le précède et sa contribution vaut \(4|H|\). Par conséquent,
+\[
+    \phi_1(v_H)=\phi_2(v_H)
+    =|H|\left(\frac14\,0+\frac12\,1+\frac14\,4\right)
+    =\frac32|H|.
+\]
+L'efficacité est vérifiée puisque
+\(|H|\bigl(2(3/2)+2(3)\bigr)=9|H|=v_H(N)\). Pour
+\(Q=\{1,3,4\}\),
+\[
+    \sum_{i\in Q}\phi_i(v_H)
+    =\frac{15}{2}|H|
+    <8|H|
+    =v_H(Q).
+\]
+La contrainte du cœur associée à \(Q\) est donc violée et
+\(\phi(v_H)\notin\mathcal C(N,v_H)\).
+
+Le cœur n'est pourtant pas vide. L'allocation du
+Théorème~\ref{thm:capacite_coeur_non_vide} vaut ici
+\[
+    z^{\mathrm{core}}
+    =|H|\left(\frac34,\frac34,\frac{15}{4},\frac{15}{4}\right),
+    \qquad
+    z^{\mathrm{core}}(N)=9|H|=v_H(N).
+\]
+Pour vérifier toutes ses contraintes, posons
+\(a:=|S\cap\{1,2\}|\) et \(b:=|S\cap\{3,4\}|\). Si \(a\geqslant1\), alors
+\[
+    z^{\mathrm{core}}(S)-v_H(S)
+    =|H|\left[\frac{3a+15b}{4}-(a+4b-1)\right]
+    =|H|\frac{4-|S|}{4}
+    \geqslant0.
+\]
+Si \(a=0\) et \(b\geqslant1\), alors
+\[
+    z^{\mathrm{core}}(S)-v_H(S)
+    =|H|\left[\frac{15b}{4}-4(b-1)\right]
+    =|H|\left(4-\frac b4\right)
+    >0.
+\]
+Ainsi \(z^{\mathrm{core}}\in\mathcal C(N,v_H)\), ce qui distingue bien la
+non-appartenance de Shapley de la non-vacuité du cœur.
+\end{proof}
+
+\subsection{Stabilité de Shapley sous homogénéité des coûts}
+\label{app:preuve_shapley_homogene}
+
+\begin{proof}[Démonstration du Corollaire~\ref{cor:shapley_coeur_tres_faible_trafic_homogene}]
+Par \eqref{eq:cout_tres_faible_trafic},
+\(C_H^*(S)=|H|F+\gamma D(S)\) pour tout \(S\in\mathcal S\). Comme
+\(C_H^*(\{i\})=|H|F+\gamma D_i\),
+\[
+    v_H(S)
+    =\sum_{i\in S}(|H|F+\gamma D_i)-|H|F-\gamma D(S)
+    =|H|F(|S|-1).
+\]
+Le jeu ne dépend que du cardinal des coalitions. Par symétrie et efficacité,
+si \(n=|N|\),
+\[
+    \phi_i(v_H)=\frac{v_H(N)}{n}=\frac{|H|F(n-1)}{n},
+    \qquad \forall i\in N.
+\]
+Pour tout \(Q\in\mathcal S\) de cardinal \(k\),
+\[
+    \sum_{i\in Q}\phi_i(v_H)-v_H(Q)
+    =\frac{k|H|F(n-1)}{n}-|H|F(k-1)
+    =\frac{|H|F(n-k)}{n}
+    \geqslant0.
+\]
+L'efficacité de la valeur de Shapley et les contraintes précédentes donnent
+\(\phi(v_H)\in\mathcal C(N,v_H)\).
+\end{proof}
+
+\subsection{Équilibre budgétaire des transferts}
+\label{app:preuve_equilibre_budgetaire}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:equilibre_budgetaire}]
+\begin{align*}
+\sum_{i\in N}\tau_i
+&=
+\sum_{i\in N}C_{i,H}^*(N)
+-
+\sum_{i\in N}C_H^*(\{i\})
++
+\sum_{i\in N}z_i\\
+&=
+C_H^*(N)-\sum_{i\in N}C_H^*(\{i\})+v_H(N)
+=
+0.
+\end{align*}
+\end{proof}
+
+\subsection{Équivalence entre économies attribuées et coûts nets}
+\label{app:preuve_translation_coeur}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:translation_coeur}]
+L'efficacité de \(z\) donne
+\[
+\sum_{i\in N}y_i
+=
+\sum_{i\in N}C_H^*(\{i\})-v_H(N)
+=
+C_H^*(N).
+\]
+Pour tout \(Q\in\mathcal S\),
+\begin{align*}
+\sum_{i\in Q}y_i\leqslant C_H^*(Q)
+&\Longleftrightarrow
+\sum_{i\in Q}C_H^*(\{i\})-z(Q)\leqslant C_H^*(Q)\\
+&\Longleftrightarrow
+z(Q)\geqslant
+\sum_{i\in Q}C_H^*(\{i\})-C_H^*(Q)\\
+&\Longleftrightarrow
+z(Q)\geqslant v_H(Q).
+\end{align*}
+Les contraintes de stabilité sont donc équivalentes.
+\end{proof}

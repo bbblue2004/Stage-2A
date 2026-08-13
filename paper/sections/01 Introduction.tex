@@ -39,14 +39,17 @@ est-elle aussi stable vis-à-vis de toutes les coalitions ?} Nous considérons
 un site en information complète sur une fenêtre horaire finie. Le même
 ensemble d'équipements gardiens doit rester actif pendant toute la fenêtre,
 alors que les demandes et l'allocation du trafic varient d'une heure à
-l'autre. Chaque gardien supporte un coût fixe d'activation, un coût variable
-et une contrainte de capacité ; son activation demeure indivisible.
+l'autre. Chaque gardien supporte un coût énergétique fixe de fonctionnement
+en état actif, un coût énergétique variable et une contrainte de capacité ;
+son activation demeure indivisible.
 
 Pour chaque coalition, nous résolvons d'abord le choix des gardiens et
 l'acheminement horaire, puis définissons sa valeur comme l'économie par rapport
 au fonctionnement séparé. La réunion de coalitions disjointes ne réduit pas
 leurs économies : le jeu est superadditif et la grande coalition est donc
-efficace au sens du surplus total. Ce résultat ne suffit pas à la stabilité.
+efficace au sens du surplus total. Cette comparaison peut être une égalité en
+général, mais elle devient stricte lorsque chaque opérateur peut acheminer seul
+la demande totale. Même stricte, cette efficacité ne suffit pas à la stabilité.
 Les coûts fixes et les seuils de capacité peuvent rendre le jeu non équilibré,
 jusqu'à produire un cœur vide. La valeur de Shapley, le nucléole, le cœur et le
 moindre cœur sont employés comme outils classiques d'allocation ou de
@@ -60,14 +63,17 @@ Les contributions de l'article sont les suivantes :
     horaires ; nous établissons l'optimalité d'une allocation gloutonne à
     gardiens fixés et situons le coût de cette politique par rapport à une
     relaxation reconfigurable heure par heure ;
-    \item nous établissons la superadditivité du jeu d'économies, puis
-    construisons un contre-exemple homogène minimal à cœur vide ; nous
+    \item nous établissons la superadditivité du jeu d'économies, précisons
+    quand elle peut être non stricte et donnons une condition suffisante de
+    superadditivité stricte, puis
+    construisons un contre-exemple homogène à quatre opérateurs et à cœur
+    vide ; nous
     caractérisons en outre le cas homogène, exhibons une famille paramétrique
     de jeux à cœur vide et proposons un certificat \emph{leave-one-out} ainsi
     qu'une borne sur le moindre cœur ;
-    \item nous donnons une condition de capacité suffisante pour que le cœur
-    soit non vide, accompagnée d'une allocation explicite, puis étendons cette
-    garantie à la fenêtre temporelle. Nous montrons toutefois, par un
+    \item nous donnons une condition de capacité sur toute la fenêtre,
+    suffisante pour que le cœur soit non vide et accompagnée d'une allocation
+    explicite. Nous montrons toutefois, par un
     contre-exemple à quatre opérateurs, que ce régime de très faible trafic ne
     garantit pas l'appartenance de la valeur de Shapley au cœur, puis
     rétablissons cette propriété sous homogénéité des coûts fixes et variables.
@@ -89,7 +95,8 @@ un site et à une fenêtre de décision.
 
 La suite de l'article est organisée comme suit. La section~2 situe le travail
 par rapport à la mise en veille multi-opérateur et aux mécanismes
-économiques. La section~3 formalise le système. La section~4 résout le problème
-opérationnel de chaque coalition. La section~5 construit le jeu d'économies et
-analyse son efficacité et sa stabilité. La section~6 décrit l'évaluation
-numérique, puis la section~7 conclut.
+économiques. La section~3 formalise le système, le jeu d'économies et le
+critère de stabilité. La section~4 résout le problème opérationnel de chaque
+coalition et établit la superadditivité du jeu. La section~5 analyse
+l'existence et le choix d'une allocation stable. La section~6 décrit
+l'évaluation numérique, puis la section~7 conclut.
