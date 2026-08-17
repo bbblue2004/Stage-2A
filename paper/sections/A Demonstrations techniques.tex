@@ -78,16 +78,54 @@ la faisabilité et la répartition gloutonne sont évaluées aux \(|H|\) heures 
 \]
 \end{proof}
 
+\subsection{Réduction semi-homogène}
+\label{app:preuve_semi_homogene}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:reduction_semi_homogene}]
+Fixons \(S\in\mathcal S\). Puisque tous les équipements ont la capacité
+\(q\), un ensemble persistant de \(r\) gardiens est faisable si et seulement
+si
+\[
+    rq\geqslant d^h(S),
+    \qquad \forall h\in H.
+\]
+Le nombre minimal de gardiens est donc \(k_H(S)\). Tous les coûts fixes étant
+égaux à \(F>0\), une solution optimale active exactement ce nombre
+d'équipements. De plus, pour toute répartition faisable,
+\[
+    \sum_{h\in H}\sum_{i\in G}\gamma t_i^h
+    =\gamma\sum_{h\in H}d^h(S)
+    =\gamma D(S).
+\]
+Il en résulte
+\[
+    C_H^*(S)=|H|Fk_H(S)+\gamma D(S).
+\]
+L'hypothèse de faisabilité individuelle donne
+\(C_H^*(\{i\})=|H|F+\gamma D_i\). En sommant ces coûts autonomes et en
+utilisant \(D(S)=\sum_{i\in S}D_i\), on obtient
+\[
+    v_H(S)=|H|F\bigl(|S|-k_H(S)\bigr).
+\]
+
+Enfin, la fonction \(S\mapsto |S|\) est modulaire. Pour tous
+\(A,B\subseteq N\), l'inégalité de supermodularité de \(v_H\) est donc
+équivalente à
+\[
+    k_H(A)+k_H(B)
+    \geqslant
+    k_H(A\cup B)+k_H(A\cap B),
+\]
+qui est la sous-modularité de \(k_H\).
+\end{proof}
+
 \subsection{Caractérisation du cas homogène}
 \label{app:preuve_cas_homogene}
 
-\begin{proof}[Démonstration de la Proposition~\ref{prop:coeur_cas_homogene}
-et du Corollaire~\ref{cor:partages_cas_homogene}]
-Une coalition de taille \(s\) requiert au moins \(k_{H,s}\) gardiens pour
-rester faisable à toutes les heures, et tout ensemble de \(k_{H,s}\) gardiens
-est faisable. Comme le coût variable total sur la fenêtre vaut toujours
-\(\gamma sD_H\), une solution optimale active exactement \(k_{H,s}\)
-équipements. Les expressions de \(C_H^*(S)\) et de \(v_H(S)\) en découlent.
+\begin{proof}[Démonstration du Corollaire~\ref{prop:coeur_cas_homogene}]
+La Proposition~\ref{prop:reduction_semi_homogene} donne
+\(k_H(S)=k_{H,s}\) et \(v_H(S)=v_{H,s}\) pour toute coalition de taille
+\(s\).
 
 Si \(z\in\mathcal C(N,v_H)\), la somme des contraintes du coeur sur toutes les
 coalitions de taille \(s\) donne
@@ -101,9 +139,7 @@ coalitions de taille \(s\) donne
 soit \(v_{H,s}/s\leqslant v_{H,n}/n\). Réciproquement, sous ces inégalités,
 l'allocation \(z_i=v_{H,n}/n\) satisfait toutes les contraintes du coeur.
 La symétrie et l'efficacité donnent les expressions de Shapley et du
-nucléole. Enfin, pour toute allocation efficace, l'excès moyen des coalitions
-de taille \(s\) vaut \(v_{H,s}-sv_{H,n}/n\). L'allocation égalitaire rend tous
-ces excès égaux à leur moyenne, ce qui établit la formule du moindre coeur.
+nucléole.
 \end{proof}
 
 \subsection{Certificat leave-one-out}
@@ -191,87 +227,6 @@ donne \(z_i=C_H^*(\{i\})-y_{i,H}\geqslant0\), tandis que
 \(\sum_{i\in N}z_i=v_H(N)\). La
 Proposition~\ref{prop:translation_coeur} permet donc de conclure que
 \(z\in\mathcal C(N,v_H)\).
-\end{proof}
-
-\subsection{Instabilité de Shapley en très faible trafic}
-\label{app:preuve_shapley_instable}
-
-\begin{proof}[Démonstration de la Proposition~\ref{prop:shapley_hors_coeur_tres_faible_trafic}]
-On a \(d^h(N)=4<10=q_i\) pour tout \(i\in N\) et tout \(h\in H\) :
-chaque équipement peut donc servir seul la demande de la grande coalition à
-chaque heure. Les coûts autonomes sur la fenêtre sont
-\[
-    \bigl(C_H^*(\{1\}),C_H^*(\{2\}),C_H^*(\{3\}),C_H^*(\{4\})\bigr)
-    =|H|(2,2,5,5).
-\]
-Comme \(d^h(S)=|S|\) et que tous les coûts variables unitaires valent un,
-\eqref{eq:cout_tres_faible_trafic} donne, pour tout \(S\in\mathcal S\),
-\[
-    C_H^*(S)=|H|\left(|S|+\min_{i\in S}F_i\right),
-    \qquad
-    v_H(S)=|H|\left(\sum_{i\in S}F_i-\min_{i\in S}F_i\right).
-\]
-En particulier,
-\[
-    v_H(N)=9|H|,
-    \qquad
-    v_H(\{1,3,4\})=8|H|.
-\]
-
-Les opérateurs 1 et 2 sont symétriques, de même que les opérateurs 3 et 4.
-Pour l'opérateur 3, la contribution marginale est nulle lorsqu'il arrive en
-premier et vaut \(4|H|\) dès qu'au moins un opérateur le précède. Il vient donc
-\[
-    \phi_3(v_H)=\phi_4(v_H)=3|H|.
-\]
-Pour l'opérateur 1, trois événements disjoints suffisent. Il arrive en premier
-avec probabilité \(1/4\), auquel cas sa contribution est nulle ; l'opérateur 2
-le précède avec probabilité \(1/2\), auquel cas sa contribution vaut \(|H|\) ;
-enfin, il précède l'opérateur 2 sans arriver en premier avec probabilité
-\(1/2-1/4=1/4\), auquel cas une coalition formée uniquement d'opérateurs à
-coût fixe élevé le précède et sa contribution vaut \(4|H|\). Par conséquent,
-\[
-    \phi_1(v_H)=\phi_2(v_H)
-    =|H|\left(\frac14\,0+\frac12\,1+\frac14\,4\right)
-    =\frac32|H|.
-\]
-L'efficacité est vérifiée puisque
-\(|H|\bigl(2(3/2)+2(3)\bigr)=9|H|=v_H(N)\). Pour
-\(Q=\{1,3,4\}\),
-\[
-    \sum_{i\in Q}\phi_i(v_H)
-    =\frac{15}{2}|H|
-    <8|H|
-    =v_H(Q).
-\]
-La contrainte du cœur associée à \(Q\) est donc violée et
-\(\phi(v_H)\notin\mathcal C(N,v_H)\).
-
-Le cœur n'est pourtant pas vide. L'allocation du
-Théorème~\ref{thm:capacite_coeur_non_vide} vaut ici
-\[
-    z^{\mathrm{core}}
-    =|H|\left(\frac34,\frac34,\frac{15}{4},\frac{15}{4}\right),
-    \qquad
-    z^{\mathrm{core}}(N)=9|H|=v_H(N).
-\]
-Pour vérifier toutes ses contraintes, posons
-\(a:=|S\cap\{1,2\}|\) et \(b:=|S\cap\{3,4\}|\). Si \(a\geqslant1\), alors
-\[
-    z^{\mathrm{core}}(S)-v_H(S)
-    =|H|\left[\frac{3a+15b}{4}-(a+4b-1)\right]
-    =|H|\frac{4-|S|}{4}
-    \geqslant0.
-\]
-Si \(a=0\) et \(b\geqslant1\), alors
-\[
-    z^{\mathrm{core}}(S)-v_H(S)
-    =|H|\left[\frac{15b}{4}-4(b-1)\right]
-    =|H|\left(4-\frac b4\right)
-    >0.
-\]
-Ainsi \(z^{\mathrm{core}}\in\mathcal C(N,v_H)\), ce qui distingue bien la
-non-appartenance de Shapley de la non-vacuité du cœur.
 \end{proof}
 
 \subsection{Stabilité de Shapley sous homogénéité des coûts}

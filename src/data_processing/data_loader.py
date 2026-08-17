@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FULL_CSV_PATH = ROOT / "data" / "raw" / "radio_sites.csv"
 COMPACT_CSV_PATH = ROOT / "data" / "processed" / "radio_sites_10x7.csv"
 CSV_PATH = COMPACT_CSV_PATH if COMPACT_CSV_PATH.is_file() else FULL_CSV_PATH
-OUTPUT_DIR = ROOT / "figures" / "data_figures"
+OUTPUT_DIR = ROOT / "figures" / "diagnostics"
 DEFAULT_ANTENNA_ID = "00000001U6"
 
 Record = tuple[datetime, str, float, float]

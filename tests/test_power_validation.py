@@ -10,102 +10,97 @@ import numpy as np
 
 from src.data_processing.power_validation import (
     AntennaSeries,
+    CalibratedPopulation,
+    calibrate_antenna,
     fit_affine,
-    fit_nonnegative_affine,
-    fit_quadratic,
+    load_calibrated_population,
     load_population,
-    validate_antenna,
+    save_calibrated_population,
 )
+from src.data_processing.virtual_sites import generate_virtual_sites
 
 
-class AffinePowerModelTests(unittest.TestCase):
-    def test_unconstrained_fit_recovers_an_exact_affine_model(self) -> None:
+def _days(count: int = 5) -> tuple[date, ...]:
+    return tuple(date(2023, 3, 20) + timedelta(days=index) for index in range(count))
+
+
+def _calibrated_population(count: int = 16) -> CalibratedPopulation:
+    traffic = np.arange(count * 5 * 24, dtype=float).reshape(count, 5, 24)
+    return CalibratedPopulation(
+        antenna_ids=np.asarray([f"A{index:02d}" for index in range(count)]),
+        days=np.asarray([day.isoformat() for day in _days()]),
+        traffic_gb=traffic,
+        power_w=100.0 + traffic,
+        p_fixed_w=np.linspace(100.0, 200.0, count),
+        slope_w_per_gb=np.ones(count),
+        r_squared=np.ones(count),
+        normalized_rmse=np.zeros(count),
+        peak_traffic_gb=np.max(traffic, axis=(1, 2)),
+        traffic_group=np.repeat(np.arange(2), count // 2).astype(np.int8),
+        fixed_power_group=np.repeat(np.arange(2), count // 2).astype(np.int8),
+    )
+
+
+class AffinePowerCalibrationTests(unittest.TestCase):
+    def test_affine_fit_recovers_exact_coefficients(self) -> None:
         traffic = np.asarray([0.0, 1.0, 2.0, 4.0, 7.0])
         power = 125.0 + 3.5 * traffic
 
         fit = fit_affine(traffic, power)
 
-        self.assertAlmostEqual(fit.f_tilde, 125.0, places=10)
-        self.assertAlmostEqual(fit.gamma_tilde, 3.5, places=10)
-        self.assertAlmostEqual(fit.sse, 0.0, places=20)
+        self.assertAlmostEqual(fit.p_fixed_w, 125.0, places=10)
+        self.assertAlmostEqual(fit.slope_w_per_gb, 3.5, places=10)
         self.assertAlmostEqual(fit.r_squared, 1.0, places=12)
+        self.assertAlmostEqual(fit.rmse_w, 0.0, places=12)
+        self.assertAlmostEqual(fit.normalized_rmse, 0.0, places=12)
 
-    def test_nonnegative_fit_uses_the_correct_boundary(self) -> None:
-        traffic = np.asarray([0.0, 1.0, 2.0, 3.0])
-        power = np.asarray([5.0, 4.0, 3.0, 2.0])
-
-        free = fit_affine(traffic, power)
-        constrained = fit_nonnegative_affine(traffic, power)
-
-        self.assertLess(free.gamma_tilde, 0.0)
-        self.assertAlmostEqual(constrained.gamma_tilde, 0.0, places=12)
-        self.assertAlmostEqual(constrained.f_tilde, np.mean(power), places=12)
-
-    def test_centered_quadratic_fit_is_stable_for_large_traffic_values(self) -> None:
-        traffic = 1_000_000.0 + np.arange(20, dtype=float)
-        centered = traffic - 1_000_000.0
-        power = 500.0 + 2.0 * centered + 0.25 * centered**2
-
-        fit = fit_quadratic(traffic, power)
-        prediction = fit.predict(traffic)
-
-        np.testing.assert_allclose(prediction, power, rtol=1e-8, atol=1e-4)
-        self.assertLess(fit.sse, 1e-15)
-
-    def test_leave_one_day_out_has_no_day_leakage(self) -> None:
-        days = tuple(date(2023, 3, 20) + timedelta(days=index) for index in range(5))
+    def test_direct_calibration_uses_all_five_days(self) -> None:
         traffic = np.vstack(
-            [np.arange(24, dtype=float) + 0.25 * index for index in range(5)]
+            [np.arange(24, dtype=float) + day_index for day_index in range(5)]
         )
         power = 200.0 + 4.0 * traffic
-        series = AntennaSeries("exact", days, traffic, power)
+        series = AntennaSeries("exact", _days(), traffic, power)
 
-        result, folds, diagnostics = validate_antenna(series)
+        result = calibrate_antenna(series)
 
         self.assertEqual(result.status, "included")
-        self.assertEqual(len(folds), 5)
-        self.assertEqual({fold.n_train for fold in folds}, {4 * 24})
-        self.assertEqual({fold.n_test for fold in folds}, {24})
-        self.assertEqual({fold.held_out_day for fold in folds}, {d.isoformat() for d in days})
-        self.assertAlmostEqual(result.f_tilde, 200.0, places=9)
-        self.assertAlmostEqual(result.gamma_tilde, 4.0, places=9)
-        self.assertAlmostEqual(result.cv_r_squared, 1.0, places=12)
-        self.assertLess(result.cv_rmse_affine, 1e-10)
-        self.assertIsNotNone(diagnostics)
-        assert diagnostics is not None
-        for day in days:
-            self.assertEqual(
-                int(np.sum(diagnostics["day"] == day.isoformat())),
-                24,
-            )
+        self.assertEqual(result.num_observations, 120)
+        self.assertEqual(result.num_active_observations, 120)
+        self.assertAlmostEqual(result.p_fixed_w, 200.0, places=9)
+        self.assertAlmostEqual(result.slope_w_per_gb, 4.0, places=9)
+        self.assertAlmostEqual(result.r_squared, 1.0, places=12)
 
-    def test_constant_traffic_is_reported_without_fitting(self) -> None:
-        days = tuple(date(2023, 3, 20) + timedelta(days=index) for index in range(5))
+    def test_zero_power_rows_are_excluded_from_active_fit(self) -> None:
+        traffic = np.tile(np.arange(24, dtype=float), (5, 1))
+        power = 200.0 + 4.0 * traffic
+        traffic[0, 0], power[0, 0] = 0.0, 0.0
+        traffic[1, 1], power[1, 1] = 3.0, 0.0
+        series = AntennaSeries("active-only", _days(), traffic, power)
+
+        result = calibrate_antenna(series)
+
+        self.assertEqual(result.status, "included")
+        self.assertEqual(result.num_active_observations, 118)
+        self.assertAlmostEqual(result.p_fixed_w, 200.0, places=9)
+        self.assertAlmostEqual(result.slope_w_per_gb, 4.0, places=9)
+
+    def test_constant_traffic_is_excluded(self) -> None:
         traffic = np.ones((5, 24))
-        power = np.arange(120, dtype=float).reshape(5, 24)
-        series = AntennaSeries("constant", days, traffic, power)
-
-        result, folds, diagnostics = validate_antenna(series)
-
+        power = np.arange(120, dtype=float).reshape(5, 24) + 100.0
+        result = calibrate_antenna(
+            AntennaSeries("constant", _days(), traffic, power)
+        )
         self.assertEqual(result.status, "constant_traffic")
-        self.assertEqual(folds, [])
-        self.assertIsNone(diagnostics)
-        self.assertTrue(np.isnan(result.cv_r_squared))
 
-    def test_constant_leave_one_day_training_sample_is_reported(self) -> None:
-        days = tuple(date(2023, 3, 20) + timedelta(days=index) for index in range(5))
-        traffic = np.ones((5, 24))
-        traffic[-1] = np.arange(24, dtype=float)
-        power = 100.0 + traffic
-        series = AntennaSeries("single-varying-day", days, traffic, power)
+    def test_nonpositive_slope_is_excluded(self) -> None:
+        traffic = np.tile(np.arange(24, dtype=float), (5, 1))
+        power = 500.0 - 2.0 * traffic
+        result = calibrate_antenna(
+            AntennaSeries("negative-slope", _days(), traffic, power)
+        )
+        self.assertEqual(result.status, "nonpositive_slope")
 
-        result, folds, diagnostics = validate_antenna(series)
-
-        self.assertEqual(result.status, "unidentifiable_training_fold")
-        self.assertEqual(folds, [])
-        self.assertIsNone(diagnostics)
-
-    def test_loader_averages_duplicates_and_keeps_only_complete_days(self) -> None:
+    def test_loader_selects_first_five_days_and_averages_duplicates(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "data.csv"
             headers = (
@@ -117,7 +112,7 @@ class AffinePowerModelTests(unittest.TestCase):
             with path.open("w", newline="", encoding="utf-8") as file:
                 writer = csv.writer(file, delimiter=";")
                 writer.writerow(headers)
-                for day_offset in range(3):
+                for day_offset in range(6):
                     day = datetime(2023, 3, 20) + timedelta(days=day_offset)
                     for hour in range(24):
                         writer.writerow(
@@ -133,84 +128,39 @@ class AffinePowerModelTests(unittest.TestCase):
 
             population, audit = load_population(path)
 
-        self.assertEqual(audit.total_rows, 74)
-        self.assertEqual(audit.parsed_rows, 73)
-        self.assertEqual(audit.invalid_rows, 1)
-        self.assertEqual(audit.duplicate_rows, 1)
+        self.assertEqual(audit.selected_dates, tuple(day.isoformat() for day in _days()))
+        self.assertEqual(audit.selected_rows, 121)
+        self.assertEqual(audit.duplicate_selected_rows, 1)
+        self.assertEqual(audit.unparsed_source_rows, 1)
         self.assertEqual(len(population), 1)
-        self.assertEqual(population[0].num_days, 3)
+        self.assertEqual(population[0].num_observations, 120)
         self.assertAlmostEqual(population[0].traffic[0, 0], 1.0)
         self.assertAlmostEqual(population[0].power[0, 0], 101.0)
 
-    def test_loader_marks_a_network_wide_joint_zero_as_an_outage(self) -> None:
+    def test_calibrated_population_cache_round_trip(self) -> None:
+        expected = _calibrated_population()
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "data.csv"
-            headers = (
-                "HEURE(PSDATE)",
-                "SYS.NIDT",
-                "DL_VOLUME_PDCP_GBYTES",
-                "AVERAGE_POWER_CONSUMPTION_(W)",
-            )
-            with path.open("w", newline="", encoding="utf-8") as file:
-                writer = csv.writer(file, delimiter=";")
-                writer.writerow(headers)
-                for antenna in ("A", "B"):
-                    for day_offset in range(5):
-                        day = datetime(2023, 3, 20) + timedelta(days=day_offset)
-                        for hour in range(24):
-                            outage = day_offset == 4 and hour == 2
-                            writer.writerow(
-                                (
-                                    (day + timedelta(hours=hour)).strftime(
-                                        "%Y-%m-%d %H"
-                                    ),
-                                    antenna,
-                                    0.0 if outage else float(hour + 1),
-                                    0.0 if outage else 100.0 + hour,
-                                )
-                            )
+            path = Path(directory) / "population.npz"
+            save_calibrated_population(expected, path)
+            observed = load_calibrated_population(path)
 
-            population, audit = load_population(path)
+        np.testing.assert_array_equal(observed.antenna_ids, expected.antenna_ids)
+        np.testing.assert_allclose(observed.traffic_gb, expected.traffic_gb)
+        np.testing.assert_allclose(observed.p_fixed_w, expected.p_fixed_w)
+        np.testing.assert_array_equal(observed.traffic_group, expected.traffic_group)
 
-        self.assertEqual(audit.global_outage_timestamps, ("2023-03-24 02:00:00",))
-        self.assertEqual(audit.globally_excluded_rows, 2)
-        self.assertEqual({series.num_days for series in population}, {5})
-        self.assertEqual({series.num_observations for series in population}, {119})
-        self.assertTrue(all(np.isnan(series.traffic[4, 2]) for series in population))
+    def test_virtual_sites_are_fixed_distinct_quadruplets(self) -> None:
+        population = _calibrated_population()
+        first = generate_virtual_sites(population, num_sites=20, seed=123)
+        second = generate_virtual_sites(population, num_sites=20, seed=123)
 
-    def test_leave_one_day_out_records_extrapolated_test_points(self) -> None:
-        days = tuple(date(2023, 3, 20) + timedelta(days=index) for index in range(5))
-        traffic = np.tile(np.arange(24, dtype=float), (5, 1))
-        traffic[-1, -1] = 100.0
-        power = 200.0 + 4.0 * traffic
-        series = AntennaSeries("extrapolation", days, traffic, power)
-
-        result, folds, diagnostics = validate_antenna(series)
-
-        self.assertGreater(result.cv_extrapolation_fraction, 0.0)
-        held_out = next(fold for fold in folds if fold.held_out_day == days[-1].isoformat())
-        self.assertAlmostEqual(held_out.extrapolation_fraction, 1.0 / 24.0)
-        self.assertIsNotNone(diagnostics)
-        assert diagnostics is not None
-        self.assertEqual(int(np.sum(diagnostics["is_extrapolation"])), 1)
-
-    def test_active_fit_excludes_sleep_and_inconsistent_zero_power_rows(self) -> None:
-        days = tuple(date(2023, 3, 20) + timedelta(days=index) for index in range(5))
-        traffic = np.tile(np.arange(24, dtype=float), (5, 1))
-        power = 200.0 + 4.0 * traffic
-        traffic[0, 0], power[0, 0] = 0.0, 0.0
-        traffic[1, 1], power[1, 1] = 3.0, 0.0
-        series = AntennaSeries("active-only", days, traffic, power)
-
-        result, folds, diagnostics = validate_antenna(series)
-
-        self.assertEqual(result.status, "included")
-        self.assertEqual(result.num_observations, 118)
-        self.assertEqual(result.num_active_days, 5)
-        self.assertAlmostEqual(result.f_tilde, 200.0, places=9)
-        self.assertAlmostEqual(result.gamma_tilde, 4.0, places=9)
-        self.assertEqual(sum(fold.n_test for fold in folds), 118)
-        self.assertIsNotNone(diagnostics)
+        self.assertEqual(first.num_sites, 20)
+        np.testing.assert_array_equal(first.antenna_indices, second.antenna_indices)
+        self.assertEqual(len({tuple(row) for row in first.antenna_indices}), 20)
+        for row in first.antenna_indices:
+            self.assertEqual(len(set(row)), 4)
+            self.assertEqual(len(set(population.traffic_group[row])), 1)
+            self.assertEqual(len(set(population.fixed_power_group[row])), 1)
 
 
 if __name__ == "__main__":

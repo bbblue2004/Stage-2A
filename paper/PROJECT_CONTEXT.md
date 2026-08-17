@@ -17,13 +17,29 @@ théorie des jeux coopératifs.
 - Projection de Shapley : diagnostic secondaire.
 - Veille : puissance supposée nulle ; \(F_i\) est calibré directement à partir
   de l'intercept actif.
-- Fenêtre numérique : bornes horaires paramétrables, à fixer ultérieurement à
-  partir du trafic et avant l’analyse de stabilité.
+- Fenêtre numérique : sept créneaux nocturnes [00:00, 07:00) pour chacun des
+  cinq jours ; les gardiens sont fixes pendant une nuit et peuvent changer la
+  nuit suivante. Cette fenêtre ne varie pas entre les scénarios de la campagne
+  principale, mais ses bornes restent des paramètres du code.
+- Période empirique : les cinq premiers jours observés, soit 120 créneaux
+  horaires par antenne, sont utilisés dans toutes les expériences.
+- Population simulée : 1 000 sites virtuels de quatre antennes, générés une
+  fois avec la graine 20260814 puis réutilisés dans tous les scénarios.
 - Politique opérationnelle principale : même ensemble de gardiens sur toute
   la fenêtre, allocations de trafic horaires.
-- Capacité : paramètre de scénario construit à partir du pic observé et d’un
-  taux de charge au pic explicite ; aucune capacité physique n’est prétendue
-  observée.
+- Référence énergétique : l'absence de partage sert uniquement à normaliser
+  l'énergie évitée. Les comparaisons opérationnelles portent sur l'activation
+  par capacité décroissante et la répartition proportionnelle sur les gardiens optimaux.
+  L'optimum principal fixe les gardiens sur la nuit et applique l'allocation
+  gloutonne à chaque heure ; l'optimum horaire est seulement une borne basse.
+- Capacité : paramètre de scénario construit de sorte que le pic observé
+  représente entre 70 % et 100 % de \(q_i\) ; aucune capacité physique
+  n’est prétendue observée. La demande n’est pas multipliée dans la campagne
+  principale ; ses variations sont réservées à l’analyse de sensibilité.
+- Sensibilité : une section globale, placée après les résultats opérationnels
+  et de stabilité, varie séparément capacité, trafic, coefficients de
+  puissance, veille, fenêtre et nombre d'opérateurs. Le prix commun de
+  l'électricité est traité par invariance d'échelle.
 
 Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
 
@@ -76,6 +92,25 @@ Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
   capacités par ordre croissant des coûts variables unitaires.
 - La sélection globale des gardiens est un problème à coûts fixes.
 - Pour les petites coalitions, l’énumération exacte est acceptable.
+- Sur les 20 000 instances de la Section 6.3, l'optimum persistant évite une
+  médiane de 67,7 % de l'énergie autonome et retient un seul gardien dans
+  64,5 % des cas.
+- Sur ces mêmes 20 000 instances, le cœur est vide dans 25,2 % des cas ; il
+  est non vide mais exclut Shapley dans 12,0 % des cas, et Shapley appartient
+  au cœur dans 62,9 % des cas.
+- L'analyse de sensibilité repose sur 1 000 sites (5 jours, et 4 nuits communes
+  pour la position de la fenêtre) et sur 1 000 sites stratifiés pour chaque
+  taille de coalition entre 2 et 6, soit 182 000 lignes de résultats.
+- Sur les plages testées, la position et la durée de la fenêtre sont les
+  principaux leviers opérationnels. Les perturbations uniformes de +/-20 % de
+  F_i ou gamma_i changent l'économie médiane de moins de 3 points et la
+  fréquence de stabilité de moins d'un point.
+- Entre quatre et six opérateurs, l'économie médiane reste voisine de 69 %,
+  tandis que la fréquence d'une valeur de Shapley dans le cœur passe de
+  63,2 % à 32,7 %.
+- La condition de capacité individuelle suffisante garantit bien un cœur non
+  vide dans toutes les instances où elle s'applique, sans garantir Shapley ;
+  le certificat leave-one-out détecte 71,5 % des cœurs vides sans faux positif.
 - La sous-additivité est stricte lorsque l’un des gardiens de coût variable
   minimal des deux solutions séparées peut acheminer toute la demande réunie.
 - Le coût \(C_H^*\) avec gardiens fixes est sous-additif et le jeu \(v_H\)
@@ -93,6 +128,5 @@ Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
 - usure induite par une allocation déterministe répétée ;
 - équité temporelle entre gardiens ;
 - conditions de non-vacuité du cœur ;
-- choix définitif des bornes de la fenêtre temporelle ;
 - validation puis exécution du protocole numérique gelé ;
 - cohérence entre optimisation opérationnelle et répartition des économies de coopération.

@@ -1,440 +1,456 @@
-\section{Évaluation numérique}
+\section{Résultats}
 \label{sec:simulations_numeriques}
 
-Cette section évalue la précision du modèle affine de puissance, puis les
-économies et la stabilité de la coopération. Comme les données n'observent
-pas plusieurs opérateurs colocalisés, les scénarios multi-opérateurs sont
-construits à partir de profils Orange distincts.
+Cette section évalue, à partir de mesures de trafic et de puissance, les
+bénéfices énergétiques du partage opportuniste du RAN et la stabilité de la
+coopération qui les produit. L'étude est semi-empirique : les profils sont
+mesurés sur des équipements Orange d'Île-de-France, tandis que les sites
+multi-opérateurs et leurs capacités sont construits selon un protocole
+contrôlé.
 
-\subsection{Scénario et paramètres}
+Nous vérifions d'abord l'adéquation du modèle affine de puissance, puis
+quantifions les économies de la grande coalition et examinons si elles peuvent
+être réparties de manière stable. Une analyse transversale détermine ensuite
+quels paramètres influencent le plus l'efficacité et la stabilité, avant
+d'étudier le partage des gains sur des cas représentatifs.
 
-Les données regroupent, pour des équipements radio d'Île-de-France, un trafic
-descendant horaire et une puissance moyenne. Leur provenance détaillée, la
-période d'acquisition et la technologie seront précisées avant soumission. Une
-antenne n'est retenue que si elle possède suffisamment de journées complètes
-et des observations finies et non négatives. Les profils constants et les
-ajustements à coefficients non positifs sont comptabilisés séparément.
+\subsection{Protocole expérimental}
+\label{subsec:protocole_experimental}
 
-Chaque site virtuel associe une antenne d'ancrage à trois antennes distinctes,
-tirées sans remise. Le scénario principal apparie des profils de pics de
-trafic et d'intercepts actifs comparables ; un tirage sans restriction mesure
-l'effet de l'hétérogénéité. Les profils obtenus par perturbation d'une même
-antenne sont réservés à la reproduction des calculs exploratoires. Vingt
-tirages, indexés de 0 à 19, sont réalisés pour chaque ancre.
+Les données associent, pour chaque identifiant radio Orange observé en
+Île-de-France, un trafic descendant horaire, exprimé en Go, et une puissance
+moyenne, exprimée en watts. Elles contiennent \(459\,000\) couples
+trafic--puissance pour \(3\,825\) identifiants entre le 20 et le 24 mars 2023,
+soit 120 créneaux horaires par identifiant. Dans la suite, chaque identifiant
+est traité comme une antenne. Le trafic et la puissance proviennent toujours
+de la même antenne et du même créneau.
 
-Le fichier ne contient pas la capacité physique. Elle est donc traitée comme
-un paramètre de scénario :
+L'ajustement du modèle de puissance utilise uniquement les heures pendant
+lesquelles l'équipement est actif. Les lignes dont l'horodatage, le trafic ou
+la puissance ne peuvent pas être lus, ainsi que les valeurs négatives, sont
+écartées car elles n'ont pas d'interprétation physique. Les créneaux où la
+puissance est nulle ne décrivent pas un état actif exploitable et ne sont donc
+pas utilisés pour cet ajustement ; une puissance nulle associée à un trafic
+positif est en outre physiquement incohérente.
+
+Une antenne est également écartée si son trafic actif ne varie pas, car la
+pente du modèle ne peut alors pas être estimée, ou si l'ajustement produit un
+coefficient non positif. Une pente négative signifierait en effet que la
+puissance diminue lorsque le trafic augmente, tandis qu'une puissance fixe
+non positive n'a pas d'interprétation physique. Le nombre d'antennes concernées
+par chaque motif est archivé avec les résultats de calibration.
+
+Les données ne contiennent pas quatre opérateurs observés sur un même site.
+Nous construisons donc \(1\,000\) sites virtuels en associant quatre antennes
+différentes. Une graine pseudo-aléatoire fixée à \(20260814\) détermine
+entièrement ces associations, qui sont exportées avant les simulations puis
+réutilisées pour les cinq nuits et les quatre scénarios de capacité. Les
+\(1\,000\) associations sont distinctes : elles définissent un échantillon
+reproductible de \(20\,000\) instances, sans chercher à énumérer toutes les
+combinaisons possibles. Ce choix borne le temps de calcul tout en couvrant les
+différentes échelles observées ; la stabilité des principaux résultats sera
+contrôlée en comparant leur valeur sur les 500 premiers sites et sur
+l'échantillon complet.
+
+Dans l'expérience principale, les quatre antennes ont des trafics maximaux et
+des puissances actives estimées sans trafic du même ordre de grandeur. Pour
+chaque critère, les antennes sont classées de la plus faible à la plus élevée,
+puis divisées en quatre groupes de même taille. Les quatre antennes d'un site
+sont tirées dans le même groupe pour les deux critères, et le nombre de sites
+tirés dans chaque groupe est proportionnel à son effectif. Cette restriction évite
+qu'un site virtuel soit dominé par un équipement d'une échelle très
+différente. Une antenne peut appartenir à plusieurs sites, mais jamais deux
+fois au même site.
+
+Pour chacun des cinq jours, les simulations portent sur la fenêtre nocturne
+\[
+    H=\{0\,\mathrm{h},1\,\mathrm{h},\ldots,6\,\mathrm{h}\},
+\]
+c'est-à-dire sur les sept créneaux de l'intervalle
+\([0\,\mathrm{h},7\,\mathrm{h})\). Le même ensemble de gardiens reste actif
+pendant les sept heures d'une nuit, tandis que la répartition du trafic peut
+varier à l'heure. Chaque nuit est évaluée séparément : les gardiens peuvent
+donc changer le jour suivant. Cette fenêtre est identique pour tous les sites
+et tous les scénarios de la campagne principale. Elle constitue son réglage
+de référence, mais ses bornes sont variées séparément dans l'analyse de
+sensibilité. Elles restent des paramètres explicites du code et peuvent être
+modifiées sans changer la construction des instances ni les méthodes de
+calcul.
+
+L'identifiant de chaque site, ceux de ses quatre antennes, le jour et les
+paramètres utilisés seront enregistrés avec les résultats afin de pouvoir
+reproduire chaque simulation.
+
+La capacité physique n'étant pas observée, nous construisons quatre scénarios.
+Pour chaque taux maximal cible
+\(r\in\{0{,}70,0{,}80,0{,}90,1\}\), nous fixons
+
 \begin{equation}
-    q_i
-    =\frac{\max_h d_i^h}{\rho_i^{\mathrm{peak}}},
-    \qquad
-    \rho_i^{\mathrm{peak}}
-    \in\{0{,}30,0{,}50,0{,}70,0{,}90\}.
+    q_i=\frac{\max_h d_i^h}{r},
+    \qquad\text{soit}\qquad
+    \max_h d_i^h=rq_i,
     \label{eq:capacite_scenario}
 \end{equation}
-Le maximum porte sur toute la période disponible. Toute la demande doit être
-servie sans dépasser les capacités ; le débit utilisateur, la latence et la
-couverture ne sont pas modélisés.
 
-Dans l'analyse de sensibilité, un multiplicateur \(\alpha\) modifie la demande
-mais pas la capacité calibrée :
+où le maximum porte sur les 120 heures retenues. Ainsi, \(r=0{,}70\)
+accorde une marge de capacité de 30\,\% au pic observé, tandis que \(r=1\)
+fixe la capacité à ce pic. Le paramètre \(r\) décrit un scénario et non une
+capacité mesurée ; la demande observée reste inchangée. Dans chaque scénario,
+toute la demande doit être servie et aucune capacité ne peut être dépassée.
+Une instance numérique est donc entièrement définie par l'identifiant du site
+virtuel, le jour considéré et la valeur de \(r\).
+
+La puissance consommée par une antenne éteinte est supposée nulle. Comme tous
+les opérateurs paient le même prix de l'électricité, le coût est directement
+proportionnel à l'énergie consommée. Les résultats présenteront donc d'abord
+les économies d'énergie ; leur conversion monétaire sera donnée ensuite.
+
+\paragraph{Contrôle préalable de l'implémentation.}
+Avant d'utiliser les données, nous vérifierons le code sur des cas artificiels
+simples comportant de deux à six opérateurs et quelques heures. Pour ces cas,
+le même optimum sera calculé par deux méthodes indépendantes : la répartition
+gloutonne sera comparée à un programme linéaire, et l'énumération des gardiens
+au programme mixte de \eqref{eq:milp_gardiens}. Les calculs du cœur, de
+Shapley, du moindre cœur et du nucléole seront vérifiés sur les exemples de la
+Section~\ref{sec:jeu_cooperatif}, dont les réponses sont connues
+analytiquement. Ces contrôles servent uniquement à valider l'implémentation ;
+ils ne constituent pas des résultats empiriques.
+
+\subsection{Modèle de puissance}
+\label{subsec:adequation_modele_affine}
+
+Pour chaque antenne, nous ajustons sur les heures actives des cinq jours le
+modèle descriptif
 \begin{equation}
-    d_{i,\alpha}^h=\alpha d_i^h,
-    \qquad
-    \alpha\in\{0{,}50,0{,}75,1,1{,}25,1{,}50,2\}.
-    \label{eq:multiplicateur_trafic}
-\end{equation}
-Par \eqref{eq:capacite_scenario}, la charge maximale sur la période disponible
-vaut exactement \(\alpha\rho_i^{\mathrm{peak}}\). Un couple de paramètres
-n'est donc simulé que s'il satisfait
-\begin{equation}
-    \alpha\rho_i^{\mathrm{peak}}\leqslant1,
-    \qquad \forall i\in N.
-    \label{eq:admissibilite_multiplicateur_trafic}
-\end{equation}
-Cette condition garantit en particulier \(d_{i,\alpha}^h\leqslant q_i\) sur
-toute fenêtre \(H\). La demande n'est jamais tronquée et \(q_i\) n'est pas
-recalculée après multiplication.
-
-Les principaux paramètres sont résumés dans le
-Tableau~\ref{tab:parametres_evaluation}.
-\begin{table}[h]
-\centering
-\begin{tabular}{|l|l|}
-\hline
-Paramètre & Valeurs \\
-\hline
-Nombre d'opérateurs & \(4\) ; extension de \(2\) à \(6\) \\
-Tirages par antenne & \(20\) \\
-Charge au pic \(\rho^{\mathrm{peak}}\) & \(0{,}30;0{,}50;0{,}70;0{,}90\) \\
-Multiplicateur candidat \(\alpha\) & \(0{,}50;0{,}75;1;1{,}25;1{,}50;2\) \\
-Couples retenus & \(\alpha\rho^{\mathrm{peak}}\leqslant1\) \\
-Fenêtre & \(H(h_{\mathrm{start}},h_{\mathrm{end}})\) \\
-Puissance de veille & \(0\ \mathrm{W}\) \\
-\hline
-\end{tabular}
-\caption{Paramètres de la campagne numérique.}
-\label{tab:parametres_evaluation}
-\end{table}
-
-La grille effective retient tous les multiplicateurs candidats pour
-\(\rho^{\mathrm{peak}}\in\{0{,}30,0{,}50\}\), seulement
-\(\{0{,}50,0{,}75,1,1{,}25\}\) pour \(\rho^{\mathrm{peak}}=0{,}70\), et
-\(\{0{,}50,0{,}75,1\}\) pour \(\rho^{\mathrm{peak}}=0{,}90\).
-
-Les tests appliquent le modèle sur fenêtre des
-Sous-sections~\ref{subsec:fenetre_decision}
-et~\ref{subsec:optimisation_fenetre}. Le même ensemble de gardiens est donc
-conservé sur \(H\), tandis que le trafic est réparti à chaque heure. Les
-bornes \(h_{\mathrm{start}}\) et \(h_{\mathrm{end}}\) seront fixées à partir
-du trafic avant l'analyse de stabilité. La première figure de la campagne
-présentera le profil journalier agrégé et la fenêtre ainsi retenue.
-
-\subsection{Test 1 : validation des calculs théoriques}
-
-La mise en œuvre est d'abord contrôlée sur des instances de petite taille. La
-répartition gloutonne est comparée à la solution d'un programme linéaire, puis
-l'énumération des gardiens à la formulation MILP
-\eqref{eq:milp_gardiens}. Le test du cœur est comparé au programme de
-Bondareva--Shapley, et l'équilibre budgétaire des transferts est vérifié
-numériquement. Shapley, le moindre cœur et le nucléole sont enfin contrôlés
-sur des jeux dont la solution est connue.
-
-Les conditions suffisantes et les contre-exemples de la
-Section~\ref{sec:jeu_cooperatif} sont ensuite générés sur des grilles de
-paramètres. Le tableau de validation rapporte le nombre d'instances, l'erreur
-maximale entre formulations et le nombre de contradictions observées. Ces
-contrôles valident l'implémentation des résultats théoriques ; ils ne se
-substituent pas aux preuves.
-Les temps nécessaires au calcul de la fonction caractéristique, au test de
-faisabilité du coeur et au programme de Bondareva--Shapley sont rapportés
-séparément, afin de documenter le coût effectif de ces opérations pour les
-valeurs de \(n\) étudiées.
-
-La suite de validation inclut en particulier l'instance à quatre opérateurs de
-la Proposition~\ref{prop:shapley_hors_coeur_tres_faible_trafic}. Elle vérifie
-simultanément la formule fermée de \(C^*(S)\), la valeur
-\(\phi(v)=(3/2,3/2,3,3)\), la non-vacuité du cœur et la violation produite par
-\(Q=\{1,3,4\}\).
-
-\subsection{Test 2 : validation empirique du modèle de puissance}
-\label{subsec:validation_modele_puissance}
-
-\paragraph{Données et règles de sélection.}
-Le jeu de données contient \(642\,600\) couples horaires de trafic
-descendant et de puissance moyenne pour \(3\,825\) identifiants radio
-d'Île-de-France, du 20 au 26 mars 2023. Une ligne terminale vide est ignorée ;
-aucune valeur finie n'est négative et aucun doublon identifiant--heure n'est
-présent. Deux heures, le 26 mars à 02 h et 04 h, ont simultanément un trafic
-et une puissance nuls pour les \(3\,825\) identifiants. Cette coïncidence
-réseau ne pouvant représenter un état physique propre à chaque équipement,
-ces \(7\,650\) lignes sont traitées comme une interruption globale de collecte
-et exclues avant tout ajustement. Chaque identifiant conserve ainsi au plus
-\(166\) créneaux répartis en sept blocs journaliers.
-
-La relation affine étudiée décrivant uniquement l'état
-actif, les \(26\,206\) créneaux locaux tels que \((P,d)=(0,0)\) sont
-comptabilisés comme non actifs et ne sont pas utilisés pour son estimation.
-Les \(3\,238\) créneaux tels que \(P=0\) et \(d>0\), incompatibles avec une
-relation puissance--trafic active pour le même identifiant, sont également
-exclus de l'ajustement. Les observations à trafic nul mais à puissance
-strictement positive sont, elles, conservées car elles identifient la
-consommation active à vide. Au moins cinq jours comportant une observation
-active sont exigés.
-
-Le Tableau~\ref{tab:selection_validation_puissance} applique successivement
-les motifs d'exclusion. Ses deux dernières lignes partitionnent ensuite les
-profils analysables selon le signe des coefficients. Un profil est dit
-\emph{analysable} si le trafic et la puissance varient et si chaque pli de
-validation permet d'identifier une pente. L'estimation physique exige en
-outre \(\widetilde F>0\) et \(\widetilde\gamma>0\).
-
-\begin{table}[t]
-\centering
-\begin{tabular}{lr}
-\hline
-Catégorie & Nombre \\
-\hline
-Identifiants disponibles & \(3\,825\) \\
-Moins de cinq jours actifs & \(173\) \\
-Trafic actif constant & \(9\) \\
-Pli d'apprentissage non identifiable & \(5\) \\
-Profils statistiquement analysables & \(3\,638\) \\
-Pente OLS non positive & \(31\) \\
-Profils physiquement admissibles & \(3\,607\) \\
-\hline
-\end{tabular}
-\caption{Sélection des profils pour la validation du modèle de puissance.}
-\label{tab:selection_validation_puissance}
-\end{table}
-
-\paragraph{Protocole hors échantillon.}
-Pour l'antenne \(i\), notons \(\mathcal L_i\) ses jours observés et
-\(\mathcal T_{i\ell}\) les heures valides du jour \(\ell\). Le modèle actif
-est
-\begin{equation}
-    P_i(d)=\widetilde F_i+\widetilde\gamma_i d.
+    P_i(d)=P_i^{\mathrm{fixe}}+s_i d.
     \label{eq:modele_puissance_affine}
 \end{equation}
-Dans le pli où le jour \(\ell\) est exclu, les coefficients OLS sont calculés
-uniquement sur les autres jours :
-\begin{equation}
- (\widehat F_i^{(-\ell)},\widehat\gamma_i^{(-\ell)})
- \in\underset{(F,\gamma)\in\mathbb R^2}{\operatorname{arg\,min}}
- \sum_{k\in\mathcal L_i\setminus\{\ell\}}
- \sum_{t\in\mathcal T_{ik}}
- \left(P_{it}-F-\gamma d_{it}\right)^2.
- \label{eq:ols_leave_one_day_out}
-\end{equation}
-La prédiction de test est
-\(\widehat P_{it}^{(-\ell)}=\widehat F_i^{(-\ell)}
-+\widehat\gamma_i^{(-\ell)}d_{it}\). La référence constante
-\(\widehat P_{it,0}^{(-\ell)}\) est la puissance moyenne des seuls jours
-d'apprentissage ; elle n'utilise donc aucune information du jour test.
+Le coefficient \(P_i^{\mathrm{fixe}}>0\) représente la puissance active
+estimée à trafic nul et \(s_i>0\) la puissance supplémentaire par Go. Après
+contrôle des données et des signes de ces coefficients, seules les antennes
+admissibles sont conservées.
 
-En concaténant une fois chacune des observations de test, on définit
-\(\mathrm{SSE}_{i,m}=\sum_{\ell,t}
-(P_{it}-\widehat P_{it,m}^{(-\ell)})^2\), puis
-\begin{align}
- R^2_{\mathrm{CV},i}
- &=1-\frac{\mathrm{SSE}_{i,\mathrm{aff}}}
- {\mathrm{SSE}_{i,0}},
- &
- \mathrm{NRMSE}_i
- &=\frac{\sqrt{\mathrm{SSE}_{i,\mathrm{aff}}/n_i}}{\overline P_i},
- \label{eq:metriques_cv_puissance}\\
- G_i
- &=1-\frac{\mathrm{RMSE}_{i,\mathrm{aff}}}
- {\mathrm{RMSE}_{i,0}}.
- \label{eq:gain_rmse_puissance}
-\end{align}
-où \(n_i\) est le nombre total d'observations actives de l'antenne et
-\(\overline P_i\) leur puissance moyenne.
-Ainsi, \(R^2_{\mathrm{CV},i}<0\) et \(G_i<0\) signalent explicitement qu'un
-ajustement prédit moins bien que la moyenne d'apprentissage. La MAE et la RMSE
-sont également exportées. Toute observation test située hors de l'intervalle
-de trafic du pli d'apprentissage est marquée comme extrapolation, sans être
-retirée du calcul.
+L'adéquation est appréciée principalement par la RMSE divisée par la puissance
+active moyenne. Le coefficient \(R_i^2\) est conservé comme diagnostic, mais
+pas comme critère de sélection : il peut être faible lorsque la puissance
+varie peu, même si l'erreur d'ajustement est faible.
 
-Deux analyses de sensibilité sont ajustées dans les mêmes plis : l'affine
-contraint par \(F,\gamma\geqslant0\), et le quadratique
-\(F+\gamma d+\eta d^2\), estimé après centrage et réduction du trafic. Les
-coefficients utilisés ensuite dans le modèle d'optimisation sont les OLS
-affines réestimés sur toutes les observations actives des profils physiquement
-admissibles. Les intervalles à 95\,\% sont des intervalles percentile obtenus
-par \(2\,000\) rééchantillonnages non paramétriques de l'unité statistique
-\emph{antenne}, avec la graine \(20260806\).
-
-\paragraph{Résultats.}
-Sur les \(3\,638\) profils analysables, la médiane du \(R^2\) d'ajustement
-vaut \(0{,}743\), contre \(0{,}730\) hors échantillon
-(IC à 95\,\% de la médiane : \([0{,}724;0{,}738]\)). La NRMSE affine médiane
-est \(8{,}69\,\%\) (IC : \([8{,}51;8{,}87]\,\%\)) et le gain de RMSE médian
-sur le modèle constant atteint \(48{,}08\,\%\)
-(IC : \([47{,}39;48{,}79]\,\%\)). Le gain est strictement positif pour
-\(97{,}53\,\%\) des antennes (IC : \([97{,}00;98{,}02]\,\%\)). Le faible
-écart entre les médianes d'ajustement et de validation indique que la qualité
-centrale ne provient pas seulement d'un ajustement dans l'échantillon.
-
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lrrrrr}
+\small
+\begin{tabular}{lc}
 \hline
-Modèle & \(R^2_{\rm CV}\) médian [IQR]
-& NRMSE médiane [IQR] & \(G\) médian [IQR]
-& \(\Pr(G>0)\) & \(q_{1\%}(G)\) \\
+Indicateur & Résultat \\
 \hline
-Affine libre
-& \(0{,}730\ [0{,}550;0{,}851]\)
-& \(8{,}69\ [5{,}36;11{,}92]\,\%\)
-& \(48{,}08\ [32{,}92;61{,}35]\,\%\)
-& \(97{,}53\,\%\) & \(-3{,}12\,\%\) \\
-Affine, \(F,\gamma\geqslant0\)
-& \(0{,}730\ [0{,}550;0{,}851]\)
-& \(8{,}69\ [5{,}36;11{,}92]\,\%\)
-& \(48{,}08\ [32{,}91;61{,}35]\,\%\)
-& \(97{,}22\,\%\) & \(-2{,}02\,\%\) \\
-Quadratique
-& \(0{,}800\ [0{,}657;0{,}887]\)
-& \(7{,}49\ [4{,}80;10{,}35]\,\%\)
-& \(55{,}27\ [41{,}45;66{,}46]\,\%\)
-& \(95{,}22\,\%\) & \(-251{,}01\,\%\) \\
+Antennes retenues & \(3\,624/3\,825\) \\
+RMSE normalisée médiane & \(8{,}1\,\%\) \\
+Antennes avec une RMSE normalisée \(<15\,\%\) & \(91{,}1\,\%\) \\
+Part fixe médiane au trafic moyen & \(69{,}8\,\%\) \\
 \hline
-\end{tabular}}
-\caption{Comparaison hors échantillon sur les \(3\,638\) profils
-analysables. L'IQR est l'intervalle interquartile et \(G\) est défini par
-\eqref{eq:gain_rmse_puissance}.}
-\label{tab:comparaison_modeles_puissance}
+\end{tabular}
+\caption{Synthèse de la calibration du modèle de puissance.}
+\label{tab:calibration_modele_puissance}
 \end{table}
 
-La contrainte de positivité laisse donc les médianes inchangées ; sur
-l'ajustement complet, \(3\,607/3\,638=99{,}15\,\%\) des profils ont directement
-un intercept et une pente strictement positifs. Dans cette population, les
-médianes de \(\widetilde F\), \(\widetilde\gamma\) et de la part fixe
-\(\widetilde F/(\widetilde F+\widetilde\gamma\overline d)\) sont
-respectivement \(907{,}0\ \mathrm{W}\),
-\(25{,}90\ \mathrm{W}/(\mathrm{Go}/\mathrm{h})\) et \(71{,}19\,\%\).
-L'intervalle interquartile de \(\widetilde F\) est
-\([459{,}2;1\,261{,}3]\ \mathrm{W}\). Celui de \(\widetilde\gamma\) est
-\([14{,}14;35{,}52]\ \mathrm{W}/(\mathrm{Go}/\mathrm{h})\), et celui de la
-part fixe est \([59{,}36;88{,}79]\,\%\).
+Ces résultats rendent l'approximation affine plausible à l'échelle énergétique
+considérée. La prédominance de la composante fixe confirme en outre que
+l'extinction d'un équipement peut éviter davantage de puissance que le report
+de trafic n'en ajoute. Les simulations suivantes conservent les coefficients
+propres à chaque antenne ; après conversion énergétique,
+\(P_i^{\mathrm{fixe}}\) et \(s_i\) donnent \(F_i\) et \(\gamma_i\).
 
-\begin{figure}[t]
+\subsection{Efficacité opérationnelle}
+\label{subsec:efficacite_operationnelle}
+
+Pour chaque site virtuel, chacune des cinq nuits et chaque scénario de
+capacité, nous calculons l'optimum exact \(C_H^*(N)\) de la grande coalition.
+Cet optimum est précisément la politique qui conserve un même ensemble
+\(G_H^*(N)\) sur toute la fenêtre, puis répartit le trafic à chaque heure par
+l'algorithme glouton de la Section~\ref{subsec:selection_gardiens}. Les quinze
+ensembles non vides sont énumérés ; il ne s'agit donc pas de l'optimum
+horairement reconfigurable.
+
+Les comparaisons du Tableau~\ref{tab:politiques_operationnelles} modifient une
+seule composante de cette politique principale. La sélection par capacité est
+une règle volontairement simple, fondée uniquement sur les \(q_i\) : elle
+mesure l'intérêt d'intégrer les coûts fixes et variables dans le choix des
+gardiens. La politique proportionnelle conserve au contraire les gardiens
+optimaux et isole l'apport de l'allocation gloutonne. Enfin, l'oracle horaire
+isole le coût de la persistance des gardiens sur \(H\).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{p{0.22\textwidth}p{0.31\textwidth}p{0.34\textwidth}}
+\hline
+Méthode & Gardiens & Allocation horaire \\
+\hline
+Sélection par capacité & Fixes, par \(q_i\) décroissants & Gloutonne par \(\gamma_i\) croissants \\
+Proportionnelle & \(G_H^*(N)\), fixe sur \(H\) & Proportionnelle aux \(q_i\) \\
+Optimum persistant & \(G_H^*(N)\), choisi exactement et fixe sur \(H\) & Gloutonne par \(\gamma_i\) croissants \\
+Oracle horaire & \(G_h^*(N)\), recalculé à chaque heure & Gloutonne par \(\gamma_i\) croissants \\
+\hline
+\end{tabular}
+\caption{Décomposition des méthodes coopératives comparées.}
+\label{tab:politiques_operationnelles}
+\end{table}
+
+L'absence de partage n'est pas une politique concurrente, mais uniquement la
+référence de normalisation : chaque équipement reste actif et sert son propre
+trafic. Pour toutes les méthodes, l'énergie évitée est calculée relativement
+à cette consommation. Les deux politiques approchées sont réalisables sur les
+\(20\,000\) instances ; l'oracle horaire sert uniquement de borne basse.
+
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/power_validation/power_model_representative.pdf}
-    \caption{Validation de l'antenne représentative \texttt{00015697W3},
-    choisie comme médoïde robuste de
-    \((R^2_{\rm CV},\mathrm{NRMSE},\text{part fixe})\) après mise à l'échelle
-    par les intervalles interquartiles. (a) Observations et ajustement complet ;
-    la bande ponctuelle à 95\,\% rééchantillonne les jours.
-    (b) Résidus strictement hors échantillon par décile de trafic ; les croix
-    repèrent les extrapolations.}
-    \label{fig:validation_puissance_representative}
+    \includegraphics[width=\textwidth]{../figures/operational_efficiency/operational_efficiency.pdf}
+    \caption{Efficacité opérationnelle sur les \(20\,000\) instances. Les
+    boîtes couvrent les quartiles et les moustaches les quantiles
+    5--95\,\%. À gauche, énergie évitée par chaque méthode coopérative. À droite, pertes
+    appariées induites respectivement par la sélection fondée sur les seules
+    capacités, l'allocation proportionnelle et la persistance des gardiens.}
+    \label{fig:efficacite_operationnelle}
 \end{figure}
 
-\begin{figure}[t]
+L'optimum évite une médiane de \(67{,}7\,\%\) de l'énergie autonome ; 90\,\%
+des observations se situent entre \(41{,}5\,\%\) et \(88{,}4\,\%\). Il ne
+maintient jamais les quatre équipements actifs : un gardien suffit dans
+\(64{,}5\,\%\) des instances, deux sont nécessaires dans \(34{,}8\,\%\), et
+trois dans \(0{,}6\,\%\). Le partage opportuniste permet donc presque toujours
+d'éteindre au moins deux équipements pendant la fenêtre nocturne.
+
+La politique par capacité atteint une économie médiane de \(61{,}8\,\%\), soit
+une perte médiane de \(2{,}5\) points par rapport à l'optimum. Elle sélectionne
+le même nombre de gardiens dans \(98{,}7\,\%\) des cas, mais le même ensemble
+dans seulement \(31{,}6\,\%\). La capacité détermine ainsi largement le nombre
+d'équipements nécessaires, mais les puissances fixes et les coûts variables
+sont indispensables pour choisir lesquels maintenir actifs. Par construction,
+et comme le confirme le panneau droit de la
+Figure~\ref{fig:efficacite_operationnelle}, cette politique ne bat jamais
+l'optimum exact sur une même instance.
+
+Avec les gardiens optimaux, la répartition proportionnelle atteint une
+économie médiane de \(67{,}6\,\%\). Sa perte moyenne n'est que de \(1{,}1\)
+point, mais atteint \(5{,}9\) points au quantile 95\,\%. La sélection des
+gardiens constitue donc le levier principal, sans rendre négligeable
+l'allocation du trafic lorsque plusieurs équipements restent actifs.
+
+Enfin, maintenir les mêmes gardiens sur toute la nuit coûte une médiane de
+\(1{,}0\) point d'économie par rapport à l'oracle horaire, mais cet écart
+atteint \(17{,}2\) points au quantile 95\,\%. La contrainte persistante est
+donc généralement peu coûteuse, tout en pénalisant certaines configurations.
+La médiane de l'économie optimale ne varie que de \(0{,}54\) point entre les
+500 premiers sites et l'échantillon complet, ce qui indique que l'agrégat
+principal est stabilisé à l'échelle retenue.
+
+\subsection{Stabilité de la grande coalition}
+\label{subsec:stabilite_grande_coalition}
+
+Pour chaque site, chaque nuit et chaque scénario de capacité, la fonction
+caractéristique \(v_H(S)\) est calculée exactement pour les quinze coalitions
+non vides du cas principal \(n=4\). Le programme de
+Bondareva--Shapley teste la non-vacuité du cœur, puis l'excès maximal
+\(E_{\mathrm{Sh},H}(N)\) teste Shapley. Chaque instance appartient donc à une
+seule catégorie : cœur vide, cœur non vide mais Shapley hors du cœur, ou
+Shapley dans le cœur. Les intervalles à 95\,\% sont obtenus par \(2\,000\)
+rééchantillonnages des sites, en conservant ensemble les cinq nuits et les
+quatre scénarios d'un même site.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{crrr}
+\hline
+\(r\) & Cœur vide & \shortstack{Cœur non vide,\\Shapley hors} & \shortstack{Shapley\\dans le cœur} \\
+\hline
+\(0{,}70\) & \(20{,}0\,\%\) & \(7{,}6\,\%\) & \(72{,}5\,\%\) \\
+\(0{,}80\) & \(27{,}3\,\%\) & \(9{,}5\,\%\) & \(63{,}2\,\%\) \\
+\(0{,}90\) & \(27{,}6\,\%\) & \(13{,}3\,\%\) & \(59{,}0\,\%\) \\
+\(1{,}00\) & \(25{,}8\,\%\) & \(17{,}5\,\%\) & \(56{,}7\,\%\) \\
+\hline
+\end{tabular}
+\caption{Diagnostic de stabilité par scénario de capacité. Chaque ligne
+regroupe \(5\,000\) instances.}
+\label{tab:stabilite_grande_coalition}
+\end{table}
+
+En donnant le même poids aux quatre scénarios, le cœur est vide dans
+\(25{,}2\,\%\) des instances et non vide avec Shapley à l'extérieur dans
+\(12{,}0\,\%\) des cas. Shapley constitue donc une allocation stable dans
+seulement \(62{,}9\,\%\) des instances (IC à 95\,\% :
+\([60{,}8;64{,}8]\,\%\)). Lorsque la marge de capacité diminue, cette
+proportion passe de \(72{,}5\,\%\) pour \(r=0{,}70\) à \(56{,}7\,\%\) pour
+\(r=1\). La dégradation ne se réduit pas à la vacuité du cœur : entre
+\(r=0{,}90\) et \(r=1\), la fréquence des cœurs vides baisse légèrement,
+alors que celle des cœurs excluant Shapley continue d'augmenter. L'écart
+maximal entre les fréquences obtenues avec 500 et \(1\,000\) sites est de
+\(1{,}15\) point.
+
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/power_validation/power_model_cross_validation.pdf}
-    \caption{(a) Puissances observées et prédites hors échantillon,
-    normalisées par la puissance moyenne de chaque antenne ; l'affichage est
-    limité aux quantiles \(0{,}5\)--\(99{,}5\,\%\).
-    (b) Fonctions de répartition empiriques appariées du gain de RMSE ; l'axe
-    est limité aux quantiles \(1\)--\(99\,\%\), mais les statistiques du
-    Tableau~\ref{tab:comparaison_modeles_puissance} utilisent tous les points.}
-    \label{fig:validation_puissance_cv}
+    \includegraphics[width=\textwidth]{../figures/coalition_stability/coalition_stability.pdf}
+    \caption{Stabilité et efficacité sur les \(20\,000\) instances. À gauche,
+    répartition des trois catégories selon le scénario de capacité. À droite,
+    distribution de l'énergie évitée dans chaque catégorie ; les boîtes
+    couvrent les quartiles et les moustaches les quantiles 5--95\,\%.}
+    \label{fig:stabilite_grande_coalition}
 \end{figure}
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\textwidth]{../figures/power_validation/power_model_population.pdf}
-    \caption{Validation à l'échelle de la population : distributions du
-    \(R^2\) d'ajustement et du \(R^2_{\rm CV}\), part fixe des profils
-    physiquement admissibles et structure du résidu hors échantillon selon
-    l'heure et le décile de trafic intra-antenne. Les axes de \(R^2_{\rm CV}\)
-    sont limités aux quantiles \(1\)--\(99\,\%\).}
-    \label{fig:validation_puissance_population}
-\end{figure}
+L'économie médiane atteint \(47{,}4\,\%\) lorsque le cœur est vide,
+\(55{,}4\,\%\) lorsqu'il est non vide mais exclut Shapley, et \(73{,}9\,\%\)
+lorsque Shapley appartient au cœur. L'efficacité est donc positivement
+associée à la stabilité, sans la garantir : parmi les 10\,\% d'instances qui
+évitent le plus d'énergie, \(21{,}1\,\%\) possèdent un cœur non vide dont
+Shapley est exclue. Une économie élevée ne suffit donc pas à valider la règle
+de partage.
 
-Le quadratique réduit la RMSE de l'affine pour \(87{,}88\,\%\) des antennes
-(IC : \([86{,}78;88{,}95]\,\%\)) et confirme la courbure visible dans certains
-résidus. Ce gain central ne justifie toutefois pas son emploi comme modèle
-opérationnel : il bat moins souvent la référence constante et sa queue
-d'erreur est fortement instable, avec un quantile 1\,\% de gain à
-\(-251{,}01\,\%\), contre \(-3{,}12\,\%\) pour l'affine. Cette fragilité est
-particulièrement problématique lorsque même un scénario admissible augmente le
-trafic au-delà du support empirique observé. Dans la validation principale, la proportion
-médiane de points extrapolés n'est que de \(1{,}29\,\%\) par antenne
-(IQR : \([1{,}20;1{,}81]\,\%\)), mais aucun de ces points n'a été masqué.
-Nous retenons donc l'affine comme approximation de premier ordre,
-interprétable et plus robuste, tout en conservant la structure des résidus et
-le quadratique comme diagnostics explicites de non-linéarité.
+La condition de capacité individuelle suffisante du
+Théorème~\ref{thm:capacite_coeur_non_vide} est satisfaite dans \(25{,}0\,\%\)
+des instances et leur cœur est toujours non vide, conformément à la garantie
+théorique. Shapley en reste néanmoins exclue dans \(5{,}0\,\%\) de ces cas.
+La convexité, qui garantirait simultanément les deux propriétés, n'apparaît
+que dans \(0{,}92\,\%\) des instances et constitue donc une condition trop
+restrictive pour le diagnostic empirique général.
 
-La veille étant supposée consommer \(0\ \mathrm{W}\), les paramètres
-monétaires horaires sont finalement
-\begin{equation}
-    F_i=\frac{p_e}{1000}\widetilde F_i,
-    \qquad
-    \gamma_i=\frac{p_e}{1000}\widetilde\gamma_i,
-    \label{eq:calibration_actif_veille}
-\end{equation}
-où \(p_e\) est le prix de l'électricité en \(\text{€}/\mathrm{kWh}\). Cette conversion ne
-valide pas empiriquement la puissance de veille nulle : elle applique
-l'hypothèse de scénario énoncée dans le modèle du système.
+Enfin, le certificat leave-one-out détecte \(71{,}5\,\%\) des cœurs vides,
+sans faux positif. Il fournit ainsi un filtre rapide, mais non une
+caractérisation : lorsqu'il ne conclut pas, le programme exact reste
+nécessaire. Pour les cœurs vides, la valeur médiane du moindre cœur représente
+\(9{,}45\,\%\) de \(v_H(N)\), ce qui écarte l'interprétation d'une simple
+imprécision numérique. Lorsque le cœur est non vide mais exclut Shapley, son
+objection maximale médiane représente encore \(2{,}57\,\%\) de \(v_H(N)\).
+Ces résultats confirment que la création d'une économie collective et sa
+répartition stable sont deux problèmes distincts.
 
 \FloatBarrier
 
-\subsection{Test 3 : économies et sélection des gardiens}
+\subsection{Sensibilité des paramètres}
+\label{subsec:sensibilite_mecanismes}
 
-La solution exacte avec gardiens fixes sur la fenêtre est comparée au
-fonctionnement sans partage, à une politique avec un seul opérateur actif
-lorsque celle-ci est faisable, et à l'activation des équipements par capacité
-décroissante. Une quatrième baseline conserve les gardiens optimaux mais
-répartit le trafic proportionnellement à leurs capacités, afin d'isoler le
-gain de la répartition gloutonne. La solution exacte réoptimisée à chaque
-heure sert uniquement de borne basse.
+Nous faisons varier chaque paramètre autour du scénario central
+\(r=0{,}80\), avec les trafics et les coefficients calibrés, une veille nulle,
+\(H=[0\,\mathrm{h},7\,\mathrm{h})\) et quatre opérateurs. Sauf pour la taille de
+la coalition, les comparaisons portent sur les mêmes \(1\,000\) sites et les
+mêmes jours. La position de \(H\) est comparée sur les quatre nuits
+entièrement observées par les trois fenêtres. Pour chaque taille de coalition,
+\(1\,000\) nouveaux sites sont construits avec la stratification et la graine
+du protocole principal.
 
-Les résultats présentent l'énergie et le coût évités, le nombre et la charge
-des gardiens, ainsi que l'écart entre la solution sur la fenêtre et la
-réoptimisation horaire. Ils comprennent une distribution sur la population et
-un profil temporel représentatif. Une politique qui ne sert pas toute la
-demande est déclarée infaisable.
-
-\subsection{Test 4 : sensibilité aux paramètres}
-
-La sensibilité est étudiée sur les seuls couples
-\((\rho^{\mathrm{peak}},\alpha)\) qui satisfont
-\eqref{eq:admissibilite_multiplicateur_trafic}. Les cellules rejetées de la
-grille sont indiquées comme hors domaine du modèle et ne sont pas agrégées aux
-scénarios faisables. Les mêmes graphiques donnent
-l'économie relative, le nombre de gardiens, la fréquence de cœur vide et la
-fréquence de Shapley hors du cœur. Des analyses secondaires examinent la part
-fixe du coût, la dispersion de \(F_i,\gamma_i,q_i\), la corrélation des
-profils et le nombre d'opérateurs.
-
-Les distributions sont résumées par leur médiane, leurs quartiles et leurs
-quantiles 5--95\,\%. Les intervalles bootstrap sont regroupés par antenne
-d'ancrage afin de ne pas traiter ses vingt tirages comme indépendants.
-
-\subsection{Test 5 : stabilité et partage des économies}
-
-Ce test applique au jeu \(v_H\) les critères et règles définis à la
-Section~\ref{sec:jeu_cooperatif}. Les résultats indiquent les proportions de
-jeux convexes, de cœurs vides et de valeurs de Shapley dans le cœur. Ils
-rapportent également l'excès maximal de Shapley, la valeur du moindre cœur, le
-gap leave-one-out de \eqref{eq:gap_leave_one_out}, les certificats de
-Bondareva--Shapley et la fréquence de la condition suffisante du
-Corollaire~\ref{cor:capacite_coeur_agrege}.
-
-L'appartenance de Shapley au cœur est testée explicitement, y compris dans les
-scénarios de très faible trafic, au moyen de \(E_{\mathrm{Sh}}(N)\) et du
-critère \eqref{eq:test_shapley_coeur}. Le contre-exemple de la
-Proposition~\ref{prop:shapley_hors_coeur_tres_faible_trafic} fournit la cible
-de validation \(E_{\mathrm{Sh}}(N)=1/2\), atteinte notamment par
-\(Q=\{1,3,4\}\), alors même que le cœur est non vide.
-
-% Construction secondaire temporairement retirée : la projection de Shapley
-% et sa comparaison numérique avec Shapley et le nucléole.
-Shapley et le nucléole sont comparés sur la population puis sur une instance
-représentative, au moyen des économies individuelles, des coûts nets, des
-transferts et des coalitions bloquantes.
-
-\subsection{Résultats exploratoires préliminaires}
-
-Les résultats déjà disponibles utilisent un ancien protocole : cinq journées
-moyennées heure par heure, trois profils perturbés, les graines 42 et 43, la
-capacité \(q_i=\max_h d_i^h/0{,}75\) et une réoptimisation horaire.
-
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
-\begin{tabular}{|l|r|r|r|r|}
+\small
+\begin{tabular}{p{0.24\textwidth}p{0.43\textwidth}cc}
 \hline
-Fenêtre & Calculables & Erreurs & Cœur vide & Cœur non vide \\
+Facteur & Valeurs testées & \(\Delta E\) & \(\Delta S\) \\
 \hline
-Journée complète & \(3\,626\) & \(199\) & \(33\) & \(3\,593\) \\
-Nuit, \(1\)--\(6\) h & \(3\,626\) & \(199\) & \(18\) & \(3\,608\) \\
+Marge de capacité & \(r\in\{0{,}70,0{,}80,0{,}90,1\}\) & 8,0 & 15,7 \\
+Niveau de trafic & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 9,2 & 21,8 \\
+Coût fixe \(F_i\) & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 2,7 & 0,7 \\
+Coût variable \(\gamma_i\) & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 2,6 & 0,8 \\
+Puissance en veille & \(0\), \(0{,}05F_i\), \(0{,}10F_i\) & 6,5 & 0,2 \\
+Position de \(H\), durée 7 h & \([22\,\mathrm{h},5\,\mathrm{h})\), \([0\,\mathrm{h},7\,\mathrm{h})\), \([2\,\mathrm{h},9\,\mathrm{h})\) & 20,6 & 18,6 \\
+Durée de \(H\), début à minuit & 5 h, 7 h, 9 h & 17,3 & 16,2 \\
+Nombre d'opérateurs & \(|N|\in\{2,3,4,5,6\}\) & 21,5 & 67,3 \\
 \hline
 \end{tabular}
-\caption{Résultats exploratoires obtenus avec l'ancien protocole sur
-\(3\,825\) identifiants.}
-\label{tab:coeur_3825_antennes}
+\caption{Plan et amplitudes de l'analyse de sensibilité. \(\Delta E\) est
+l'écart, en points, entre les valeurs extrêmes de l'économie énergétique
+médiane ; \(\Delta S\) est l'écart, en points, entre les fréquences extrêmes
+d'une valeur de Shapley dans le cœur. Ces amplitudes valent uniquement sur les
+plages indiquées.}
+\label{tab:plan_sensibilite}
 \end{table}
 
-Parmi les \(199\) erreurs, \(149\) profils ont un trafic moyen constant et
-\(50\) ajustements produisent au moins un coefficient non strictement positif.
-Sur la journée, les \(33\) cœurs vides sont certifiés par les quatre
-coalitions de trois opérateurs, chacune de poids \(1/3\). Le même certificat
-est précisément la famille leave-one-out de la
-Proposition~\ref{prop:certificat_leave_one_out} pour \(n=4\). Il apparaît dans
-\(17\) des \(18\) cas entre \(1\) h et \(6\) h. Ces fréquences devront être
-réestimées avec le protocole principal.
+La variation du trafic est un test contrefactuel : les demandes sont
+multipliées sans modifier les capacités centrales. Nous la croisons aussi avec
+\(r\), puisque le taux de charge maximal devient leur produit. Les deux cas
+\(1{,}2\times0{,}9\) et \(1{,}2\times1\) dépassent donc une capacité individuelle
+et sont laissés hors domaine. Lorsqu'un équipement est en veille, sa puissance
+vaut la fraction indiquée de \(F_i\). Le prix commun de l'électricité n'est pas
+testé : il multiplie tous les coûts par une même constante et ne modifie aucun
+indicateur relatif.
 
-\subsection{Discussion et limites}
+La Figure~\ref{fig:sensibilite_tornado} fait apparaître deux groupes. La
+position et la durée de \(H\), le trafic et la marge de capacité modifient à la
+fois le gain et la stabilité. En revanche, une perturbation uniforme de
+\(\pm20\,\%\) de \(F_i\) ou de \(\gamma_i\) change l'économie médiane de moins de
+3 points et la fréquence de stabilité de moins d'un point. Une veille égale à
+\(10\,\%\) de \(F_i\) réduit l'économie médiane de 6,5 points, mais laisse
+presque inchangées la stabilité et la sélection des gardiens.
 
-Les résultats principaux seront interprétés comme semi-empiriques. Les
-profils de trafic et de puissance sont mesurés, mais leur association en sites
-multi-opérateurs, les capacités et la puissance de veille sont des hypothèses
-de scénario. Le modèle impose le service de tout le trafic, sans mesurer le
-débit utilisateur, la latence ou la couverture. Enfin, les décisions sont
-prises en information complète sur un site unique ; l'incertitude, les coûts
-de transition et les interactions multisites restent hors du périmètre.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/parameter_sensitivity/parameter_sensitivity_tornado.pdf}
+    \caption{Sensibilité par rapport au scénario central. Pour chaque facteur,
+    le segment relie les effets extrêmes observés sur les valeurs du
+    Tableau~\ref{tab:plan_sensibilite}. La comparaison du nombre d'opérateurs
+    porte sur des échantillons stratifiés distincts ; les autres comparaisons
+    sont appariées par site et par jour.}
+    \label{fig:sensibilite_tornado}
+\end{figure}
+
+Parmi les fenêtres de sept heures, \([0\,\mathrm{h},7\,\mathrm{h})\) est la plus
+favorable : décaler la fenêtre vers \([22\,\mathrm{h},5\,\mathrm{h})\) ou
+\([2\,\mathrm{h},9\,\mathrm{h})\) abaisse l'économie médiane de 20,6 ou 16,9
+points. Les durées de cinq et sept heures donnent des résultats voisins, tandis
+que l'extension à neuf heures coûte 17,3 points et accroît d'environ 12 points
+l'écart à l'oracle horaire. Le choix de \(H\) est donc le principal levier
+directement pilotable : il faut couvrir le creux nocturne sans l'étendre aux
+heures de reprise du trafic.
+
+Le nombre d'opérateurs a surtout un effet sur la stabilité. Entre quatre et
+six opérateurs, l'économie médiane reste comprise entre 68,4 et 69,2\,\%, mais la
+fréquence d'une valeur de Shapley dans le cœur passe de 63,2 à 32,7\,\%. Sur
+l'ensemble de la plage, la fréquence d'un cœur vide croît de 0\,\% pour deux
+opérateurs à 41,7\,\% pour six. Ajouter des participants n'apporte donc plus
+de gain énergétique substantiel au-delà de quatre, alors que la difficulté de
+former une coalition stable augmente fortement.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.94\textwidth]{../figures/parameter_sensitivity/traffic_capacity_interaction.pdf}
+    \caption{Interaction entre niveau de trafic et marge de capacité. Les
+    cellules grisées violent une capacité individuelle et ne sont pas simulées.}
+    \label{fig:sensibilite_trafic_capacite}
+\end{figure}
+
+Enfin, la Figure~\ref{fig:sensibilite_trafic_capacite} confirme que trafic et
+capacité ne doivent pas être interprétés isolément. Le passage du cas le moins
+contraint \((0{,}8;0{,}70)\) au cas réalisable le plus chargé
+\((1{,}2;0{,}80)\) fait passer l'économie médiane de 72,2 à 62,6\,\% et la
+fréquence de stabilité de 88,1 à 57,6\,\%. L'enjeu prioritaire n'est donc pas
+une estimation plus fine d'un coefficient énergétique commun, mais la
+sélection de fenêtres et de groupes disposant d'une marge de capacité
+suffisante.
+
+\FloatBarrier
+
+\subsection{Partage et cas représentatifs}
+\label{subsec:partage_cas_representatifs}
+
+Un cas est retenu dans chacune des trois catégories de stabilité observées.
+Afin d'éviter une sélection favorable, nous calculons dans chaque catégorie
+la distance à la médiane multivariée des économies relatives, de la valeur
+normalisée du moindre cœur et de l'excès maximal de Shapley. Chaque coordonnée
+est divisée par son intervalle interquartile, lorsqu'il est non nul, et
+l'instance de distance \(L^1\) minimale est retenue. Les égalités sont
+départagées successivement par l'identifiant du site, le jour et \(r\).
+Si une catégorie n'apparaît pas, aucun cas empirique n'est fabriqué : le
+contre-exemple théorique correspondant est utilisé et signalé comme tel.
+
+Pour chaque cas, nous comparons la valeur de Shapley et le nucléole au moyen
+des économies individuelles \(z_i\), des coûts nets \(y_i\), des transferts
+\(\tau_i\) et de l'objection coalitionnelle maximale. Une figure en barres
+présentera les économies et les transferts des quatre opérateurs ; un tableau
+identifiera les coalitions bloquantes. Lorsque le cœur est vide, le nucléole
+sera décrit comme un compromis minimisant les objections, et non comme une
+allocation stable.
+
+\paragraph{Résultats, figure et analyse.}
+% À COMPLÉTER APRÈS EXÉCUTION :
+% - identifiants et justification des cas retenus ;
+% - comparaison Shapley--nucléole ;
+% - figure des économies et transferts individuels ;
+% - coalitions bloquantes et interprétation.
+\mbox{}\par
+\vspace{2\baselineskip}

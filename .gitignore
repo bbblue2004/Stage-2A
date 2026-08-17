@@ -10,7 +10,13 @@ venv/
 .DS_Store
 data/
 .vscode/
-bilan.md
+
+# Reproducible numerical caches
+results/
+
+# Local diagnostic and bitmap previews
+figures/diagnostics/
+figures/**/*.png
 
 # LaTeX generated files
 paper/main.pdf

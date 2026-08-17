@@ -1,108 +1,141 @@
-# RAN sharing - cooperative cost simulation
+# RAN sharing
 
-The program implements the operational cost model and the cooperative savings
-game developed in Sections 3--5 of the report:
+Research code for the opportunistic sharing of radio access network
+infrastructure. The repository combines exact operational optimisation,
+cooperative-game analysis, a semi-empirical numerical campaign, and the
+associated research article.
 
-- affine active-equipment cost `F_i + gamma_i t_i`;
-- optimal traffic allocation and guardian selection for every coalition;
-- minimal coalition cost `C*(S)`;
-- savings game `v(S) = sum_{i in S} C_i^0 - C*(S)`;
-- convexity, core and Bondareva--Shapley tests;
-- Shapley value, Shapley projection, least core and nucleolus;
-- physical costs, final net costs, and budget-balanced internal transfers.
+## Repository layout
 
-The feasibility LP is only used to test the core. By default, the final
-allocation is Shapley when it belongs to the core and the nucleolus otherwise.
+```text
+data/                  Local raw and processed measurements (not versioned)
+docs/                  Model documentation and archived working notes
+figures/               Current experiment figures used by the article
+paper/                 LaTeX article and scientific protocol
+results/               Reproducible numerical caches (not versioned)
+src/core/              Optimisation and cooperative-game algorithms
+src/data_processing/   Data loading, calibration and virtual-site generation
+src/experiments/       Reproducible experiments reported in Section 6
+src/cli/               Exploratory command-line diagnostics
+tests/                 Unit and numerical-consistency tests
+archive/legacy/        Outputs from superseded protocols
+```
 
-## Setup
+The material under `archive/legacy/` is retained only for traceability. It is
+not used by the current article or by the numerical pipeline.
 
-```bash
+## Environment
+
+The supported local setup uses the repository's virtual environment:
+
+```powershell
 python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-Place `radio_sites.csv` in `data/raw/` (semicolon-separated). By default, the
-first antenna encountered in the CSV is selected. Its traffic and power
-profiles are the hourly means over its first five available calendar days. If
-the file cannot be used, the simulation falls back to a hard-coded profile.
+All commands below deliberately use this interpreter. The exact dependency
+versions are recorded in `requirements.txt`.
 
-To generate the compact working CSV (10 antennas, 7 days, 24 rows per day):
+## Data
 
-```bash
-python -c "from src.data_processing.data_loader import create_compact_csv; print(create_compact_csv())"
+Place the semicolon-separated source file at:
+
+```text
+data/raw/radio_sites.csv
 ```
 
-Subsequent runs automatically use `data/processed/radio_sites_10x7.csv`.
+The source data are not versioned. A fresh clone can therefore run the
+article's experiments only after this file has been supplied. Generated
+results are cached under `results/`; deleting that directory does not remove
+source data and only forces a later recomputation.
 
-## Run
+## Reproduce the numerical campaign
 
-```bash
-# Default: first antenna, five-day hourly-average mode, hours 01:00--06:00
-python main.py
+Run the four experiments in dependency order:
 
-# First antenna, with days 1--4 assigned to operators 1--4
-python main.py 1 --traffic-mode daily
-
-# Third antenna, averaged mode
-python main.py 3
-
-# Third antenna, full-day evaluation
-python main.py 3 --hours 0 23
-
-# An overnight window is also accepted
-python main.py 3 --hours 22 6
-
-# Fourth antenna, with its seven daily traffic profiles
-python main.py 4 --plot-weekly-traffic
-
-# Change the electricity price used to convert W into period costs
-python main.py 1 --price-per-kwh 0.18
-
-# Force the nucleolus even when Shapley belongs to the core
-python main.py 1 --allocation-priority robustness
-
-# Change the acceptable relative least-core instability threshold
-python main.py 1 --max-instability-ratio 0.02
-
-# Generate only the requested regression graph
-python plot_regression.py
-
-# Count empty cores among all antennas, by default over hours 01:00--06:00
-python check_empty_cores.py
-
-# Restrict the calculation to the first 50 antennas and change the window
-python check_empty_cores.py --count 50 --hours 0 23
+```powershell
+.venv\Scripts\python.exe -m src.experiments.reproduce_all
 ```
 
-The bounds passed to `--hours START END` are inclusive. The selected window
-only changes the games that are evaluated and aggregated. Operator capacities
-`q_i` are always computed from the maximum traffic over the full 24-hour
-profile.
+The command is idempotent:
 
-## Allocation rule
+- a missing cache is computed;
+- a valid cache is reused;
+- `--rebuild` forces every stage to be recomputed.
 
-The program always computes Shapley, its core membership, the least core and
-the nucleolus. By default, `--allocation-priority contribution` selects
-Shapley when it belongs to the core and the nucleolus otherwise. The optional
-`--allocation-priority robustness` always selects the nucleolus. The
-normalized Euclidean projection of Shapley on the core, or on the optimal
-least core when the core is empty, remains a diagnostic candidate.
-An empty-core allocation is flagged as operationally unacceptable when its
-relative least-core epsilon exceeds `--max-instability-ratio`.
+Cache manifests identify inputs by SHA-256 content hashes rather than by
+machine-specific paths or modification dates.
 
-The regression graph and console report use
-`P_conso = F_tilde + gamma_tilde d`, with zero sleep power.
+The individual stages are:
 
-## Module map
+```powershell
+# Section 6.2: affine power calibration and virtual sites
+.venv\Scripts\python.exe -m src.experiments.power_calibration
 
-| Module | Role |
-|---|---|
-| `generate_data.py` | 24-hour scenario, `q_i`, `F_i`, and `gamma_i` |
-| `optimiser.py` | Operational cost `C(S,G,t)` and minimum `C*(S)` |
-| `allocate.py` | Greedy traffic allocation at fixed guardians |
-| `game.py` | Convexity, Shapley, core, least core and nucleolus |
-| `simulation.py` | Hourly games and selected-period aggregation |
-| `time_window.py` | Inclusive hour-window validation and formatting |
-| `reporting.py` | Console results and accounting checks |
-| `data_processing/` | CSV loading, five-day averages, regressions, figures |
+# Section 6.3: operational efficiency
+.venv\Scripts\python.exe -m src.experiments.operational_efficiency
+
+# Section 6.4: coalition stability
+.venv\Scripts\python.exe -m src.experiments.coalition_stability
+
+# Section 6.5: parameter sensitivity
+.venv\Scripts\python.exe -m src.experiments.parameter_sensitivity
+```
+
+The calibration stage accepts `--rebuild-cache`; the other stages accept
+`--rebuild`. Every experiment also exposes `--help` and explicit input/output
+directory options.
+
+## Exploratory commands
+
+These utilities are independent of the article's main numerical campaign:
+
+```powershell
+# Configurable single-site simulation
+.venv\Scripts\python.exe -m src.cli.single_site_simulation --help
+
+# Empty-core diagnostic over field antennas
+.venv\Scripts\python.exe -m src.cli.empty_core_diagnostic --help
+
+# Power-versus-traffic graph for one antenna
+.venv\Scripts\python.exe -m src.cli.regression_plot --help
+```
+
+Diagnostic figures are written under `figures/diagnostics/` and are not used
+by the article.
+
+## Model and implementation
+
+For a non-empty coalition `S`, the program enumerates feasible guardian sets,
+allocates traffic greedily by increasing variable cost, and computes the
+minimal operational cost `C*(S)`. The transferable-utility savings game is
+
+```text
+v(S) = sum_{i in S} C_i^0 - C*(S),   v(empty) = 0.
+```
+
+The implementation evaluates convexity, the core, balancedness, the Shapley
+value, the least core and the nucleolus. The full notation and numerical
+protocol are documented in `docs/model.md` and
+`paper/NUMERICAL_PROTOCOL.md`.
+
+## Tests
+
+```powershell
+.venv\Scripts\python.exe -m unittest discover -s tests -q
+```
+
+The tests cover operational allocation, time windows, power calibration,
+coalition stability, parameter sensitivity and cache portability.
+
+## Article
+
+From `paper/`:
+
+```powershell
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+```
+
+The LaTeX source is governed by `paper/AGENTS.md`. Numerical code changes must
+not silently alter the model, notation or assumptions stated in the article.

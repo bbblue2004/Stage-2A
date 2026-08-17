@@ -1,0 +1,367 @@
+"""Run the persistent-guardian operational experiment reported in Section 6.3."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+from pathlib import Path
+
+import matplotlib
+import numpy as np
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+from src.core.time_window import inclusive_hour_window
+from src.core.window_optimiser import (
+    descending_capacity_policy,
+    optimal_persistent_with_oracle,
+    proportional_policy,
+    standalone_energy,
+)
+from src.data_processing.data_loader import ROOT
+from src.data_processing.power_validation import load_calibrated_population
+from src.data_processing.virtual_sites import load_virtual_sites
+from src.experiments.common import file_signature, inputs_match, portable_path
+
+
+DEFAULT_CALIBRATION_DIR = ROOT / "results" / "power_calibration"
+DEFAULT_RESULTS_DIR = ROOT / "results" / "operational_efficiency"
+DEFAULT_FIGURES_DIR = ROOT / "figures" / "operational_efficiency"
+CAPACITY_RATES = (0.70, 0.80, 0.90, 1.00)
+POLICIES = (
+    ("optimal", "Optimum exact", "optimal_energy_wh", "optimal_guardians"),
+    (
+        "descending_capacity",
+        "Capacités décroissantes",
+        "capacity_energy_wh",
+        "capacity_guardians",
+    ),
+    (
+        "proportional",
+        "Répartition proportionnelle",
+        "proportional_energy_wh",
+        "optimal_guardians",
+    ),
+)
+
+
+def _write_rows(path: Path, rows: list[dict[str, object]]) -> None:
+    if not rows:
+        raise ValueError(f"cannot write an empty table: {path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _quantiles(values: np.ndarray) -> dict[str, float]:
+    q05, median, q95 = np.quantile(values, (0.05, 0.50, 0.95))
+    return {
+        "mean": float(np.mean(values)),
+        "q05": float(q05),
+        "median": float(median),
+        "q95": float(q95),
+    }
+
+
+def _policy_summaries(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    summaries: list[dict[str, object]] = []
+    for rate in (*CAPACITY_RATES, None):
+        selected = [row for row in rows if rate is None or row["capacity_rate"] == rate]
+        baseline = np.asarray([row["standalone_energy_wh"] for row in selected])
+        optimum = np.asarray([row["optimal_energy_wh"] for row in selected])
+        for key, label, energy_column, guardian_column in POLICIES:
+            energy = np.asarray([row[energy_column] for row in selected])
+            savings = 100.0 * (1.0 - energy / baseline)
+            loss = np.maximum(0.0, 100.0 * (energy - optimum) / baseline)
+            guardians = np.asarray([row[guardian_column] for row in selected])
+            summary = {
+                "capacity_rate": "all" if rate is None else f"{rate:.2f}",
+                "policy": key,
+                "label": label,
+                "instances": len(selected),
+                **{f"savings_pct_{name}": value for name, value in _quantiles(savings).items()},
+                **{f"loss_vs_optimum_pp_{name}": value for name, value in _quantiles(loss).items()},
+                "guardians_mean": float(np.mean(guardians)),
+                "guardians_median": float(np.median(guardians)),
+            }
+            summaries.append(summary)
+    return summaries
+
+
+def _analysis(rows: list[dict[str, object]]) -> dict[str, object]:
+    baseline = np.asarray([row["standalone_energy_wh"] for row in rows])
+    optimum = np.asarray([row["optimal_energy_wh"] for row in rows])
+    capacity = np.asarray([row["capacity_energy_wh"] for row in rows])
+    proportional = np.asarray([row["proportional_energy_wh"] for row in rows])
+    oracle = np.asarray([row["hourly_oracle_energy_wh"] for row in rows])
+    savings = 100.0 * (1.0 - optimum / baseline)
+    persistence_gap = np.maximum(0.0, 100.0 * (optimum - oracle) / baseline)
+    first_half = np.asarray([str(row["site_id"]) <= "site_0500" for row in rows])
+    exact_guardians = np.asarray([row["optimal_guardians"] for row in rows], dtype=int)
+    capacity_guardians = np.asarray([row["capacity_guardians"] for row in rows], dtype=int)
+    return {
+        "instances": len(rows),
+        "all_policies_feasible": True,
+        "optimal_savings_pct": _quantiles(savings),
+        "capacity_loss_vs_optimum_pp": _quantiles(np.maximum(0.0, 100.0 * (capacity - optimum) / baseline)),
+        "proportional_loss_vs_optimum_pp": _quantiles(np.maximum(0.0, 100.0 * (proportional - optimum) / baseline)),
+        "persistent_loss_vs_hourly_oracle_pp": _quantiles(persistence_gap),
+        "capacity_matches_optimum_fraction": float(np.mean(np.isclose(capacity, optimum, rtol=1e-10, atol=1e-7))),
+        "proportional_matches_optimum_fraction": float(np.mean(np.isclose(proportional, optimum, rtol=1e-10, atol=1e-7))),
+        "same_guardian_count_fraction": float(np.mean(exact_guardians == capacity_guardians)),
+        "same_guardian_set_fraction": float(
+            np.mean(
+                [
+                    row["optimal_guardian_set"] == row["capacity_guardian_set"]
+                    for row in rows
+                ]
+            )
+        ),
+        "persistent_matches_hourly_oracle_fraction": float(
+            np.mean(np.isclose(optimum, oracle, rtol=1e-10, atol=1e-7))
+        ),
+        "exact_guardian_distribution": {
+            str(count): float(np.mean(exact_guardians == count))
+            for count in range(1, 5)
+        },
+        "capacity_guardian_distribution": {
+            str(count): float(np.mean(capacity_guardians == count))
+            for count in range(1, 5)
+        },
+        "convergence": {
+            "median_savings_first_500_sites_pct": float(np.median(savings[first_half])),
+            "median_savings_1000_sites_pct": float(np.median(savings)),
+            "absolute_difference_pp": float(abs(np.median(savings[first_half]) - np.median(savings))),
+        },
+    }
+
+
+def _figure(rows: list[dict[str, object]], output_dir: Path) -> list[Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    baseline = np.asarray([row["standalone_energy_wh"] for row in rows])
+    optimum = np.asarray([row["optimal_energy_wh"] for row in rows])
+    capacity = np.asarray([row["capacity_energy_wh"] for row in rows])
+    proportional = np.asarray([row["proportional_energy_wh"] for row in rows])
+    oracle = np.asarray([row["hourly_oracle_energy_wh"] for row in rows])
+    savings = [
+        100.0 * (1.0 - capacity / baseline),
+        100.0 * (1.0 - proportional / baseline),
+        100.0 * (1.0 - optimum / baseline),
+        100.0 * (1.0 - oracle / baseline),
+    ]
+    losses = [
+        np.maximum(0.0, 100.0 * (capacity - optimum) / baseline),
+        np.maximum(0.0, 100.0 * (proportional - optimum) / baseline),
+        np.maximum(0.0, 100.0 * (optimum - oracle) / baseline),
+    ]
+
+    figure, axes = plt.subplots(1, 2, figsize=(8.8, 3.5))
+    box = axes[0].boxplot(
+        savings,
+        tick_labels=(
+            "Capacité",
+            "Proportionnelle",
+            "Optimum\npersistant",
+            "Oracle\nhoraire",
+        ),
+        whis=(5, 95),
+        showfliers=False,
+        patch_artist=True,
+    )
+    for patch, color in zip(
+        box["boxes"],
+        ("#D98E04", "#5B9A55", "#2A6FBB", "#7557A5"),
+        strict=True,
+    ):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.75)
+    axes[0].axhline(0.0, color="0.35", linewidth=0.8, linestyle="--")
+    axes[0].set_ylabel("Énergie évitée (%)")
+    axes[0].set_title("(a) Énergie évitée")
+    axes[0].tick_params(axis="x", labelsize=8)
+    axes[0].grid(axis="y", alpha=0.25)
+
+    loss_box = axes[1].boxplot(
+        losses,
+        tick_labels=(
+            "Sélection\npar capacité",
+            "Allocation\nproportionnelle",
+            "Persistance\ndes gardiens",
+        ),
+        whis=(5, 95),
+        showfliers=False,
+        patch_artist=True,
+    )
+    for patch, color in zip(
+        loss_box["boxes"], ("#D98E04", "#5B9A55", "#7557A5"), strict=True
+    ):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.75)
+    axes[1].axhline(0.0, color="0.35", linewidth=0.8, linestyle="--")
+    axes[1].set_ylabel("Perte d'économie (points)")
+    axes[1].set_title("(b) Coût des restrictions")
+    axes[1].grid(axis="y", alpha=0.25)
+    figure.tight_layout()
+
+    paths = [
+        output_dir / "operational_efficiency.pdf",
+        output_dir / "operational_efficiency.png",
+    ]
+    figure.savefig(paths[0], bbox_inches="tight")
+    figure.savefig(paths[1], dpi=220, bbox_inches="tight")
+    plt.close(figure)
+    return paths
+
+
+def _run(
+    cache_path: Path,
+    sites_path: Path,
+    num_sites: int,
+    hours: tuple[int, ...],
+) -> list[dict[str, object]]:
+    population = load_calibrated_population(cache_path)
+    sites = load_virtual_sites(sites_path, population)
+    if not 1 <= num_sites <= sites.num_sites:
+        raise ValueError(f"num_sites must be between 1 and {sites.num_sites}")
+    rows: list[dict[str, object]] = []
+    for site_index in range(num_sites):
+        indices = sites.antenna_indices[site_index]
+        fixed = population.p_fixed_w[indices]
+        slopes = population.slope_w_per_gb[indices]
+        peaks = population.peak_traffic_gb[indices]
+        for day_index, day in enumerate(population.days):
+            demands = population.traffic_gb[indices, day_index][:, hours]
+            for rate in CAPACITY_RATES:
+                capacities = peaks / rate
+                autonomous = standalone_energy(fixed, slopes, demands)
+                optimum, oracle = optimal_persistent_with_oracle(
+                    capacities, fixed, slopes, demands
+                )
+                capacity = descending_capacity_policy(capacities, fixed, slopes, demands)
+                proportional = proportional_policy(
+                    optimum.guardians, capacities, fixed, slopes, demands
+                )
+                tolerance = 1e-7 * max(1.0, autonomous)
+                if not (
+                    oracle <= optimum.energy_wh + tolerance
+                    and optimum.energy_wh <= capacity.energy_wh + tolerance
+                    and optimum.energy_wh <= proportional.energy_wh + tolerance
+                    and optimum.energy_wh <= autonomous + tolerance
+                ):
+                    raise RuntimeError(
+                        f"operational cost ordering failed for {sites.site_ids[site_index]}, {day}, r={rate}"
+                    )
+                rows.append(
+                    {
+                        "site_id": str(sites.site_ids[site_index]),
+                        "day": str(day),
+                        "capacity_rate": rate,
+                        "standalone_energy_wh": autonomous,
+                        "optimal_energy_wh": optimum.energy_wh,
+                        "capacity_energy_wh": capacity.energy_wh,
+                        "proportional_energy_wh": proportional.energy_wh,
+                        "hourly_oracle_energy_wh": oracle,
+                        "optimal_guardians": optimum.num_guardians,
+                        "capacity_guardians": capacity.num_guardians,
+                        "optimal_guardian_set": "|".join(str(index + 1) for index in optimum.guardians),
+                        "capacity_guardian_set": "|".join(str(index + 1) for index in capacity.guardians),
+                    }
+                )
+        if (site_index + 1) % 100 == 0:
+            print(f">> {site_index + 1}/{num_sites} sites evaluated", flush=True)
+    return rows
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--calibration-dir", type=Path, default=DEFAULT_CALIBRATION_DIR)
+    parser.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS_DIR)
+    parser.add_argument("--figures-dir", type=Path, default=DEFAULT_FIGURES_DIR)
+    parser.add_argument("--num-sites", type=int, default=1_000)
+    parser.add_argument("--hours", nargs=2, type=int, default=(0, 6), metavar=("START", "END"))
+    parser.add_argument("--rebuild", action="store_true")
+    parser.add_argument("--quiet", action="store_true")
+    args = parser.parse_args()
+    hours = inclusive_hour_window(*args.hours)
+    cache_path = args.calibration_dir / "calibrated_population.npz"
+    sites_path = args.calibration_dir / "virtual_sites.csv"
+    for path in (cache_path, sites_path):
+        if not path.is_file():
+            parser.error(f"missing calibrated input: {path}")
+
+    args.results_dir.mkdir(parents=True, exist_ok=True)
+    rows_path = args.results_dir / "operational_instances.csv"
+    summary_path = args.results_dir / "policy_summary.csv"
+    analysis_path = args.results_dir / "analysis.json"
+    manifest_path = args.results_dir / "manifest.json"
+    expected = {
+        "calibrated_population": file_signature(cache_path),
+        "virtual_sites": file_signature(sites_path),
+        "num_sites": args.num_sites,
+        "hours": list(hours),
+        "capacity_rates": list(CAPACITY_RATES),
+    }
+    current = False
+    if not args.rebuild and manifest_path.is_file() and rows_path.is_file():
+        try:
+            recorded = json.loads(
+                manifest_path.read_text(encoding="utf-8")
+            )["inputs"]
+            current = inputs_match(
+                recorded,
+                expected,
+                {
+                    "calibrated_population": cache_path,
+                    "virtual_sites": sites_path,
+                },
+            )
+        except (KeyError, ValueError, json.JSONDecodeError):
+            current = False
+
+    if current:
+        print(f">> Reusing operational results: {rows_path.resolve()}", flush=True)
+        with rows_path.open(newline="", encoding="utf-8") as file:
+            rows = []
+            for raw in csv.DictReader(file):
+                rows.append(
+                    {
+                        key: (
+                            raw[key]
+                            if key in {"site_id", "day", "optimal_guardian_set", "capacity_guardian_set"}
+                            else int(raw[key])
+                            if key in {"optimal_guardians", "capacity_guardians"}
+                            else float(raw[key])
+                        )
+                        for key in raw
+                    }
+                )
+    else:
+        rows = _run(cache_path, sites_path, args.num_sites, hours)
+        _write_rows(rows_path, rows)
+
+    summaries = _policy_summaries(rows)
+    analysis = _analysis(rows)
+    figures = _figure(rows, args.figures_dir)
+    _write_rows(summary_path, summaries)
+    analysis_path.write_text(json.dumps(analysis, indent=2, ensure_ascii=False), encoding="utf-8")
+    manifest = {
+        "inputs": expected,
+        "outputs": {
+            "instances": portable_path(rows_path),
+            "summary": portable_path(summary_path),
+            "analysis": portable_path(analysis_path),
+            "figures": [portable_path(path) for path in figures],
+        },
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f">> {len(rows)} operational instances completed", flush=True)
+    if not args.quiet:
+        print(json.dumps(analysis, indent=2, ensure_ascii=False), flush=True)
+
+
+if __name__ == "__main__":
+    main()

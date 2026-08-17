@@ -51,16 +51,19 @@ partage des économies.
 Informations acquises : données de terrain Orange, Île-de-France, comprenant
 un volume descendant horaire en Go et une puissance moyenne horaire en W.
 
-À compléter avant soumission : **[provenance exacte, dates d'acquisition,
-technologie, périmètre de l'identifiant radio et conditions d'utilisation]**.
+À compléter avant soumission : **[provenance administrative exacte et
+conditions d'utilisation ou de citation du jeu de données]**.
 
-Les règles d'admissibilité seront fixées avant de compter les antennes :
+Toutes les expériences utilisent les cinq premiers jours de la période, du 20
+au 24 mars 2023, soit 120 créneaux horaires par antenne. Les règles
+d'admissibilité sont :
 
 - valeurs temporelles, trafic et puissance lisibles et non négatifs ;
-- journées complètes de 24 observations ;
-- nombre suffisant de journées complètes pour la validation hors échantillon ;
-- trafic variable pour identifier une pente non contrainte ;
-- statut explicite des ajustements à coefficients non positifs.
+- exclusion de l'ajustement des créneaux inactifs `(P,d)=(0,0)` et des
+  créneaux incohérents `P=0, d>0` ;
+- trafic suffisamment variable pour identifier une pente ;
+- intercept et pente strictement positifs, afin de conserver une relation
+  puissance--trafic physiquement interprétable.
 
 Le nombre `3 626` n'est pas une taille d'échantillon gelée. La campagne
 principale utilisera toutes les antennes satisfaisant les règles ci-dessus et
@@ -82,92 +85,82 @@ Avant la campagne empirique :
 
 Ces expériences contrôlent l'implémentation mais ne remplacent pas les preuves.
 
-La validation utilise les observations journalières brutes, sans réduire au
-préalable la semaine à 24 moyennes horaires.
+L'ajustement utilise les observations horaires actives des cinq premiers
+jours, sans les réduire à 24 moyennes horaires. Pour chaque antenne admissible,
+les moindres carrés estiment sur l'ensemble de ces observations le modèle
+`P_i(d) = P_fixed_i + slope_i * d`. Il ne s'agit ni de prévoir le trafic ni de
+prédire une période future.
 
-Pour chaque antenne admissible :
+La qualité descriptive de l'ajustement est résumée uniquement par le
+coefficient de détermination R² et par la RMSE divisée par la puissance active
+moyenne. Aucun découpage apprentissage--test et aucun modèle constant ou
+quadratique ne sont utilisés.
 
-1. laisser successivement une journée complète hors apprentissage ;
-2. ajuster sur les autres jours le modèle affine
-   `P = F_tilde + gamma_tilde d` ;
-3. prédire la journée laissée de côté ;
-4. conserver R² d'apprentissage, MAE, RMSE et erreur normalisée de test ;
-5. analyser les résidus selon l'heure et le niveau de trafic ;
-6. comparer au modèle constant ;
-7. comparer en robustesse la régression libre à une régression à coefficients
-   non négatifs.
-
-Le modèle quadratique ne sera ajouté que si les résidus présentent une
-courbure systématique et si son gain hors échantillon est substantiel.
-
-La veille est supposée consommer 0 W. Les coefficients sont donc
+La puissance consommée par une antenne éteinte est supposée nulle. Les
+coefficients sont donc
 
 ```text
-F_i     = price_per_kWh / 1000 * F_tilde_i,
-gamma_i = price_per_kWh / 1000 * gamma_tilde_i.
+F_i     = price_per_kWh / 1000 * P_fixed_i,
+gamma_i = price_per_kWh / 1000 * slope_i.
 ```
 
 ## 6. Construction semi-synthétique des opérateurs
 
-L'unité primaire est un profil antenne-semaine conservant conjointement son
-trafic mesuré et sa relation puissance--trafic.
+La campagne principale utilise exactement **1 000 sites virtuels** de quatre
+antennes distinctes. La graine pseudo-aléatoire globale `20260814` fixe la
+liste complète des sites, qui est exportée avant la campagne et réutilisée à
+l'identique pour les cinq nuits et les quatre scénarios de capacité. Une
+antenne peut appartenir à plusieurs sites, mais jamais deux fois au même site.
+Les 1 000 quadruplets sont distincts. Les quatre scénarios et les cinq nuits
+forment donc 20 000 instances à partir de cette même population de sites, sans
+énumération exhaustive de toutes les associations possibles.
+Les quatre séries utilisent les mêmes 120 heures et conservent leurs propres
+trafics et coefficients de puissance.
 
-Pour chaque antenne d'ancrage et chaque graine :
+Les antennes sont classées puis divisées en quatre groupes de même taille selon
+le trafic maximal et selon `P_fixed`. Les quatre membres d'un site sont tirés
+dans le même groupe pour les deux critères. Le nombre de sites attribué à
+chaque groupe croisé est proportionnel au nombre d'antennes qu'il contient ;
+les arrondis sont répartis par la méthode des plus forts restes afin d'obtenir
+exactement 1 000 sites. Tout groupe sollicité doit contenir au moins quatre
+antennes, faute de quoi la construction s'arrête avec un diagnostic explicite.
+La suffisance de l'échantillon est contrôlée après la campagne en comparant les
+principaux agrégats sur les 500 premiers sites et sur les 1 000 sites. Cette
+comparaison réutilise les résultats calculés et n'ajoute aucune simulation.
 
-1. conserver son profil comme opérateur 1 ;
-2. tirer sans remise trois antennes distinctes dans la population admissible ;
-3. pour le scénario principal, tirer les partenaires dans des strates de
-   trafic et de puissance comparables à l'ancre ;
-4. aligner les heures civiles et utiliser les journées complètes communes ;
-5. conserver pour chaque opérateur son profil observé et ses propres
-   coefficients de puissance ;
-6. qualifier explicitement le quadruplet de site virtuel semi-synthétique.
+Les données préparées sont persistées dans `results/power_calibration/` :
 
-Le scénario principal associe quatre profils distincts et comparables, selon
-les quartiles croisés du pic hebdomadaire et de `F_tilde`. Une strate trop
-petite est élargie aux quartiles voisins. Un tirage sans restriction teste
-l'hétérogénéité ; les profils perturbés d'une même ancre servent uniquement à
-reproduire les résultats exploratoires.
+- `calibrated_population.npz` contient les 120 observations, les coefficients,
+  les diagnostics et les groupes de chaque antenne admissible ;
+- `virtual_sites.csv` contient la liste gelée des 1 000 sites ;
+- `manifest.json` enregistre la signature du fichier source, les paramètres et
+  la version du cache.
 
-La campagne utilise les **20 graines entières de 0 à 19**. Une graine fixe
-complètement les tirages ; elle ne doit modifier aucune autre convention
-expérimentale.
+Le fichier brut n'est relu que si ce cache manque, si sa version ou ses
+paramètres changent, ou si la taille ou la date de modification de la source a
+changé. L'option `--rebuild-cache` force explicitement sa reconstruction.
 
 ## 7. Capacité et satisfaction du trafic
 
 La capacité physique n'est pas observable dans le fichier. Elle est donc un
-paramètre de scénario et non une grandeur estimée :
+paramètre de scénario, construit à partir du trafic maximal observé. Pour
+chaque taux maximal cible `r in {0.70, 0.80, 0.90, 1.00}`, on fixe :
 
 ```text
-q_i = max_observed_traffic_i / rho_peak_i.
+q_i = max_observed_traffic_i / r,
+donc max_observed_traffic_i = r * q_i.
 ```
 
-Le maximum est calculé sur toute la période disponible, et non seulement sur
-la fenêtre de décision. La grille principale est
-`rho_peak in {0.30, 0.50, 0.70, 0.90}`. La valeur historique `0.75` est
-conservée seulement pour reproduire les résultats exploratoires.
+Le maximum est calculé sur les 120 heures des cinq premiers jours, et non
+seulement sur la fenêtre de décision. Le cas `r = 0.70` laisse une marge de 30 % au pic
+observé ; le cas `r = 1.00` fixe la capacité exactement à ce pic. Le paramètre
+`r` décrit un scénario de capacité et non une grandeur physique mesurée.
 
-Dans l'analyse de sensibilité, un multiplicateur `alpha` agit uniquement sur
-la demande :
-
-```text
-d_i_alpha[h] = alpha * d_i[h].
-```
-
-La capacité `q_i` reste celle calibrée sur le profil non multiplié. Elle ne
-doit être ni recalculée, ni augmentée avec `alpha`. La charge maximale sur la
-période disponible vaut alors exactement `alpha * rho_peak_i`. Un couple de
-paramètres n'est admissible que si
-
-```text
-alpha * rho_peak_i <= 1, pour tout opérateur i.
-```
-
-Avant chaque simulation, le code doit en outre vérifier directement
-`alpha * d_i[h] <= q_i` pour tout `i` et tout `h` de la fenêtre. Une violation
-arrête le scénario et le classe `outside_model_domain` : le trafic n'est pas
-tronqué et la capacité n'est pas recalibrée pour rendre le cas artificiellement
-faisable.
+Dans la campagne principale, la demande observée reste inchangée : aucun
+multiplicateur de trafic n'est appliqué. Avant chaque simulation, le code
+vérifie directement `d_i[h] <= q_i` pour tout `i` et tout `h` de la fenêtre.
+Une violation arrête le scénario ; le trafic n'est jamais tronqué et la
+capacité n'est pas recalibrée pour rendre le cas artificiellement faisable.
 
 Toute la demande doit être acheminée et aucune capacité ne peut être dépassée.
 Cette contrainte exprime une satisfaction intégrale du trafic, mais ne permet
@@ -176,14 +169,23 @@ pas observés dans les données.
 
 ## 8. Fenêtre temporelle et gardiens fixes
 
-La fenêtre est notée `H(h_start, h_end)` et ses bornes inclusives restent des
-paramètres. Aucune conclusion principale n'est attachée par défaut à 1 h--6 h.
-Les bornes finales seront choisies à partir du profil de trafic agrégé, avant
-la campagne principale et indépendamment des résultats de cœur.
+La fenêtre principale est fixée à
+`H = {0 h, 1 h, ..., 6 h}`, soit les sept créneaux horaires de l'intervalle
+`[00:00, 07:00)`. Elle est identique pour tous les sites et tous les scénarios
+de la campagne principale. L'analyse de sensibilité étudie séparément sa
+position et sa durée, sans modifier ce réglage central.
 
-Politique principale : un même ensemble de gardiens reste actif pendant toute
-la fenêtre ; l'allocation de trafic peut varier d'une heure à l'autre. Les
-coûts, économies et transferts sont agrégés et réglés une fois par fenêtre.
+Ce choix est un réglage de la campagne, et non une constante imposée par
+l'implémentation. Le code reçoit les deux bornes de la fenêtre en paramètres
+et accepte toute fenêtre horaire contiguë, y compris une fenêtre traversant
+minuit. Modifier ces bornes ne doit changer ni la construction des sites et des
+capacités, ni les méthodes d'optimisation et d'analyse coalitionnelle.
+
+Chacun des cinq jours fournit une fenêtre nocturne distincte. Un même ensemble
+de gardiens reste actif pendant les sept heures d'une nuit, tandis que
+l'allocation du trafic peut varier d'une heure à l'autre. Les gardiens peuvent
+être choisis différemment la nuit suivante. Les coûts, économies et transferts
+sont agrégés et réglés une fois par nuit.
 
 La réoptimisation exacte indépendante à chaque heure est conservée comme
 borne basse idéale. L'écart mesure le coût de la contrainte imposant les mêmes
@@ -192,47 +194,70 @@ sans donnée permettant de le calibrer.
 
 ## 9. Méthodes comparées
 
-1. absence de partage ;
-2. un seul opérateur actif, si sa capacité suffit sur toute la fenêtre ;
-3. activation par capacité décroissante jusqu'à faisabilité ;
-4. gardiens optimaux avec trafic réparti proportionnellement aux capacités ;
-5. optimum exact avec gardiens fixes sur la fenêtre ;
-6. optimum avec choix horaire des gardiens, utilisé comme borne basse.
+L'absence de partage sert uniquement de référence pour normaliser l'énergie
+évitée ; elle n'est pas traitée comme une politique concurrente. Deux
+politiques approchées sont comparées à l'optimum :
+
+1. activation par capacité décroissante jusqu'à faisabilité ;
+2. gardiens optimaux avec trafic réparti proportionnellement aux capacités.
+
+Ces deux références sont comparées à l'optimum exact avec gardiens fixes sur
+la fenêtre : l'ensemble optimal est obtenu par énumération, puis le trafic est
+réparti à chaque heure par coût variable croissant. La référence par capacité
+isole la sélection des gardiens, tandis que la répartition proportionnelle
+isole l'allocation du trafic. L'optimum avec choix horaire des gardiens est
+calculé séparément et utilisé uniquement comme borne basse sur le coût.
 
 Une baseline infaisable est déclarée comme telle ; aucune demande n'est
 abandonnée pour la rendre artificiellement comparable.
 
 ## 10. Analyse de sensibilité structurée
 
-La figure causale centrale est une grille masquée
+Le scénario central fixe `r = 0.80`, conserve le trafic et les coefficients
+calibrés, suppose une veille nulle, utilise `[00:00, 07:00)` et réunit quatre
+opérateurs. Les facteurs suivants sont modifiés un par un, sur les mêmes sites
+et les mêmes jours :
 
-```text
-rho_peak x traffic_multiplier
-```
+| Facteur | Valeurs |
+|---|---|
+| marge de capacité | `r in {0.70, 0.80, 0.90, 1.00}` |
+| trafic | `0.8 d`, `d`, `1.2 d`, capacités centrales inchangées |
+| puissance fixe | `0.8 P_fixed`, `P_fixed`, `1.2 P_fixed` |
+| pente variable | `0.8 slope`, `slope`, `1.2 slope` |
+| puissance de veille | `0`, `0.05 P_fixed`, `0.10 P_fixed` |
+| position d'une fenêtre de 7 h | `[22:00,05:00)`, `[00:00,07:00)`, `[02:00,09:00)` |
+| durée depuis minuit | 5 h, 7 h, 9 h |
+| nombre d'opérateurs | `2, 3, 4, 5, 6`, avec 1 000 sites stratifiés par taille |
 
-Les multiplicateurs candidats sont
-`{0.50, 0.75, 1.00, 1.25, 1.50, 2.00}`, mais seuls les couples satisfaisant
-`traffic_multiplier * rho_peak <= 1` sont simulés. La grille effective est :
+Dans les lignes consacrées aux coûts, la variation de `P_fixed` représente
+celle de `F_i` et la variation de `slope` celle de `gamma_i`, à prix de
+l'électricité fixé. Pour la veille, le coût d'un équipement inactif est la
+fraction indiquée de sa composante fixe ; les références autonomes et les
+coûts coalitionnels utilisent la même convention.
 
-| `rho_peak` | `traffic_multiplier` admissibles |
-|---:|:---|
-| `0.30` | `0.50, 0.75, 1.00, 1.25, 1.50, 2.00` |
-| `0.50` | `0.50, 0.75, 1.00, 1.25, 1.50, 2.00` |
-| `0.70` | `0.50, 0.75, 1.00, 1.25` |
-| `0.90` | `0.50, 0.75, 1.00` |
+La position de la fenêtre est comparée uniquement sur les nuits entièrement
+observées pour les trois positions, de façon à conserver l'appariement. La
+variation du nombre d'opérateurs utilise nécessairement de nouveaux sites,
+construits avec la même population admissible, la même stratification et la
+même graine. Le paramètre `beta_i = gamma_i * q_i` n'est pas varié séparément :
+à `q_i` fixé, sa variation est celle de `gamma_i`, tandis que la variation de
+`q_i` est déjà portée par `r`.
 
-Les cellules rejetées sont affichées comme « hors domaine du modèle » et ne
-sont jamais agrégées avec les scénarios faisables. Pour cette grille masquée,
-trois cartes sont produites :
+Le trafic et la capacité sont en outre croisés, car leur interaction détermine
+les seuils de faisabilité. Les cellules infaisables sont signalées comme hors
+domaine et exclues des agrégats réalisables. Pour chaque valeur, les résultats
+appariés portent sur :
 
 - économie énergétique relative ;
 - nombre de gardiens actifs sur la fenêtre ;
-- fréquence de cœur vide et de Shapley hors du cœur.
+- écart à l'oracle horaire ;
+- fréquence de cœur vide ;
+- fréquence de Shapley hors du cœur.
 
-La famille semi-synthétique, la part fixe du coût, la dispersion de
-`F_i`, `gamma_i`, `q_i`, la corrélation des profils et le nombre d'opérateurs
-sont présentés comme tests secondaires. Le cas `n = 4` est principal ;
-`n = 2,...,6` est une extension.
+Les facteurs sont classés par amplitude d'effet dans les plages testées. Ce
+classement n'est pas interprété au-delà de ces plages. Le prix commun de
+l'électricité n'est pas simulé : sa multiplication par une constante positive
+ne change ni les décisions ni les indicateurs relatifs.
 
 ## 11. Métriques et inférence
 
@@ -250,20 +275,21 @@ Métriques de partage : économie individuelle `z_i`, coût net `y_i`, transfert
 Métriques de validation : erreur maximale entre formulations équivalentes,
 nombre de contradictions et résidu d'équilibre budgétaire.
 
+Métriques d'ajustement du modèle de puissance : R² et RMSE divisée par la
+puissance active moyenne.
+
 Les distributions sont résumées par médiane, quartiles et quantiles 5 %--95 %.
-Les intervalles bootstrap à 95 % sont regroupés par antenne d'ancrage afin de
-ne pas traiter les graines d'un même site virtuel comme des observations
-indépendantes.
+Les intervalles d'incertitude à 95 % sont obtenus en rééchantillonnant les
+1 000 sites virtuels.
 
 ## 12. Critères de gel avant campagne principale
 
-- bornes `h_start` et `h_end` fixées et justifiées par le trafic, non par les
-  résultats de stabilité ;
+- fenêtre nocturne principale fixée à `[00:00, 07:00)` pour chaque jour ;
 - règles d'admissibilité exécutées et motifs d'exclusion audités ;
-- validation leave-one-day-out terminée ;
+- ajustement affine sur les cinq premiers jours terminé ;
 - tests de cohérence théorique et algorithmique terminés ;
-- listes des antennes, partenaires et graines exportées ;
+- liste des 1 000 sites et graine globale exportées ;
 - chaque configuration entièrement déterminée par un fichier de paramètres ;
-- chaque couple `(rho_peak, traffic_multiplier)` satisfait la contrainte de
-  charge et le contrôle direct `d_i[h] <= q_i` ;
-- résultats pilotes reproduits à l'identique à graine fixée.
+- chaque scénario vérifie `max_observed_traffic_i = r * q_i` et le contrôle
+  direct `d_i[h] <= q_i` ;
+- résultats pilotes reproduits à l'identique avec la liste de sites gelée.
