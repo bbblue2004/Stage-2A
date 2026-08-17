@@ -1,4 +1,4 @@
-# Protocole scientifique du jour 1 — révision du 5 août 2026
+# Protocole scientifique — révision du 17 août 2026
 
 Date de gel : 4 août 2026.
 
@@ -167,7 +167,7 @@ Cette contrainte exprime une satisfaction intégrale du trafic, mais ne permet
 pas d'affirmer une QoS maximale en débit, latence ou couverture, qui ne sont
 pas observés dans les données.
 
-## 8. Fenêtre temporelle et gardiens fixes
+## 8. Fenêtre temporelle et reconfiguration horaire
 
 La fenêtre principale est fixée à
 `H = {0 h, 1 h, ..., 6 h}`, soit les sept créneaux horaires de l'intervalle
@@ -181,16 +181,15 @@ et accepte toute fenêtre horaire contiguë, y compris une fenêtre traversant
 minuit. Modifier ces bornes ne doit changer ni la construction des sites et des
 capacités, ni les méthodes d'optimisation et d'analyse coalitionnelle.
 
-Chacun des cinq jours fournit une fenêtre nocturne distincte. Un même ensemble
-de gardiens reste actif pendant les sept heures d'une nuit, tandis que
-l'allocation du trafic peut varier d'une heure à l'autre. Les gardiens peuvent
-être choisis différemment la nuit suivante. Les coûts, économies et transferts
-sont agrégés et réglés une fois par nuit.
+Chacun des cinq jours fournit une fenêtre nocturne distincte. Dans le modèle
+principal, les gardiens et l'allocation du trafic sont réoptimisés
+indépendamment à chaque heure. Les coûts, économies et transferts sont ensuite
+agrégés et réglés une fois par nuit.
 
-La réoptimisation exacte indépendante à chaque heure est conservée comme
-borne basse idéale. L'écart mesure le coût de la contrainte imposant les mêmes
-gardiens sur toute la fenêtre. Aucun coût de commutation monétaire n'est introduit
-sans donnée permettant de le calibrer.
+L'optimum persistant est calculé séparément en imposant les mêmes gardiens sur
+toute la fenêtre. Son écart à l'optimum horaire mesure le coût de cette
+contrainte. Aucun coût de commutation monétaire n'est introduit sans donnée
+permettant de le calibrer.
 
 ## 9. Méthodes comparées
 
@@ -201,12 +200,12 @@ politiques approchées sont comparées à l'optimum :
 1. activation par capacité décroissante jusqu'à faisabilité ;
 2. gardiens optimaux avec trafic réparti proportionnellement aux capacités.
 
-Ces deux références sont comparées à l'optimum exact avec gardiens fixes sur
-la fenêtre : l'ensemble optimal est obtenu par énumération, puis le trafic est
-réparti à chaque heure par coût variable croissant. La référence par capacité
-isole la sélection des gardiens, tandis que la répartition proportionnelle
-isole l'allocation du trafic. L'optimum avec choix horaire des gardiens est
-calculé séparément et utilisé uniquement comme borne basse sur le coût.
+Ces deux références sont comparées à l'optimum horaire exact : à chaque heure,
+l'ensemble optimal est obtenu par énumération, puis le trafic est réparti par
+coût variable croissant. La référence par capacité est elle-même recalculée à
+chaque heure et isole la sélection des gardiens, tandis que la répartition
+proportionnelle isole l'allocation du trafic. L'optimum avec gardiens fixes sur
+la fenêtre est calculé séparément comme politique secondaire réalisable.
 
 Une baseline infaisable est déclarée comme telle ; aucune demande n'est
 abandonnée pour la rendre artificiellement comparable.
@@ -249,8 +248,8 @@ domaine et exclues des agrégats réalisables. Pour chaque valeur, les résultat
 appariés portent sur :
 
 - économie énergétique relative ;
-- nombre de gardiens actifs sur la fenêtre ;
-- écart à l'oracle horaire ;
+- nombre moyen de gardiens actifs par heure ;
+- écart de persistance par rapport à l'optimum horaire ;
 - fréquence de cœur vide ;
 - fréquence de Shapley hors du cœur.
 
@@ -262,8 +261,8 @@ ne change ni les décisions ni les indicateurs relatifs.
 ## 11. Métriques et inférence
 
 Métriques opérationnelles : énergie et coût évités, économie relative, nombre
-de gardiens, charges des gardiens, faisabilité des baselines et écart entre
-gardiens fixes et choix horaire.
+de gardiens, changements d'ensemble, faisabilité des baselines et écart de
+persistance entre gardiens fixes et choix horaire.
 
 Métriques coalitionnelles : convexité, non-vacuité du cœur, Shapley dans le
 cœur, excès maximal de Shapley, gap de Bondareva--Shapley, structure du

@@ -20,8 +20,8 @@ F_i:=u_i,\qquad
 \beta_i:=u_i,\qquad
 d_i^h:=Bu_i.
 \]
-Les paramètres primitifs produits sont entiers, leur taille d'encodage est
-polynomiale, et $\gamma_i=\beta_i/q_i=1/U$ pour tout $i\in N$. De plus,
+Les paramètres sont entiers sauf $\gamma_i=\beta_i/q_i=1/U$ pour tout $i\in N$
+et leur taille d'encodage est polynomiale. De plus,
 $d_i^h\leqslant q_i$ et
 \[
 d^h(S)=\sum_{i\in S}d_i^h=BU.
@@ -60,7 +60,10 @@ C_H^*(S)\leqslant2B
 \]
 Un algorithme polynomial pour la sélection optimale des gardiens
 permettrait donc de décider \textsc{Subset Sum} en temps polynomial. Le
-problème de sélection optimale des gardiens est ainsi NP-difficile.
+problème de sélection optimale des gardiens à une heure est ainsi
+NP-difficile. La construction utilise \(H=\{h\}\) : sur cette instance, les
+modèles horaire et persistant coïncident, mais la réduction suffit déjà pour
+le problème principal.
 \end{proof}
 
 \subsection{Complexité de l'énumération exacte}
@@ -68,9 +71,9 @@ problème de sélection optimale des gardiens est ainsi NP-difficile.
 
 \begin{proof}[Démonstration de la Proposition~\ref{prop:complexite_enumeration}]
 Après avoir ordonné les membres de \(S\) par coût variable unitaire, une
-coalition de taille \(s\) admet \(2^s-1\) ensembles de gardiens. Pour chacun,
-la faisabilité et la répartition gloutonne sont évaluées aux \(|H|\) heures en
-\(O(|H|s)\). En sommant sur les coalitions, on obtient
+coalition de taille \(s\) admet \(2^s-1\) ensembles de gardiens. À chacune
+des \(|H|\) heures, la faisabilité et la répartition gloutonne de chaque
+ensemble sont évaluées en \(O(s)\). En sommant sur les coalitions, on obtient
 \[
 |H|\sum_{s=1}^{n}\binom ns s(2^s-1)
 =|H|\left(2n\,3^{n-1}-n\,2^{n-1}\right)
@@ -82,41 +85,38 @@ la faisabilité et la répartition gloutonne sont évaluées aux \(|H|\) heures 
 \label{app:preuve_semi_homogene}
 
 \begin{proof}[Démonstration de la Proposition~\ref{prop:reduction_semi_homogene}]
-Fixons \(S\in\mathcal S\). Puisque tous les équipements ont la capacité
-\(q\), un ensemble persistant de \(r\) gardiens est faisable si et seulement
-si
+Fixons \(S\in\mathcal S\). À chaque \(h\in H\), puisque tous les équipements
+ont la capacité \(q\), le nombre minimal de gardiens est
+\(\lceil d^h(S)/q\rceil\). Tous les coûts fixes étant égaux à \(F>0\), une
+solution horaire optimale active exactement ce nombre d'équipements. De plus,
+pour toute famille de répartitions faisables,
 \[
-    rq\geqslant d^h(S),
-    \qquad \forall h\in H.
-\]
-Le nombre minimal de gardiens est donc \(k_H(S)\). Tous les coûts fixes étant
-égaux à \(F>0\), une solution optimale active exactement ce nombre
-d'équipements. De plus, pour toute répartition faisable,
-\[
-    \sum_{h\in H}\sum_{i\in G}\gamma t_i^h
+    \sum_{h\in H}\sum_{i\in G_h}\gamma t_i^h
     =\gamma\sum_{h\in H}d^h(S)
     =\gamma D(S).
 \]
 Il en résulte
 \[
-    C_H^*(S)=|H|Fk_H(S)+\gamma D(S).
+    C_H^*(S)=F\sum_{h\in H}
+    \left\lceil\frac{d^h(S)}q\right\rceil+\gamma D(S)
+    =FK_H(S)+\gamma D(S).
 \]
 L'hypothèse de faisabilité individuelle donne
 \(C_H^*(\{i\})=|H|F+\gamma D_i\). En sommant ces coûts autonomes et en
 utilisant \(D(S)=\sum_{i\in S}D_i\), on obtient
 \[
-    v_H(S)=|H|F\bigl(|S|-k_H(S)\bigr).
+    v_H(S)=F\bigl(|H||S|-K_H(S)\bigr).
 \]
 
 Enfin, la fonction \(S\mapsto |S|\) est modulaire. Pour tous
 \(A,B\subseteq N\), l'inégalité de supermodularité de \(v_H\) est donc
 équivalente à
 \[
-    k_H(A)+k_H(B)
+    K_H(A)+K_H(B)
     \geqslant
-    k_H(A\cup B)+k_H(A\cap B),
+    K_H(A\cup B)+K_H(A\cap B),
 \]
-qui est la sous-modularité de \(k_H\).
+qui est la sous-modularité de \(K_H\).
 \end{proof}
 
 \subsection{Caractérisation du cas homogène}
@@ -124,7 +124,7 @@ qui est la sous-modularité de \(k_H\).
 
 \begin{proof}[Démonstration du Corollaire~\ref{prop:coeur_cas_homogene}]
 La Proposition~\ref{prop:reduction_semi_homogene} donne
-\(k_H(S)=k_{H,s}\) et \(v_H(S)=v_{H,s}\) pour toute coalition de taille
+\(K_H(S)=K_{H,s}\) et \(v_H(S)=v_{H,s}\) pour toute coalition de taille
 \(s\).
 
 Si \(z\in\mathcal C(N,v_H)\), la somme des contraintes du coeur sur toutes les
@@ -194,36 +194,36 @@ pour \(\varepsilon^*\).
 
 \begin{proof}[Démonstration du Théorème~\ref{thm:capacite_coeur_non_vide}]
 Soit \(Q\in\mathcal S\). Sous l'hypothèse de capacité,
-tout \(j\in Q\) peut servir seul \(Q\) à chaque heure. Réciproquement,
-considérons un ensemble persistant de gardiens \(G\subseteq Q\) et choisissons
-\(j\in\operatorname*{arg\,min}_{i\in G}\gamma_i\). Pour toute famille de
-répartitions faisables \((\mathbf t^h)_{h\in H}\),
-\begin{align*}
-    \sum_{h\in H}\sum_{i\in G}\left(F_i+\gamma_i t_i^h\right)
-    &\geqslant
-    |H|F_j+\gamma_j\sum_{h\in H}\sum_{i\in G}t_i^h\\
-    &=|H|F_j+\gamma_jD(Q).
-\end{align*}
-La configuration persistante réduite au gardien \(j\) est faisable. Il en
+tout \(j\in Q\) peut servir seul \(Q\) à chaque heure. Fixons \(h\in H\),
+considérons un ensemble de gardiens \(G\subseteq Q\) et choisissons
+\(j\in\operatorname*{arg\,min}_{i\in G}\gamma_i\). Pour toute répartition
+faisable \(\mathbf t^h\),
+\[
+    \sum_{i\in G}\left(F_i+\gamma_i t_i^h\right)
+    \geqslant F_j+\gamma_jd^h(Q).
+\]
+La configuration réduite au gardien \(j\) est faisable à cette heure. Il en
 résulte
 \[
-    C_H^*(Q)
-    =
-    \min_{j\in Q}
-    \left\{|H|F_j+\gamma_jD(Q)\right\}.
+    C_h^*(Q)=\min_{j\in Q}\left\{F_j+\gamma_jd^h(Q)\right\},
 \]
-Posons \(p_H:=C_H^*(N)/D(N)\) et \(y_{i,H}:=p_HD_i\). Pour tout
-\(Q\in\mathcal S\) et tout \(j\in Q\),
+et la somme sur les heures donne \eqref{eq:cout_tres_faible_trafic}.
+
+Posons \(p_h:=C_h^*(N)/d^h(N)\) et
+\(y_i:=\sum_{h\in H}p_hd_i^h\). Pour tout \(Q\in\mathcal S\), tout
+\(j\in Q\) et toute heure \(h\),
 \[
-    p_H
+    p_h
     \leqslant
-    \gamma_j+\frac{|H|F_j}{D(N)}
+    \gamma_j+\frac{F_j}{d^h(N)}
     \leqslant
-    \gamma_j+\frac{|H|F_j}{D(Q)}.
+    \gamma_j+\frac{F_j}{d^h(Q)}.
 \]
-Ainsi, \(\sum_{i\in Q}y_{i,H}\leqslant C_H^*(Q)\) et
-\(\sum_{i\in N}y_{i,H}=C_H^*(N)\). Pour \(Q=\{i\}\), la première inégalité
-donne \(z_i=C_H^*(\{i\})-y_{i,H}\geqslant0\), tandis que
+Après multiplication par \(d^h(Q)\), minimisation sur \(j\in Q\), puis
+sommation sur \(h\), on obtient
+\(\sum_{i\in Q}y_i\leqslant C_H^*(Q)\). En outre,
+\(\sum_{i\in N}y_i=C_H^*(N)\). Pour \(Q=\{i\}\), la première inégalité
+donne \(z_i=C_H^*(\{i\})-y_i\geqslant0\), tandis que
 \(\sum_{i\in N}z_i=v_H(N)\). La
 Proposition~\ref{prop:translation_coeur} permet donc de conclure que
 \(z\in\mathcal C(N,v_H)\).

@@ -1,22 +1,22 @@
 \newpage
 
-\section{Stabilité et répartition des économies}
+\section{Stabilité coalitionnelle et partage des économies}
 \label{sec:jeu_cooperatif}
 
-La Section précédente établit la superadditivité des deux jeux d'économies
-associés aux politiques opérationnelles. L'analyse de stabilité porte ici sur
-le jeu principal \((N,v_H)\), dans lequel l'ensemble des gardiens reste fixe sur
-la fenêtre \(H\). La politique horairement reconfigurable conserve son rôle de
-référence opérationnelle, mais ne définit pas le jeu étudié dans cette section.
+La superadditivité répond à une question d'efficacité : la grande coalition
+crée le surplus total le plus élevé. Le cœur répond à une question différente,
+celle de la soutenabilité de sa répartition face aux sous-coalitions. Cette
+section constitue donc le cœur scientifique de l'article. L'analyse porte sur
+le jeu principal \((N,v_H)\), construit à partir de l'optimum reconfiguré à
+chaque heure. L'engagement d'un même ensemble de gardiens sur toute la fenêtre
+reste une extension opérationnelle, sans définir un second jeu dans la suite.
 
-La superadditivité rend la grande coalition collectivement efficace, mais ne
-garantit pas que sa valeur puisse être répartie de manière à écarter toute
-déviation. Cette section sépare donc trois questions : l'existence d'une
-allocation stable, la stabilité d'une règle de partage donnée et le traitement
-de l'instabilité lorsqu'aucune allocation du coeur n'existe. Les limites du
-modèle général sont d'abord établies, puis diagnostiquées exactement, avant
-d'identifier des régimes structurels dans lesquels des conclusions plus fortes
-sont possibles.
+La progression distingue quatre niveaux. Nous montrons d'abord que le cœur peut
+être vide malgré la superadditivité. Nous établissons ensuite que Shapley peut
+rester hors du cœur lorsque celui-ci existe. Des conditions structurelles
+identifient alors des régimes où la stabilité est restaurée. Enfin, lorsque la
+stabilité parfaite est impossible, le moindre cœur quantifie le défaut et le
+nucléole fournit une règle de compromis.
 
 \subsection{Garanties et limites dans le modèle général}
 
@@ -73,7 +73,7 @@ avec des demandes constantes sur la fenêtre données par
 \[
     (d_1^h,d_2^h,d_3^h,d_4^h)=(1,3,4,5).
 \]
-Le jeu persistant $v_H$ est superadditif, mais il n'est pas convexe et son
+Le jeu horaire $v_H$ est superadditif, mais il n'est pas convexe et son
 coeur est vide.
 \end{proposition}
 
@@ -81,7 +81,9 @@ coeur est vide.
 Une coalition \(S\in\mathcal S\) requiert
 \(\lceil d^h(S)/6\rceil\) gardiens. Comme les coûts variables unitaires sont
 identiques, son coût variable vaut \(|H|d^h(S)\), indépendamment de la
-répartition. Par conséquent,
+répartition. Les demandes étant constantes, l'optimum horaire répète la même
+décision à chaque heure et coïncide ici avec l'optimum persistant. Par
+conséquent,
 \[
     v_H(S)
     =|H|\left(|S|-\left\lceil\frac{d^h(S)}6\right\rceil\right).
@@ -112,11 +114,11 @@ alors que l'efficacité impose \(3z(N)=3|H|\). Le coeur est donc vide.
 \end{proof}
 
 Ce contre-exemple ne repose ni sur une hétérogénéité des capacités ni sur une
-hétérogénéité des coûts. Les activations entières créent des économies par
-paliers : toutes les coalitions de trois opérateurs peuvent réclamer la valeur
-entière de la grande coalition. La grande coalition reste efficace au sens de
-la superadditivité, mais cette valeur ne peut pas être répartie de manière
-stable.
+hétérogénéité des coûts. Les activations binaires et indivisibles créent des
+économies par paliers : toutes les coalitions de trois opérateurs peuvent
+réclamer la valeur entière de la grande coalition. La grande coalition reste
+efficace au sens de la superadditivité, mais cette valeur ne peut pas être
+répartie de manière stable.
 
 \subsubsection{Un coeur non vide peut exclure Shapley}
 
@@ -136,6 +138,9 @@ Le coeur est réduit à l'allocation \(|H|(1,1,0,0)\), tandis que
     \notin\mathcal C(N,v_H).
 \]
 \end{proposition}
+
+Ici encore, la constance des demandes rend les optima horaire et persistant
+identiques ; le contre-exemple porte donc bien sur le jeu principal.
 
 \begin{proof}
 En unités de \(|H|\), les singletons valent zéro, et les autres valeurs sont
@@ -323,29 +328,32 @@ Supposons
 \]
 avec \(F>0\). Pour tout \(S\in\mathcal S\), posons
 \[
-    k_H(S)
+    K_H(S)
     :=
-    \max_{h\in H}
+    \sum_{h\in H}
     \left\lceil\frac{d^h(S)}q\right\rceil.
 \]
 Alors
 \begin{equation}
 \label{eq:valeur_semi_homogene}
-    C_H^*(S)=|H|Fk_H(S)+\gamma D(S),
+    C_H^*(S)=FK_H(S)+\gamma D(S),
     \qquad
-    v_H(S)=|H|F\bigl(|S|-k_H(S)\bigr).
+    v_H(S)=F\bigl(|H||S|-K_H(S)\bigr).
 \end{equation}
-En prolongeant \(k_H\) par \(k_H(\varnothing)=0\), le jeu \(v_H\) est
-convexe si et seulement si \(k_H\) est sous-modulaire.
+En prolongeant \(K_H\) par \(K_H(\varnothing)=0\), le jeu \(v_H\) est
+convexe si et seulement si \(K_H\) est sous-modulaire.
 \end{proposition}
 
 \emph{Démonstration : voir l'Annexe~\ref{app:preuve_semi_homogene}.}
 
 Le terme de coût variable commun s'annule dans les économies de coopération :
 les profils \(d_i^h\) interviennent dans la stabilité par les franchissements
-des seuils entiers \(k_H(S)\). Les deux contre-exemples précédents appartiennent
+des seuils entiers \(K_H(S)\). Dans ce terme, le plafond
+\(\lceil d^h(S)/q\rceil\) compte les gardiens indivisibles nécessaires : son
+saut à chaque seuil de capacité produit précisément les discontinuités du coût
+et les économies par paliers. Les deux contre-exemples précédents appartiennent
 à ce cas semi-homogène ; l'homogénéité des équipements ne suffit donc pas à
-garantir la stabilité. En revanche, si \(k_H\) est sous-modulaire, la
+garantir la stabilité. En revanche, si \(K_H\) est sous-modulaire, la
 Proposition~\ref{prop:shapley_coeur_convexe} garantit que Shapley appartient au
 coeur.
 
@@ -370,14 +378,19 @@ opérateurs à chaque heure :
 Alors, pour tout \(S\in\mathcal S\),
 \begin{equation}
     C_H^*(S)
-    =\min_{i\in S}\left\{|H|F_i+\gamma_iD(S)\right\}.
+    =\sum_{h\in H}\min_{i\in S}
+      \left\{F_i+\gamma_i d^h(S)\right\}.
     \label{eq:cout_tres_faible_trafic}
 \end{equation}
-Le coeur du jeu persistant est non vide. Plus précisément, l'allocation
+Le coeur du jeu horaire est non vide. Plus précisément, en posant
+\[
+    p_h:=\frac{C_h^*(N)}{d^h(N)},
+\]
+l'allocation
 \[
     z_i
     :=
-    C_H^*(\{i\})-\frac{D_i}{D(N)}C_H^*(N),
+    C_H^*(\{i\})-\sum_{h\in H}p_h d_i^h,
     \qquad i\in N,
 \]
 appartient à \(\mathcal C(N,v_H)\).
@@ -424,10 +437,10 @@ Proposition~\ref{prop:reduction_semi_homogene}, supposons en outre
 \(d_i^h=d^h\) pour tout \(i\in N\) et tout \(h\in H\). Pour
 \(s\in\{1,\ldots,n\}\), posons
 \[
-    k_{H,s}:=\max_{h\in H}
+    K_{H,s}:=\sum_{h\in H}
     \left\lceil\frac{sd^h}{q}\right\rceil,
     \qquad
-    v_{H,s}:=|H|(s-k_{H,s})F.
+    v_{H,s}:=F\bigl(|H|s-K_{H,s}\bigr).
 \]
 Alors \(v_H(S)=v_{H,s}\) pour toute coalition de taille \(s\), et
 \[
@@ -555,20 +568,19 @@ et le nucléole minimise les objections au meilleur niveau réalisable.
 
 \subsubsection{Coûts nets et transferts internes}
 
-Nous nous plaçons désormais dans la grande coalition $N$. Fixons le
-représentant optimal $G_H^*(N)$ introduit dans la partie précédente. Le
-coût physiquement supporté par l'opérateur $i\in N$ dans la solution
-\(\bigl(G_H^*(N),(\mathbf t^{h,*}(N))_{h\in H}\bigr)\) est
+Nous nous plaçons désormais dans la grande coalition $N$. Pour chaque heure,
+fixons un ensemble optimal $G_h^*(N)$ et une répartition optimale
+\(\mathbf t^{h,*}(N)\). Le coût physiquement supporté par l'opérateur
+$i\in N$ dans cette politique horaire est
 \[
 C_{i,H}^*(N)
 :=
-\mathds{1}_{\{i\in G_H^*(N)\}}
-\sum_{h\in H}\left(F_i+\gamma_i t_i^{h,*}(N)\right).
+\sum_{h\in H}
+\mathds{1}_{\{i\in G_h^*(N)\}}
+\left(F_i+\gamma_i t_i^{h,*}(N)\right).
 \]
-Ainsi, les gardiens supportent initialement le coût de fonctionnement de
-leur équipement, tandis que tout opérateur $i\notin G_H^*(N)$ supporte le
-coût physique $C_{i,H}^*(N)=0$. Le coût optimal de la grande coalition se
-décompose donc comme
+À chaque heure, les gardiens supportent d'abord le coût de leur équipement.
+Le coût optimal de la grande coalition se décompose donc comme
 \[
 C_H^*(N)=\sum_{i\in N}C_{i,H}^*(N).
 \]
@@ -622,3 +634,8 @@ Si plusieurs solutions opérationnelles
 \(\tau_i\) peuvent dépendre de la solution retenue, bien que les coûts nets
 \(y_i\) n'en dépendent pas. Une règle de départage doit donc être fixée dans
 l'implémentation.
+
+Les résultats précédents identifient ainsi le mécanisme des seuils, des
+garanties structurelles et des diagnostics applicables hors de ces régimes.
+Nous examinons maintenant leur importance sur des instances semi-empiriques
+construites à partir de mesures de réseau.

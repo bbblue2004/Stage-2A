@@ -1,18 +1,26 @@
-\section{Résultats}
+\section{Évaluation semi-empirique de l'efficacité et de la stabilité}
 \label{sec:simulations_numeriques}
 
-Cette section évalue, à partir de mesures de trafic et de puissance, les
-bénéfices énergétiques du partage opportuniste du RAN et la stabilité de la
-coopération qui les produit. L'étude est semi-empirique : les profils sont
-mesurés sur des équipements Orange d'Île-de-France, tandis que les sites
-multi-opérateurs et leurs capacités sont construits selon un protocole
-contrôlé.
+Cette section évalue la portée quantitative du mécanisme théorique sur des
+instances semi-empiriques. Les profils de trafic et de puissance proviennent
+d'équipements Orange d'Île-de-France. Ils sont assemblés en sites
+multi-opérateurs selon un protocole contrôlé, et les capacités sont construites
+par scénario. Ces instances ne sont pas des observations directes d'accords
+entre MNO.
 
-Nous vérifions d'abord l'adéquation du modèle affine de puissance, puis
-quantifions les économies de la grande coalition et examinons si elles peuvent
-être réparties de manière stable. Une analyse transversale détermine ensuite
-quels paramètres influencent le plus l'efficacité et la stabilité, avant
-d'étudier le partage des gains sur des cas représentatifs.
+L'évaluation répond à trois questions :
+\begin{enumerate}
+    \item \textbf{Combien d'énergie la coopération économise-t-elle dans les
+    instances étudiées ?}
+    \item \textbf{À quelle fréquence cette coopération efficace est-elle
+    coalitionnellement stable ?}
+    \item \textbf{Quels paramètres et mécanismes sont associés au passage
+    entre stabilité et instabilité ?}
+\end{enumerate}
+La calibration et le protocole fixent d'abord le domaine de ces réponses.
+L'efficacité opérationnelle traite la première question, le diagnostic du cœur
+et de Shapley la deuxième, puis la sensibilité et les cas représentatifs
+relient les régimes observés aux seuils de capacité et aux règles de partage.
 
 \subsection{Protocole expérimental}
 \label{subsec:protocole_experimental}
@@ -48,7 +56,7 @@ réutilisées pour les cinq nuits et les quatre scénarios de capacité. Les
 \(1\,000\) associations sont distinctes : elles définissent un échantillon
 reproductible de \(20\,000\) instances, sans chercher à énumérer toutes les
 combinaisons possibles. Ce choix borne le temps de calcul tout en couvrant les
-différentes échelles observées ; la stabilité des principaux résultats sera
+différentes échelles observées ; la stabilité des principaux résultats est
 contrôlée en comparant leur valeur sur les 500 premiers sites et sur
 l'échantillon complet.
 
@@ -67,18 +75,16 @@ Pour chacun des cinq jours, les simulations portent sur la fenêtre nocturne
     H=\{0\,\mathrm{h},1\,\mathrm{h},\ldots,6\,\mathrm{h}\},
 \]
 c'est-à-dire sur les sept créneaux de l'intervalle
-\([0\,\mathrm{h},7\,\mathrm{h})\). Le même ensemble de gardiens reste actif
-pendant les sept heures d'une nuit, tandis que la répartition du trafic peut
-varier à l'heure. Chaque nuit est évaluée séparément : les gardiens peuvent
-donc changer le jour suivant. Cette fenêtre est identique pour tous les sites
+\([0\,\mathrm{h},7\,\mathrm{h})\). Dans le modèle principal, l'ensemble des
+gardiens et la répartition du trafic sont recalculés à chaque heure. Chaque
+nuit est évaluée séparément. Cette fenêtre est identique pour tous les sites
 et tous les scénarios de la campagne principale. Elle constitue son réglage
 de référence, mais ses bornes sont variées séparément dans l'analyse de
-sensibilité. Elles restent des paramètres explicites du code et peuvent être
-modifiées sans changer la construction des instances ni les méthodes de
-calcul.
+sensibilité. L'engagement d'un ensemble de gardiens fixe pendant les sept
+heures est évalué à part comme une contrainte opérationnelle persistante.
 
 L'identifiant de chaque site, ceux de ses quatre antennes, le jour et les
-paramètres utilisés seront enregistrés avec les résultats afin de pouvoir
+paramètres utilisés sont enregistrés avec les résultats afin de pouvoir
 reproduire chaque simulation.
 
 La capacité physique n'étant pas observée, nous construisons quatre scénarios.
@@ -102,19 +108,21 @@ virtuel, le jour considéré et la valeur de \(r\).
 
 La puissance consommée par une antenne éteinte est supposée nulle. Comme tous
 les opérateurs paient le même prix de l'électricité, le coût est directement
-proportionnel à l'énergie consommée. Les résultats présenteront donc d'abord
-les économies d'énergie ; leur conversion monétaire sera donnée ensuite.
+proportionnel à l'énergie consommée. Les résultats sont donc exprimés en
+économies d'énergie ; leur conversion monétaire ne ferait qu'appliquer un
+facteur commun.
 
 \paragraph{Contrôle préalable de l'implémentation.}
-Avant d'utiliser les données, nous vérifierons le code sur des cas artificiels
-simples comportant de deux à six opérateurs et quelques heures. Pour ces cas,
-le même optimum sera calculé par deux méthodes indépendantes : la répartition
-gloutonne sera comparée à un programme linéaire, et l'énumération des gardiens
-au programme mixte de \eqref{eq:milp_gardiens}. Les calculs du cœur, de
-Shapley, du moindre cœur et du nucléole seront vérifiés sur les exemples de la
+Le contrôle du code repose sur des cas artificiels simples comportant de deux
+à six opérateurs et quelques heures. Pour ces cas, le même optimum est calculé
+par deux méthodes indépendantes : la répartition gloutonne est comparée à un
+programme linéaire, et l'énumération horaire des gardiens au programme mixte
+de \eqref{eq:milp_horaire}. La variante persistante est en outre comparée à
+\eqref{eq:milp_gardiens}. Les calculs du cœur, de Shapley, du moindre cœur et
+du nucléole sont comparés aux exemples de la
 Section~\ref{sec:jeu_cooperatif}, dont les réponses sont connues
-analytiquement. Ces contrôles servent uniquement à valider l'implémentation ;
-ils ne constituent pas des résultats empiriques.
+analytiquement. Ces contrôles valident l'implémentation ; ils ne constituent
+pas des résultats empiriques.
 
 \subsection{Modèle de puissance}
 \label{subsec:adequation_modele_affine}
@@ -164,19 +172,20 @@ propres à chaque antenne ; après conversion énergétique,
 
 Pour chaque site virtuel, chacune des cinq nuits et chaque scénario de
 capacité, nous calculons l'optimum exact \(C_H^*(N)\) de la grande coalition.
-Cet optimum est précisément la politique qui conserve un même ensemble
-\(G_H^*(N)\) sur toute la fenêtre, puis répartit le trafic à chaque heure par
-l'algorithme glouton de la Section~\ref{subsec:selection_gardiens}. Les quinze
-ensembles non vides sont énumérés ; il ne s'agit donc pas de l'optimum
-horairement reconfigurable.
+Cet optimum est la somme des sept optima horaires : à chaque heure, les quinze
+ensembles non vides sont énumérés, puis le trafic est réparti par l'algorithme
+glouton de la Section~\ref{subsec:selection_gardiens}. Il s'agit donc bien de
+l'optimum horairement reconfigurable défini par
+\eqref{eq:cout_horaire_principal}.
 
 Les comparaisons du Tableau~\ref{tab:politiques_operationnelles} modifient une
 seule composante de cette politique principale. La sélection par capacité est
 une règle volontairement simple, fondée uniquement sur les \(q_i\) : elle
 mesure l'intérêt d'intégrer les coûts fixes et variables dans le choix des
 gardiens. La politique proportionnelle conserve au contraire les gardiens
-optimaux et isole l'apport de l'allocation gloutonne. Enfin, l'oracle horaire
-isole le coût de la persistance des gardiens sur \(H\).
+optimaux de chaque heure et isole l'apport de l'allocation gloutonne. Enfin,
+l'optimum persistant impose un ensemble commun à toute la fenêtre et mesure
+le coût de cette contrainte par rapport au modèle principal.
 
 \begin{table}[htbp]
 \centering
@@ -185,10 +194,10 @@ isole le coût de la persistance des gardiens sur \(H\).
 \hline
 Méthode & Gardiens & Allocation horaire \\
 \hline
-Sélection par capacité & Fixes, par \(q_i\) décroissants & Gloutonne par \(\gamma_i\) croissants \\
-Proportionnelle & \(G_H^*(N)\), fixe sur \(H\) & Proportionnelle aux \(q_i\) \\
-Optimum persistant & \(G_H^*(N)\), choisi exactement et fixe sur \(H\) & Gloutonne par \(\gamma_i\) croissants \\
-Oracle horaire & \(G_h^*(N)\), recalculé à chaque heure & Gloutonne par \(\gamma_i\) croissants \\
+Sélection par capacité & Recalculés à chaque heure, par \(q_i\) décroissants & Gloutonne par \(\gamma_i\) croissants \\
+Proportionnelle & \(G_h^*(N)\), recalculé à chaque heure & Proportionnelle aux \(q_i\) \\
+Optimum horaire & \(G_h^*(N)\), exact à chaque heure & Gloutonne par \(\gamma_i\) croissants \\
+Optimum persistant & \(G_{H,\mathrm{pers}}^*(N)\), fixe sur \(H\) & Gloutonne par \(\gamma_i\) croissants \\
 \hline
 \end{tabular}
 \caption{Décomposition des méthodes coopératives comparées.}
@@ -199,7 +208,8 @@ L'absence de partage n'est pas une politique concurrente, mais uniquement la
 référence de normalisation : chaque équipement reste actif et sert son propre
 trafic. Pour toutes les méthodes, l'énergie évitée est calculée relativement
 à cette consommation. Les deux politiques approchées sont réalisables sur les
-\(20\,000\) instances ; l'oracle horaire sert uniquement de borne basse.
+\(20\,000\) instances ; l'optimum persistant est une politique réalisable et
+vérifie toujours \(C_H^*(N)\leqslant C_{H,\mathrm{pers}}^*(N)\).
 
 \begin{figure}[htbp]
     \centering
@@ -212,36 +222,37 @@ trafic. Pour toutes les méthodes, l'énergie évitée est calculée relativemen
     \label{fig:efficacite_operationnelle}
 \end{figure}
 
-L'optimum évite une médiane de \(67{,}7\,\%\) de l'énergie autonome ; 90\,\%
-des observations se situent entre \(41{,}5\,\%\) et \(88{,}4\,\%\). Il ne
-maintient jamais les quatre équipements actifs : un gardien suffit dans
-\(64{,}5\,\%\) des instances, deux sont nécessaires dans \(34{,}8\,\%\), et
-trois dans \(0{,}6\,\%\). Le partage opportuniste permet donc presque toujours
-d'éteindre au moins deux équipements pendant la fenêtre nocturne.
+L'optimum horaire évite une médiane de \(70{,}6\,\%\) de l'énergie autonome ;
+90\,\% des observations se situent entre \(55{,}3\,\%\) et \(88{,}6\,\%\).
+Sur les \(140\,000\) décisions horaires, un gardien suffit dans \(93{,}6\,\%\)
+des cas, deux sont nécessaires dans \(6{,}3\,\%\), et trois dans \(0{,}1\,\%\).
+Le partage opportuniste permet donc presque toujours d'éteindre au moins deux
+équipements à une heure donnée.
 
-La politique par capacité atteint une économie médiane de \(61{,}8\,\%\), soit
-une perte médiane de \(2{,}5\) points par rapport à l'optimum. Elle sélectionne
-le même nombre de gardiens dans \(98{,}7\,\%\) des cas, mais le même ensemble
-dans seulement \(31{,}6\,\%\). La capacité détermine ainsi largement le nombre
-d'équipements nécessaires, mais les puissances fixes et les coûts variables
-sont indispensables pour choisir lesquels maintenir actifs. Par construction,
-et comme le confirme le panneau droit de la
-Figure~\ref{fig:efficacite_operationnelle}, cette politique ne bat jamais
-l'optimum exact sur une même instance.
+La politique par capacité perd une médiane de \(4{,}5\) points par rapport à
+l'optimum horaire, et \(24{,}7\) points au quantile 95\,\%. Elle sélectionne le
+même nombre de gardiens dans \(99{,}2\,\%\) des décisions horaires, mais le même
+ensemble dans seulement \(29{,}5\,\%\). La capacité détermine ainsi largement
+le nombre d'équipements nécessaires, mais les puissances fixes et les coûts
+variables sont indispensables pour choisir lesquels maintenir actifs. Par
+construction, cette politique ne bat jamais l'optimum exact sur une même
+instance.
 
-Avec les gardiens optimaux, la répartition proportionnelle atteint une
-économie médiane de \(67{,}6\,\%\). Sa perte moyenne n'est que de \(1{,}1\)
-point, mais atteint \(5{,}9\) points au quantile 95\,\%. La sélection des
-gardiens constitue donc le levier principal, sans rendre négligeable
-l'allocation du trafic lorsque plusieurs équipements restent actifs.
+Avec les gardiens optimaux de chaque heure, la répartition proportionnelle
+coïncide avec l'optimum dans \(62{,}1\,\%\) des instances. Sa perte médiane est
+nulle, sa perte moyenne vaut \(0{,}23\) point et son quantile 95 atteint
+\(1{,}28\) point. L'allocation gloutonne apporte donc un gain plus limité que
+la sélection des gardiens, mais mesurable lorsque plusieurs équipements sont
+actifs.
 
 Enfin, maintenir les mêmes gardiens sur toute la nuit coûte une médiane de
-\(1{,}0\) point d'économie par rapport à l'oracle horaire, mais cet écart
-atteint \(17{,}2\) points au quantile 95\,\%. La contrainte persistante est
-donc généralement peu coûteuse, tout en pénalisant certaines configurations.
-La médiane de l'économie optimale ne varie que de \(0{,}54\) point entre les
-500 premiers sites et l'échantillon complet, ce qui indique que l'agrégat
-principal est stabilisé à l'échelle retenue.
+\(0{,}98\) point d'économie, et \(17{,}2\) points au quantile 95\,\%. L'optimum
+persistant coïncide avec l'optimum horaire dans \(39{,}9\,\%\) des instances.
+Dans le modèle principal, le nombre médian de changements d'ensemble entre
+deux heures consécutives vaut un, et son quantile 95 vaut trois. La contrainte
+persistante est donc parfois gratuite, mais pénalise fortement certaines
+configurations. La médiane de l'économie optimale diffère de \(0{,}61\) point
+entre les 500 premiers sites et l'échantillon complet.
 
 \subsection{Stabilité de la grande coalition}
 \label{subsec:stabilite_grande_coalition}
@@ -263,10 +274,10 @@ quatre scénarios d'un même site.
 \hline
 \(r\) & Cœur vide & \shortstack{Cœur non vide,\\Shapley hors} & \shortstack{Shapley\\dans le cœur} \\
 \hline
-\(0{,}70\) & \(20{,}0\,\%\) & \(7{,}6\,\%\) & \(72{,}5\,\%\) \\
-\(0{,}80\) & \(27{,}3\,\%\) & \(9{,}5\,\%\) & \(63{,}2\,\%\) \\
-\(0{,}90\) & \(27{,}6\,\%\) & \(13{,}3\,\%\) & \(59{,}0\,\%\) \\
-\(1{,}00\) & \(25{,}8\,\%\) & \(17{,}5\,\%\) & \(56{,}7\,\%\) \\
+\(0{,}70\) & \(0{,}0\,\%\) & \(3{,}36\,\%\) & \(96{,}64\,\%\) \\
+\(0{,}80\) & \(0{,}0\,\%\) & \(3{,}38\,\%\) & \(96{,}62\,\%\) \\
+\(0{,}90\) & \(0{,}0\,\%\) & \(3{,}44\,\%\) & \(96{,}56\,\%\) \\
+\(1{,}00\) & \(0{,}0\,\%\) & \(3{,}44\,\%\) & \(96{,}56\,\%\) \\
 \hline
 \end{tabular}
 \caption{Diagnostic de stabilité par scénario de capacité. Chaque ligne
@@ -274,17 +285,13 @@ regroupe \(5\,000\) instances.}
 \label{tab:stabilite_grande_coalition}
 \end{table}
 
-En donnant le même poids aux quatre scénarios, le cœur est vide dans
-\(25{,}2\,\%\) des instances et non vide avec Shapley à l'extérieur dans
-\(12{,}0\,\%\) des cas. Shapley constitue donc une allocation stable dans
-seulement \(62{,}9\,\%\) des instances (IC à 95\,\% :
-\([60{,}8;64{,}8]\,\%\)). Lorsque la marge de capacité diminue, cette
-proportion passe de \(72{,}5\,\%\) pour \(r=0{,}70\) à \(56{,}7\,\%\) pour
-\(r=1\). La dégradation ne se réduit pas à la vacuité du cœur : entre
-\(r=0{,}90\) et \(r=1\), la fréquence des cœurs vides baisse légèrement,
-alors que celle des cœurs excluant Shapley continue d'augmenter. L'écart
-maximal entre les fréquences obtenues avec 500 et \(1\,000\) sites est de
-\(1{,}15\) point.
+En donnant le même poids aux quatre scénarios, aucun cœur vide n'est observé
+dans les \(20\,000\) instances principales. Le cœur est non vide mais exclut
+Shapley dans \(3{,}405\,\%\) des cas ; Shapley constitue donc une allocation
+stable dans \(96{,}595\,\%\) des instances (IC à 95\,\% :
+\([95{,}575;97{,}595]\,\%\)). Cette fréquence varie de moins de \(0{,}1\) point
+entre les quatre scénarios de capacité. L'écart maximal entre les fréquences
+obtenues avec 500 et \(1\,000\) sites vaut \(0{,}385\) point.
 
 \begin{figure}[htbp]
     \centering
@@ -296,31 +303,30 @@ maximal entre les fréquences obtenues avec 500 et \(1\,000\) sites est de
     \label{fig:stabilite_grande_coalition}
 \end{figure}
 
-L'économie médiane atteint \(47{,}4\,\%\) lorsque le cœur est vide,
-\(55{,}4\,\%\) lorsqu'il est non vide mais exclut Shapley, et \(73{,}9\,\%\)
-lorsque Shapley appartient au cœur. L'efficacité est donc positivement
-associée à la stabilité, sans la garantir : parmi les 10\,\% d'instances qui
-évitent le plus d'énergie, \(21{,}1\,\%\) possèdent un cœur non vide dont
-Shapley est exclue. Une économie élevée ne suffit donc pas à valider la règle
-de partage.
+L'économie médiane atteint \(87{,}3\,\%\) lorsque le cœur non vide exclut
+Shapley, contre \(70{,}3\,\%\) lorsque Shapley lui appartient. Dans cette
+campagne horaire, l'efficacité élevée est donc associée à davantage
+d'objections contre Shapley : parmi les 10\,\% d'instances qui évitent le plus
+d'énergie, \(26{,}9\,\%\) excluent cette allocation du cœur. Une économie
+élevée ne suffit donc pas à valider la règle de partage.
 
 La condition de capacité individuelle suffisante du
 Théorème~\ref{thm:capacite_coeur_non_vide} est satisfaite dans \(25{,}0\,\%\)
 des instances et leur cœur est toujours non vide, conformément à la garantie
-théorique. Shapley en reste néanmoins exclue dans \(5{,}0\,\%\) de ces cas.
+théorique. Shapley en reste néanmoins exclue dans \(5{,}05\,\%\) de ces cas.
 La convexité, qui garantirait simultanément les deux propriétés, n'apparaît
-que dans \(0{,}92\,\%\) des instances et constitue donc une condition trop
+que dans \(0{,}215\,\%\) des instances et constitue donc une condition trop
 restrictive pour le diagnostic empirique général.
 
-Enfin, le certificat leave-one-out détecte \(71{,}5\,\%\) des cœurs vides,
-sans faux positif. Il fournit ainsi un filtre rapide, mais non une
-caractérisation : lorsqu'il ne conclut pas, le programme exact reste
-nécessaire. Pour les cœurs vides, la valeur médiane du moindre cœur représente
-\(9{,}45\,\%\) de \(v_H(N)\), ce qui écarte l'interprétation d'une simple
-imprécision numérique. Lorsque le cœur est non vide mais exclut Shapley, son
-objection maximale médiane représente encore \(2{,}57\,\%\) de \(v_H(N)\).
-Ces résultats confirment que la création d'une économie collective et sa
-répartition stable sont deux problèmes distincts.
+L'ancien constat empirique de cœurs vides ne survit donc pas au passage au jeu
+horaire sur l'échantillon principal : le certificat leave-one-out et le
+moindre cœur n'ont ici aucun cas vide à diagnostiquer. Cela ne contredit pas
+les contre-exemples analytiques ni les expériences de sensibilité, qui en
+produisent encore. Lorsque le cœur non vide exclut Shapley, son objection
+maximale médiane représente \(2{,}01\,\%\) de \(v_H(N)\), et toutes les
+coalitions maximisant cette objection comptent trois opérateurs. Les
+diagnostics suivants examinent l'effet de la charge, de la fenêtre et du
+nombre d'opérateurs.
 
 \FloatBarrier
 
@@ -343,14 +349,14 @@ du protocole principal.
 \hline
 Facteur & Valeurs testées & \(\Delta E\) & \(\Delta S\) \\
 \hline
-Marge de capacité & \(r\in\{0{,}70,0{,}80,0{,}90,1\}\) & 8,0 & 15,7 \\
-Niveau de trafic & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 9,2 & 21,8 \\
-Coût fixe \(F_i\) & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 2,7 & 0,7 \\
-Coût variable \(\gamma_i\) & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 2,6 & 0,8 \\
-Puissance en veille & \(0\), \(0{,}05F_i\), \(0{,}10F_i\) & 6,5 & 0,2 \\
-Position de \(H\), durée 7 h & \([22\,\mathrm{h},5\,\mathrm{h})\), \([0\,\mathrm{h},7\,\mathrm{h})\), \([2\,\mathrm{h},9\,\mathrm{h})\) & 20,6 & 18,6 \\
-Durée de \(H\), début à minuit & 5 h, 7 h, 9 h & 17,3 & 16,2 \\
-Nombre d'opérateurs & \(|N|\in\{2,3,4,5,6\}\) & 21,5 & 67,3 \\
+Marge de capacité & \(r\in\{0{,}70,0{,}80,0{,}90,1\}\) & 1,6 & 0,1 \\
+Niveau de trafic & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 3,5 & 0,2 \\
+Coût fixe \(F_i\) & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 1,9 & 0,2 \\
+Coût variable \(\gamma_i\) & multiplicateur \(0{,}8\), \(1\), \(1{,}2\) & 1,9 & 0,1 \\
+Puissance en veille & \(0\), \(0{,}05F_i\), \(0{,}10F_i\) & 6,5 & 0,02 \\
+Position de \(H\), durée 7 h & \([22\,\mathrm{h},5\,\mathrm{h})\), \([0\,\mathrm{h},7\,\mathrm{h})\), \([2\,\mathrm{h},9\,\mathrm{h})\) & 9,8 & 2,0 \\
+Durée de \(H\), début à minuit & 5 h, 7 h, 9 h & 5,2 & 0,8 \\
+Nombre d'opérateurs & \(|N|\in\{2,3,4,5,6\}\) & 29,6 & 20,6 \\
 \hline
 \end{tabular}
 \caption{Plan et amplitudes de l'analyse de sensibilité. \(\Delta E\) est
@@ -370,13 +376,15 @@ vaut la fraction indiquée de \(F_i\). Le prix commun de l'électricité n'est p
 testé : il multiplie tous les coûts par une même constante et ne modifie aucun
 indicateur relatif.
 
-La Figure~\ref{fig:sensibilite_tornado} fait apparaître deux groupes. La
-position et la durée de \(H\), le trafic et la marge de capacité modifient à la
-fois le gain et la stabilité. En revanche, une perturbation uniforme de
+La Figure~\ref{fig:sensibilite_tornado} montre que le nombre d'opérateurs
+domine les variations d'efficacité et de stabilité. La position et la durée de
+\(H\) influencent surtout le gain énergétique et le coût de la persistance.
+Sur les plages principales, le trafic et la marge de capacité modifient peu la
+fréquence d'une valeur de Shapley stable. Une perturbation uniforme de
 \(\pm20\,\%\) de \(F_i\) ou de \(\gamma_i\) change l'économie médiane de moins de
-3 points et la fréquence de stabilité de moins d'un point. Une veille égale à
-\(10\,\%\) de \(F_i\) réduit l'économie médiane de 6,5 points, mais laisse
-presque inchangées la stabilité et la sélection des gardiens.
+2 points et la fréquence de stabilité de \(0{,}2\) point au plus. Une veille
+égale à \(10\,\%\) de \(F_i\) réduit l'économie médiane de \(6{,}5\) points,
+mais laisse presque inchangée la stabilité.
 
 \begin{figure}[htbp]
     \centering
@@ -391,20 +399,22 @@ presque inchangées la stabilité et la sélection des gardiens.
 
 Parmi les fenêtres de sept heures, \([0\,\mathrm{h},7\,\mathrm{h})\) est la plus
 favorable : décaler la fenêtre vers \([22\,\mathrm{h},5\,\mathrm{h})\) ou
-\([2\,\mathrm{h},9\,\mathrm{h})\) abaisse l'économie médiane de 20,6 ou 16,9
-points. Les durées de cinq et sept heures donnent des résultats voisins, tandis
-que l'extension à neuf heures coûte 17,3 points et accroît d'environ 12 points
-l'écart à l'oracle horaire. Le choix de \(H\) est donc le principal levier
+\([2\,\mathrm{h},9\,\mathrm{h})\) abaisse l'économie médiane de \(9{,}8\) ou
+\(5{,}2\) points. Les durées de cinq et sept heures donnent des résultats
+voisins, tandis que l'extension à neuf heures coûte \(5{,}2\) points et accroît
+d'environ \(11{,}9\) points l'écart médian de persistance. Le choix de \(H\)
+est donc un levier
 directement pilotable : il faut couvrir le creux nocturne sans l'étendre aux
 heures de reprise du trafic.
 
-Le nombre d'opérateurs a surtout un effet sur la stabilité. Entre quatre et
-six opérateurs, l'économie médiane reste comprise entre 68,4 et 69,2\,\%, mais la
-fréquence d'une valeur de Shapley dans le cœur passe de 63,2 à 32,7\,\%. Sur
-l'ensemble de la plage, la fréquence d'un cœur vide croît de 0\,\% pour deux
-opérateurs à 41,7\,\% pour six. Ajouter des participants n'apporte donc plus
-de gain énergétique substantiel au-delà de quatre, alors que la difficulté de
-former une coalition stable augmente fortement.
+Le nombre d'opérateurs augmente le gain tout en réduisant sa stabilité.
+L'économie médiane passe de \(48{,}1\,\%\) pour deux opérateurs à \(70{,}8\,\%\)
+pour quatre, puis \(77{,}7\,\%\) pour six. Dans le même temps, la fréquence
+d'une valeur de Shapley dans le cœur passe de \(100\,\%\) à \(96{,}6\,\%\), puis
+\(79{,}4\,\%\). La fréquence d'un cœur vide reste nulle jusqu'à quatre
+opérateurs, puis vaut \(0{,}08\,\%\) à cinq et \(0{,}86\,\%\) à six. Les gains
+marginaux persistent donc, mais s'accompagnent d'objections coalitionnelles
+plus fréquentes.
 
 \begin{figure}[htbp]
     \centering
@@ -417,40 +427,62 @@ former une coalition stable augmente fortement.
 Enfin, la Figure~\ref{fig:sensibilite_trafic_capacite} confirme que trafic et
 capacité ne doivent pas être interprétés isolément. Le passage du cas le moins
 contraint \((0{,}8;0{,}70)\) au cas réalisable le plus chargé
-\((1{,}2;0{,}80)\) fait passer l'économie médiane de 72,2 à 62,6\,\% et la
-fréquence de stabilité de 88,1 à 57,6\,\%. L'enjeu prioritaire n'est donc pas
-une estimation plus fine d'un coefficient énergétique commun, mais la
-sélection de fenêtres et de groupes disposant d'une marge de capacité
-suffisante.
+\((1{,}2;0{,}80)\) fait passer l'économie médiane de \(72{,}8\) à \(69{,}1\,\%\)
+et la fréquence de stabilité de \(96{,}82\) à \(96{,}60\,\%\). L'effet sur la
+stabilité est faible dans ce domaine principal, tandis que l'écart médian de
+persistance passe de zéro à \(8{,}37\) points. La marge de capacité influence
+donc ici davantage la valeur opérationnelle de la reconfiguration horaire que
+l'existence d'une allocation stable.
 
 \FloatBarrier
 
 \subsection{Partage et cas représentatifs}
 \label{subsec:partage_cas_representatifs}
 
-Un cas est retenu dans chacune des trois catégories de stabilité observées.
-Afin d'éviter une sélection favorable, nous calculons dans chaque catégorie
-la distance à la médiane multivariée des économies relatives, de la valeur
+Un cas est retenu dans chacune des catégories effectivement observées. Afin
+d'éviter une sélection favorable, nous calculons dans chaque catégorie la
+distance à la médiane multivariée des économies relatives, de la valeur
 normalisée du moindre cœur et de l'excès maximal de Shapley. Chaque coordonnée
 est divisée par son intervalle interquartile, lorsqu'il est non nul, et
 l'instance de distance \(L^1\) minimale est retenue. Les égalités sont
-départagées successivement par l'identifiant du site, le jour et \(r\).
-Si une catégorie n'apparaît pas, aucun cas empirique n'est fabriqué : le
-contre-exemple théorique correspondant est utilisé et signalé comme tel.
+départagées successivement par l'identifiant du site, le jour et \(r\). Aucun
+cas à cœur vide n'est fabriqué, puisque cette catégorie est absente de la
+campagne principale ; la Proposition~\ref{prop:contre_exemple_coeur_vide}
+reste le témoin analytique correspondant.
 
-Pour chaque cas, nous comparons la valeur de Shapley et le nucléole au moyen
-des économies individuelles \(z_i\), des coûts nets \(y_i\), des transferts
-\(\tau_i\) et de l'objection coalitionnelle maximale. Une figure en barres
-présentera les économies et les transferts des quatre opérateurs ; un tableau
-identifiera les coalitions bloquantes. Lorsque le cœur est vide, le nucléole
-sera décrit comme un compromis minimisant les objections, et non comme une
-allocation stable.
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{llllrr}
+\hline
+Catégorie & Site & Date & \(r\) & Économie & Excès de Shapley \\
+\hline
+Shapley hors du cœur & 0724 & 22/03/2023 & 0,70 & 87,23\,\% & 94,46 Wh \\
+Shapley dans le cœur & 0833 & 21/03/2023 & 1,00 & 70,26\,\% & \(\leqslant0\) \\
+\hline
+\end{tabular}
+\caption{Cas représentatifs sélectionnés automatiquement parmi les catégories
+observées.}
+\label{tab:cas_representatifs}
+\end{table}
 
-\paragraph{Résultats, figure et analyse.}
-% À COMPLÉTER APRÈS EXÉCUTION :
-% - identifiants et justification des cas retenus ;
-% - comparaison Shapley--nucléole ;
-% - figure des économies et transferts individuels ;
-% - coalitions bloquantes et interprétation.
-\mbox{}\par
-\vspace{2\baselineskip}
+Dans le premier cas, l'excès positif représente \(1{,}88\,\%\) de
+\(v_H(N)\) et provient de la coalition \(\{1,2,3\}\). Le cœur étant non vide,
+le nucléole remplace Shapley par une allocation stable et supprime cette
+objection. Dans le second cas, Shapley et le nucléole sont tous deux stables,
+mais répartissent différemment les économies et les transferts. La
+Figure~\ref{fig:cas_representatifs} montre également que l'opérateur qui
+supporte physiquement l'essentiel du coût horaire peut recevoir un transfert
+important : la répartition des économies et le remboursement de l'exploitation
+sont deux objets distincts reliés par \(\tau_i\).
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/coalition_stability/representative_allocations.pdf}
+    \caption{Économies attribuées et transferts nets dans les deux cas
+    représentatifs, pour la valeur de Shapley et le nucléole. Un transfert
+    positif est reçu par l'opérateur.}
+    \label{fig:cas_representatifs}
+\end{figure}
+
+\FloatBarrier

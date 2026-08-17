@@ -10,9 +10,10 @@
 
 ## Décisions actives
 
-- Le modèle statique reste le modèle principal.
-- L’usure et la rotation des gardiens seront soit une extension, soit une
-  limite discutée explicitement.
+- Le modèle horairement reconfigurable est le modèle principal ; l'engagement
+  persistant des gardiens est une extension opérationnelle secondaire.
+- L’usure, les coûts de commutation et la rotation des gardiens restent des
+  limites discutées explicitement.
 - Ne plus modifier les notations fondamentales sans nécessité scientifique.
 
 ## 4 août 2026 — Jour 1
@@ -75,3 +76,20 @@
 - La Section 6 comprend désormais un test préalable de cohérence entre
   algorithmes et formulations théoriques, cinq tests numériques, une baseline
   d'allocation proportionnelle et une discussion des limites.
+
+## 17 août 2026 — Inversion du modèle temporel principal
+
+- Le coût principal devient \(C_H^*(S)=\sum_h C_h^*(S)\), avec sélection des
+  gardiens et allocation du trafic indépendantes à chaque heure.
+- Le coût \(C_{H,\mathrm{pers}}^*(S)\) est conservé comme extension secondaire
+  et son écart à \(C_H^*(S)\) mesure le prix de la persistance.
+- Les preuves de NP-difficulté, sous-additivité, superadditivité et les deux
+  contre-exemples sont conservées. La réduction semi-homogène utilise la somme
+  des plafonds horaires ; la preuve de cœur non vide en faible trafic est
+  reformulée heure par heure.
+- Toute la campagne a été reconstruite : 20 000 instances opérationnelles,
+  20 000 jeux et 182 000 lignes de sensibilité.
+- L'économie horaire médiane vaut 70,6 %. Aucun cœur vide n'est observé dans
+  la campagne principale ; Shapley est hors du cœur dans 3,405 % des cas.
+  Des cœurs vides subsistent dans certaines sensibilités à la taille de la
+  coalition et à la fenêtre.

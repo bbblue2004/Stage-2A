@@ -1,24 +1,35 @@
 \section{Conclusion}
 
-Nous avons formulé l'exploitation exacte d'une coalition d'opérateurs sur une
-fenêtre de décision, avec activations binaires, capacités et coûts
-hétérogènes, puis relié son coût optimal à un jeu coopératif d'économies. La
-sous-additivité du coût rend ce jeu superadditif, sans garantir son
-équilibrage : les seuils de capacité peuvent produire un cœur vide malgré
-l'intérêt collectif de la grande coalition. Les conditions suffisantes, les
-certificats analytiques et les indicateurs numériques proposés permettent de
-distinguer l'efficacité opérationnelle de la stabilité des allocations.
+Le partage opportuniste du RAN crée des économies d'énergie en concentrant le
+trafic sur un sous-ensemble d'équipements actifs. La sous-additivité du coût
+rend le jeu d'économies superadditif : la grande coalition est collectivement
+efficace. Cette propriété ne garantit toutefois pas que son surplus puisse
+être réparti de façon coalitionnellement stable.
 
-Le régime de très faible trafic illustre une seconde distinction. La capacité
-de chaque équipement à servir seul toute la demande garantit un cœur non vide,
-mais ne suffit pas à y placer la valeur de Shapley lorsque les coûts fixes sont
-hétérogènes. L'appartenance de Shapley au cœur doit donc être testée
-explicitement dans les instances hétérogènes ; l'homogénéité des coûts fixes et
-variables fournit, dans ce régime, une condition suffisante simple qui
-rétablit cette stabilité.
+La divergence vient des activations binaires et indivisibles. Lorsqu'un seuil
+de capacité impose un gardien supplémentaire, son coût fixe apparaît d'un seul
+bloc et les économies évoluent par paliers. Le jeu peut alors ne pas être
+équilibré et avoir un cœur vide. Des régimes structurels restaurent des
+garanties positives : la capacité de chaque opérateur à servir toute la
+demande assure un cœur non vide, tandis que la stabilité de Shapley requiert
+éventuellement des hypothèses supplémentaires, telles que l'homogénéité des
+coûts dans ce régime.
 
-L'évaluation semi-empirique devra enfin quantifier la fréquence et l'intensité
-de ces phénomènes sur les sites multi-opérateurs construits à partir des
-mesures disponibles. L'extension à l'incertitude du trafic, aux coûts de
-transition et aux interactions multisites constitue une suite naturelle de ce
-travail.
+Sur les instances semi-empiriques construites à partir de mesures de réseau,
+l'optimum horaire évite une médiane de \(70{,}6\,\%\) de l'énergie autonome.
+Imposer les mêmes gardiens sur toute la nuit coûte une médiane de \(0{,}98\)
+point d'économie, mais \(17{,}2\) points au quantile 95. Aucun cœur vide n'est
+observé dans les \(20\,000\) instances principales ; le cœur non vide exclut
+néanmoins Shapley dans \(3{,}405\,\%\) des cas. Les cœurs vides réapparaissent
+dans la sensibilité à cinq et six opérateurs ou sur une fenêtre plus longue.
+Le nombre d'opérateurs est le principal facteur de stabilité, tandis que la
+position et la durée de la fenêtre influencent fortement l'efficacité et le
+coût de la persistance. Ces résultats ne constituent pas une observation
+directe d'accords multi-opérateurs réels, mais montrent que la distinction
+entre efficacité, flexibilité temporelle et stabilité reste quantitativement
+pertinente.
+
+Le partage du RAN doit ainsi être évalué à la fois par l'énergie qu'il
+économise et par la possibilité de répartir cette économie de manière stable.
+L'extension à l'incertitude du trafic, aux coûts de transition et aux
+interactions multisites constitue une suite naturelle de ce travail.

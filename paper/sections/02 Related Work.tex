@@ -35,9 +35,10 @@ mettent en œuvre un report dynamique du trafic entre opérateurs par
 \emph{roaming-in-place} \cite{ukyab2025}. Ces contributions quantifient la
 faisabilité ou les gains du partage, mais ne caractérisent pas les contraintes
 d'allocation nécessaires pour empêcher la déviation d'une coalition. En
-outre, leurs décisions dynamiques diffèrent de notre engagement : un même
-ensemble de gardiens est maintenu pendant toute une fenêtre, malgré les
-variations horaires du trafic.
+outre, elles ne relient pas systématiquement la décision horaire exacte aux
+contraintes de stabilité de toutes les sous-coalitions. Notre modèle principal
+reconfigure les gardiens à chaque heure et évalue séparément la contrainte
+d'un engagement commun sur toute la fenêtre.
 
 \subsection{Décisions stratégiques et mécanismes économiques}
 
@@ -76,8 +77,7 @@ cœur du jeu à utilité transférable associé à la grande coalition.
 
 Koutitas et al. sont les plus proches du présent travail : ils associent
 capacités, décisions de mise en veille, coûts énergétiques et jeu coopératif
-d'économies \cite{koutitas2016}. Leur fonction de coût constitue l'antécédent
-mathématique direct de la nôtre. Pour une station active \(n\), ils écrivent
+d'économies \cite{koutitas2016}. Pour une station active \(n\), ils écrivent
 la puissance comme une
 fonction affine \(a_n U_n(t)+b_n\) du nombre d'utilisateurs servis, où \(b_n\)
 est la consommation à vide et \(a_n\) le coût marginal d'un utilisateur. Sous
@@ -89,12 +89,15 @@ linéaire de service, qui conduisent à une formulation de type
 \emph{facility location}. Nous conservons cette structure à coût fixe, mais
 estimons ses coefficients équipement par équipement à partir de couples de
 trafic et de puissance mesurés sur un réseau opérationnel, sans reconstruire
-un nombre synthétique d'utilisateurs. Koutitas et al. établissent, pour leur
-traitement opérationnel, une structure convexe, un cœur non vide et la
-stabilité de la valeur de Shapley. Leur algorithme autorise toutefois
-l'ouverture d'une infrastructure pendant une fraction du créneau ; notre
-modèle conserve l'indivisibilité exacte de l'activation et ajoute un
-engagement commun des gardiens sur plusieurs heures. Oikonomakou et al.
+un nombre synthétique d'utilisateurs. Dans leur traitement, Koutitas et al.
+établissent une structure convexe, un cœur non vide et la stabilité de la
+valeur de Shapley. Leur algorithme autorise toutefois l'ouverture d'une
+infrastructure pendant une fraction du créneau. Cette divisibilité lisse le
+coût d'ouverture, tandis que notre modèle impose une activation binaire et
+indivisible à chaque heure ; l'engagement commun des gardiens sur plusieurs
+heures est analysé comme une extension plus contrainte.
+Le franchissement d'un seuil de capacité peut alors imposer instantanément le
+coût fixe d'un gardien supplémentaire. Oikonomakou et al.
 étudient également le partage des coûts de mise en veille, d'abord comme un
 jeu de faillite \cite{oikonomakou2015}, puis au moyen de la valeur de Shapley
 et d'indicateurs de satisfaction dans des HetNets partagés
@@ -109,10 +112,12 @@ qu'une règle peut être équitable, ou qu'une coalition peut être stable sous
 un modèle donné. Ils ne permettent pas d'inférer que tout problème de mise en
 veille multi-opérateur produit un jeu équilibré. Notre apport porte sur cette
 limite précise : avec des activations binaires, des capacités contraignantes
-et des gardiens fixes sur la fenêtre, les économies demeurent superadditives
-mais peuvent ne soutenir aucune allocation dans le cœur. Nous isolons ce
-mécanisme par un contre-exemple homogène et des certificats analytiques, puis
-donnons une condition de capacité qui restaure la non-vacuité. Les notions de
-cœur, de valeur de Shapley et de nucléole restent des outils établis ; la
-contribution réside dans les propriétés du jeu induit par ce modèle
-opérationnel.
+et des gardiens reconfigurables à chaque heure, les économies demeurent superadditives
+mais peuvent ne soutenir aucune allocation dans le cœur. Le contraste avec le
+cadre divisible de Koutitas et al. tient donc à un mécanisme opérationnel
+précis : l'activation indivisible transforme les seuils de capacité en coûts
+fixes discontinus et en économies par paliers. Nous déterminons les effets de
+ce mécanisme sur l'existence du cœur et sur la stabilité de Shapley, ainsi que
+des conditions qui restaurent la stabilité. Les notions de cœur, de valeur de
+Shapley et de nucléole restent des outils établis ; la contribution réside
+dans les propriétés du jeu induit par ce modèle opérationnel.

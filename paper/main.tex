@@ -49,37 +49,38 @@ Institution
 
 \maketitle
 
-% Résumé
-\begin{abstract}
-Le partage opportuniste des infrastructures de réseau d'accès radio (RAN)
-permet aux opérateurs mobiles de mettre en veille des équipements
-sous-utilisés et de reporter leur trafic sur les équipements demeurés actifs.
-Toutefois, une configuration collectivement efficace ne garantit pas qu'une
-répartition de ses économies soit acceptable pour toutes les coalitions
-d'opérateurs. Nous étudions ce problème sur un site et une fenêtre de décision
-finie, avec des activations binaires, des capacités contraintes, des coûts
-fixes et variables, un ensemble de gardiens commun à la fenêtre et des
-allocations de trafic horaires. Pour chaque coalition, l'allocation optimale à
-gardiens fixés est obtenue par une procédure gloutonne, tandis que leur
-sélection est résolue exactement. Les coûts optimaux définissent un jeu
-coopératif à utilité transférable. Nous montrons que ce jeu est superadditif,
-mais que son cœur peut être vide, y compris dans un cadre parfaitement
-homogène, en raison des seuils d'activation et de capacité. Nous caractérisons
-le cas homogène, construisons une famille paramétrique de jeux à cœur vide,
-établissons un certificat \emph{leave-one-out} et donnons une condition de
-capacité suffisante pour la non-vacuité du cœur. Une évaluation semi-empirique
-fondée sur des mesures de trafic et de puissance d'un réseau opérationnel
-examine ensuite les économies, la sélection des gardiens, la robustesse du
-partage et la fréquence des instabilités coalitionnelles sur des sites
-multi-opérateurs construits de manière contrôlée. Ce cadre relie ainsi
-l'efficacité énergétique du partage du RAN aux conditions économiques
-nécessaires à une coopération stable.
-\end{abstract}
+% % Résumé
+% \begin{abstract}
+% Le partage opportuniste des infrastructures de réseau d'accès radio (RAN)
+% permet aux opérateurs mobiles de mettre en veille des équipements
+% sous-utilisés et de reporter leur trafic sur les équipements demeurés actifs.
+% Nous demandons quand cette efficacité énergétique est également soutenable
+% vis-à-vis de toutes les coalitions : minimiser l'énergie totale ne garantit
+% pas qu'une répartition des économies empêche un groupe d'opérateurs de faire
+% sécession. Nous modélisons des activations binaires et indivisibles, des
+% capacités contraintes et des coûts fixes et variables, avec une sélection
+% des gardiens et une allocation du trafic reconfigurées à chaque heure ; la
+% persistance des gardiens est étudiée comme contrainte secondaire. Les coûts
+% horaires optimaux induisent un jeu coopératif d'économies. Ce jeu est superadditif, mais
+% son cœur peut être vide lorsque le franchissement d'un seuil de capacité impose
+% l'activation d'un équipement supplémentaire et crée des économies par paliers.
+% Des conditions structurelles, notamment de capacité individuelle suffisante,
+% rétablissent un cœur non vide ; même alors, la valeur de Shapley n'y appartient
+% pas nécessairement. Sur les instances semi-empiriques construites à partir de
+% mesures de réseau, l'économie médiane atteint \(70{,}6\,\%\). Aucun cœur vide
+% n'est observé dans les 20 000 instances principales, mais Shapley est exclue
+% du cœur dans \(3{,}405\,\%\) des cas ; des cœurs vides réapparaissent lorsque
+% le nombre d'opérateurs ou la fenêtre augmente. Le nombre d'opérateurs et la
+% position de la fenêtre sont les principaux facteurs observés. Le
+% partage du RAN doit donc être évalué non seulement par l'énergie qu'il
+% économise, mais aussi par la possibilité de répartir ces économies de façon
+% coalitionnellement stable.
+% \end{abstract}
 
-% Mots-clés
-\noindent\textbf{Mots-clés---}Partage du RAN, efficacité énergétique,
-mise en veille des stations de base, jeux coopératifs, cœur, stabilité
-coalitionnelle.
+% % Mots-clés
+% \noindent\textbf{Mots-clés---}Partage du RAN, efficacité énergétique,
+% mise en veille des stations de base, jeux coopératifs, cœur, stabilité
+% coalitionnelle.
 
 \input{sections/01 Introduction}
 

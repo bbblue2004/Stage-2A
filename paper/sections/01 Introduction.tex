@@ -11,81 +11,85 @@ s'appuyer sur la redondance des infrastructures : certains équipements restent
 actifs et prennent en charge le trafic des autres opérateurs.
 
 Le partage d'infrastructure transforme ainsi une surcapacité locale en
-économies potentielles, mais ajoute une question d'incitation à la question
-technique. Les modèles de partage distinguent notamment les ressources
-mutualisées, l'horizon de décision et le degré de coordination entre
-opérateurs \cite{cano2020}. Or un MNO rationnel ne compare pas seulement
-l'accord commun à son fonctionnement isolé : il peut aussi préférer une
-coopération avec un sous-ensemble des participants. Une configuration qui
-minimise le coût total ne suffit donc pas à garantir qu'une répartition de ses
-gains résiste aux déviations de toutes les coalitions.
+économies potentielles, mais l'optimum technique ne résout pas à lui seul le
+problème économique. \textbf{Un optimum énergétique global n'est pas
+nécessairement un accord économiquement soutenable.} Un MNO ne compare pas
+seulement la grande coalition à son fonctionnement autonome : plusieurs MNO
+peuvent préférer se retirer ensemble et exploiter leur propre sous-coalition.
+Une répartition acceptable séparément par chaque opérateur peut donc être
+rejetée collectivement par un groupe.
 
-Cette distinction est partiellement masquée dans la littérature. Les travaux
-sur la mise en veille coopérative ont déjà étudié la valeur de Shapley, le
-nucléole et le cœur \cite{militano2013}, la formation de coalitions stables
-\cite{hasan2013,anglano2014}, ou encore des jeux de partage avec capacités et
-coûts fixes \cite{koutitas2016}. D'autres approches imposent un gain individuel
-à chaque opérateur sans tester les déviations de groupes
-\cite{tan2023}. Le modèle de Koutitas et al. est le plus proche du nôtre :
-il associe décisions d'activation, capacités et jeu coopératif, puis obtient
-un jeu convexe et un cœur non vide. Sa procédure opérationnelle admet cependant
-qu'un équipement ne soit ouvert que pendant une fraction du créneau
-\cite{koutitas2016}. Cette divisibilité lisse précisément les seuils que
-produisent des activations strictement binaires.
+Le mécanisme étudié vient de l'indivisibilité des décisions opérationnelles.
+Un équipement est actif ou en veille ; lorsqu'il est actif, il impose un coût
+fixe. Tant que la capacité disponible suffit, une coalition peut concentrer
+son trafic sur quelques gardiens. Dès qu'un seuil de capacité est franchi, un
+gardien supplémentaire doit être activé d'un seul bloc. La valeur créée évolue
+donc par paliers plutôt que continûment. Plusieurs sous-coalitions peuvent
+alors réclamer simultanément une part de l'économie supérieure à ce que la
+grande coalition peut distribuer, même si cette dernière minimise bien
+l'énergie totale.
 
-La question scientifique examinée ici est donc la suivante :
-\emph{à quelles conditions une coopération énergétiquement efficace entre MNO
-est-elle aussi stable vis-à-vis de toutes les coalitions ?} Nous considérons
-un site en information complète sur une fenêtre horaire finie. Le même
-ensemble d'équipements gardiens doit rester actif pendant toute la fenêtre,
-alors que les demandes et l'allocation du trafic varient d'une heure à
-l'autre. Chaque gardien supporte un coût énergétique fixe de fonctionnement
-en état actif, un coût énergétique variable et une contrainte de capacité ;
-son activation demeure indivisible.
+La question scientifique est dès lors la suivante : \emph{dans quelles
+conditions le partage opportuniste du RAN peut-il être à la fois
+énergétiquement efficace et coalitionnellement stable, et comment les seuils
+induits par des activations indivisibles affectent-ils cette stabilité ?}
+Nous l'étudions sur un site en information complète et une fenêtre finie. Le
+modèle principal autorise la sélection des gardiens et l'allocation du trafic
+à varier à chaque heure. L'engagement d'un même ensemble de gardiens pendant
+toute la fenêtre est conservé comme extension opérationnelle afin de mesurer
+le prix de cette contrainte.
 
-Pour chaque coalition, nous résolvons d'abord le choix des gardiens et
-l'acheminement horaire, puis définissons sa valeur comme l'économie par rapport
-au fonctionnement séparé. La réunion de coalitions disjointes ne réduit pas
-leurs économies : le jeu est superadditif et la grande coalition est donc
-efficace au sens du surplus total. Cette comparaison peut être une égalité en
-général, mais elle devient stricte lorsque chaque opérateur peut acheminer seul
-la demande totale. Même stricte, cette efficacité ne suffit pas à la stabilité.
-Les coûts fixes et les seuils de capacité peuvent rendre le jeu non équilibré,
-jusqu'à produire un cœur vide. La valeur de Shapley, le nucléole, le cœur et le
-moindre cœur sont employés comme outils classiques d'allocation ou de
-diagnostic ; leur emploi n'est pas revendiqué comme une nouveauté.
+Les modèles de partage distinguent les ressources mutualisées, l'horizon de
+décision et le degré de coordination \cite{cano2020}. Les travaux sur la mise
+en veille coopérative ont notamment étudié des règles de partage, le cœur ou
+la formation de coalitions \cite{militano2013,hasan2013,anglano2014}, tandis
+que d'autres approches garantissent seulement un gain individuel
+\cite{tan2023}. Le modèle de Koutitas et al. est le plus proche du nôtre : il
+combine capacités, coûts fixes et variables et jeu coopératif, et obtient dans
+son cadre un jeu convexe dont le cœur est non vide \cite{koutitas2016}. Sa
+procédure autorise toutefois l'ouverture d'un équipement pendant une fraction
+du créneau. Notre modèle conserve au contraire des activations strictement
+binaires et indivisibles. Ce contraste entre fonctionnement divisible et
+activation indivisible isole les seuils de capacité au cœur de notre analyse.
+
+Pour chaque coalition, nous déterminons son coût opérationnel exact, puis sa
+valeur comme l'économie réalisée par rapport au fonctionnement séparé. Les
+économies sont superadditives : la grande coalition crée au moins autant de
+surplus que toute partition des opérateurs. Cette efficacité collective
+n'implique pourtant ni l'existence d'une allocation dans le cœur, ni la
+stabilité de la valeur de Shapley lorsqu'un tel cœur existe. Nous identifions
+les seuils de capacité comme source de cette divergence et recherchons les
+régimes qui la font disparaître.
 
 Les contributions de l'article sont les suivantes :
 \begin{enumerate}
-    \item nous formulons exactement l'exploitation d'une coalition sur une
-    fenêtre, avec activations binaires, capacités et coûts hétérogènes, en
-    imposant un ensemble de gardiens fixe mais des allocations de trafic
-    horaires ; nous établissons l'optimalité d'une allocation gloutonne à
-    gardiens fixés et situons le coût de cette politique par rapport à une
-    relaxation reconfigurable heure par heure ;
-    \item nous établissons la superadditivité du jeu d'économies, précisons
-    quand elle peut être non stricte et donnons une condition suffisante de
-    superadditivité stricte, puis
-    construisons un contre-exemple homogène à quatre opérateurs et à cœur
-    vide ; nous
-    caractérisons en outre le cas homogène, exhibons une famille paramétrique
-    de jeux à cœur vide et proposons un certificat \emph{leave-one-out} ainsi
-    qu'une borne sur le moindre cœur ;
-    \item nous donnons une condition de capacité sur toute la fenêtre,
-    suffisante pour que le cœur soit non vide et accompagnée d'une allocation
-    explicite. Nous montrons toutefois, par un
-    contre-exemple à quatre opérateurs, que ce régime de très faible trafic ne
-    garantit pas l'appartenance de la valeur de Shapley au cœur, puis
-    rétablissons cette propriété sous homogénéité des coûts fixes et variables.
+    \item \textbf{Modèle opérationnel et efficacité.} Nous formulons
+    l'exploitation d'une coalition avec activations binaires, capacités,
+    coûts fixes et variables, sélection horaire des gardiens et allocation
+    horaire du trafic. Le calcul exact du coût de chaque coalition permet
+    d'établir la superadditivité des économies. La répartition gloutonne et
+    l'énumération des gardiens servent ici d'outils de calcul exact ; la
+    persistance est quantifiée séparément par un surcoût opérationnel.
+    \item \textbf{Mécanisme de stabilité.} Nous montrons qu'un jeu
+    superadditif peut néanmoins avoir un cœur vide lorsque les seuils de
+    capacité créent des économies par paliers. Nous distinguons l'existence
+    du cœur de la stabilité de Shapley. Nous donnons une garantie sous capacité
+    individuelle suffisante, précisons l'hypothèse d'homogénéité des coûts qui
+    stabilise alors Shapley et caractérisons exactement le benchmark
+    parfaitement homogène.
+    \item \textbf{Évaluation semi-empirique.} À partir de mesures réelles de
+    trafic et de puissance, nous calibrons des profils élémentaires et
+    construisons de façon contrôlée des instances multi-opérateurs. Nous y
+    quantifions simultanément les économies, le coût de la persistance et la
+    stabilité, puis étudions les facteurs associés au passage d'un régime
+    stable à un régime instable, notamment la fenêtre et le nombre
+    d'opérateurs.
 \end{enumerate}
 
-L'évaluation numérique est conçue comme une étude semi-empirique : les profils
-élémentaires de trafic et de puissance proviennent de mesures de terrain, mais
-les sites multi-opérateurs sont construits de manière contrôlée, car les
-données disponibles n'observent pas plusieurs MNO colocalisés sur un même
-site. Elle vise à éprouver le protocole et les indicateurs dérivés de
-l'analyse, sans être présentée comme une observation directe d'accords
-multi-opérateurs.
+L'évaluation porte ainsi sur des instances semi-empiriques construites à
+partir de mesures de réseau. Les données disponibles n'observent pas plusieurs
+MNO colocalisés sur un même site ; les résultats ne constituent donc pas une
+observation directe d'accords multi-opérateurs réels.
 
 Le modèle ne décrit ni un processus dynamique de formation des coalitions, ni
 l'incertitude sur le trafic, ni les transitions répétées entre veille et
@@ -95,8 +99,9 @@ un site et à une fenêtre de décision.
 
 La suite de l'article est organisée comme suit. La section~2 situe le travail
 par rapport à la mise en veille multi-opérateur et aux mécanismes
-économiques. La section~3 formalise le système, le jeu d'économies et le
-critère de stabilité. La section~4 résout le problème opérationnel de chaque
-coalition et établit la superadditivité du jeu. La section~5 analyse
-l'existence et le choix d'une allocation stable. La section~6 décrit
-l'évaluation numérique, puis la section~7 conclut.
+économiques. La section~3 isole le mécanisme opérationnel des activations
+indivisibles. La section~4 construit le coût coalitionnel exact et établit la
+superadditivité des économies. La section~5 étudie si ce surplus peut être
+réparti de manière stable et caractérise plusieurs régimes. La section~6
+évalue leur importance sur les instances semi-empiriques, puis la section~7
+conclut.

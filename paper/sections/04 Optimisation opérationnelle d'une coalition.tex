@@ -1,25 +1,19 @@
 \newpage
 
-\section{Optimisation opérationnelle et superadditivité des économies}
+\section{Optimisation opérationnelle}
 
-Après avoir défini les décisions admissibles sur \(H\), nous déterminons le
-coût minimal que peut atteindre chaque coalition. La répartition gloutonne
-est d'abord établie pour une heure arbitraire ; elle devient ensuite la brique
-élémentaire du problème persistant, dans lequel les gardiens restent fixes
-sur \(H\). La politique horairement reconfigurable est traitée séparément.
-
-L'optimisation comporte deux niveaux. Pour un ensemble de gardiens fixé, la
-linéarité des coûts variables permet de déterminer explicitement la meilleure
-répartition du trafic. Il reste ensuite à sélectionner les gardiens en tenant
-compte de leurs coûts fixes de fonctionnement.
+Dans cette partie, nous déterminons exactement
+le coût que chaque coalition peut atteindre en opérant seule. Le problème
+central est horaire : à chaque \(h\), la coalition sélectionne ses gardiens et
+leur alloue le trafic, puis les coûts optimaux \(C_h^*(S)\) sont sommés sur
+\(H\).
 
 \subsection{Répartition optimale du trafic à gardiens fixés}
 \label{subsec:allocation_gardiens_fixes}
 
-Soit $(S, G)\in\mathcal E$. Les coûts fixes $\sum_{i\in G}F_i$ ne dépendent pas de la répartition du trafic, ce qui implique que minimiser le coût associé à la configuration de gardiens $(S, G)$ revient à minimiser ses coûts variables.
-
-La répartition optimale du trafic pour $(S,G)$ est ainsi solution du
-programme linéaire suivant :
+Soit \((S,G)\in\mathcal E\) à une heure fixée. Les coûts fixes
+\(\sum_{i\in G}F_i\) ne dépendent pas de la répartition du trafic. Minimiser
+le coût de la configuration revient donc à résoudre
 \begin{equation}
 \label{eq:lp_allocation_fixe}
 \begin{aligned}
@@ -27,127 +21,176 @@ programme linéaire suivant :
         & \sum_{i\in G}\gamma_i t_i,\\
     \text{s.c.}\quad
         & \sum_{i\in G} t_i=d(S),\\
-        & 0\leqslant  t_i\leqslant q_i,
+        & 0\leqslant t_i\leqslant q_i,
         \qquad \forall i\in G,\\
         & t_i=0,
-        \qquad \forall i\in N\setminus G
+        \qquad \forall i\in N\setminus G.
 \end{aligned}
 \end{equation}
-
 
 \subsubsection{Répartition gloutonne}
 
 L'algorithme glouton répartit le trafic entre les équipements actifs par
-ordre croissant de leur coût variable unitaire $\gamma_i$.
-
-Soit $G=\{i_1,\dots,i_p\}$, ordonné de sorte que
-$\gamma_{i_1}\leqslant\dots\leqslant\gamma_{i_p}$. En présence d'ex æquo,
-une règle de départage déterministe est fixée. L'indice pivot est défini par
+ordre croissant de leur coût variable unitaire \(\gamma_i\). Soit
+\(G=\{i_1,\dots,i_p\}\), ordonné de sorte que
+\(\gamma_{i_1}\leqslant\dots\leqslant\gamma_{i_p}\). En présence d'ex æquo,
+une règle de départage déterministe est fixée. L'indice pivot est
 \[
 k:=\min\left\{
 r\in\{1,\dots,p\}\ \middle|\
 \sum_{\ell=1}^{r}q_{i_\ell}\geqslant d(S)
 \right\}.
 \]
-Cet ensemble est non vide puisque $G\in\mathcal G(S)$. La répartition
-gloutonne $\mathbf t^g(S,G)$ sature les gardiens précédant le pivot,
-affecte le trafic résiduel au pivot et laisse nul le trafic des gardiens
-suivants :
+La répartition gloutonne \(\mathbf t^g(S,G)\) sature les gardiens précédant
+le pivot, affecte le trafic résiduel au pivot et laisse nul le trafic des
+gardiens suivants :
 \[
  t_{i_\ell}^g(S,G) =
-\begin{cases} 
-q_{i_\ell} & \text{si } \ell < k \\ 
-d(S) - \sum_{m=1}^{k-1} q_{i_m} & \text{si } \ell = k \\
-0 & \text{si } \ell > k
+\begin{cases}
+q_{i_\ell} & \text{si } \ell < k,\\
+d(S) - \sum_{m=1}^{k-1} q_{i_m} & \text{si } \ell = k,\\
+0 & \text{si } \ell > k.
 \end{cases}
 \]
-(\(t_i^g(S,G)=0\) pour tout \(i\notin G\)).
-Lorsque \((S,G)\) est fixé dans un raisonnement, cette notation est abrégée
-en \(\mathbf t^g\).
-
-\subsubsection{Proposition d'optimalité}
+On pose \(t_i^g(S,G)=0\) pour tout \(i\notin G\).
 
 \begin{proposition}[Optimalité de la répartition gloutonne]
 \label{pro:opt}
-    Soit $(S, G) \in \mathcal{E}$. Alors la répartition gloutonne du trafic
-    $\mathbf{t}^g(S,G)$ minimise le coût opérationnel :
-    \[
-    C\bigl(S,G,\mathbf{t}^g(S,G)\bigr)
-    =\min_{\mathbf{t}\in\mathcal T(S,G)}C(S,G,\mathbf{t})
-    \]
+Soit \((S,G)\in\mathcal E\). Alors
+\[
+C\bigl(S,G,\mathbf t^g(S,G)\bigr)
+=\min_{\mathbf t\in\mathcal T(S,G)}C(S,G,\mathbf t).
+\]
 \end{proposition}
 
 \begin{proof}
 Fixons \((S,G)\in\mathcal E\) et posons
-\(\mathbf t^g:=\mathbf t^g(S,G)\). Soit
-\(\mathbf t\in\mathcal T(S,G)\) une répartition admissible quelconque.
-
-Les coûts fixes étant identiques pour les deux répartitions,
+\(\mathbf t^g:=\mathbf t^g(S,G)\). Pour toute
+\(\mathbf t\in\mathcal T(S,G)\), les coûts fixes sont identiques et
 \[
 \Delta
 :=C(S,G,\mathbf t)-C(S,G,\mathbf t^g)
 =\sum_{\ell=1}^{p}\gamma_{i_\ell}
 \bigl(t_{i_\ell}-t_{i_\ell}^g\bigr).
 \]
-Comme les deux répartitions acheminent exactement \(d(S)\),
-\(\sum_{\ell=1}^{p}(t_{i_\ell}-t_{i_\ell}^g)=0\). Si \(k\) désigne
-l'indice pivot, il vient donc
+Comme les deux répartitions acheminent \(d(S)\), la somme des écarts de
+trafic est nulle. Si \(k\) est l'indice pivot,
 \[
 \Delta
 =\sum_{\ell=1}^{p}
 \bigl(\gamma_{i_\ell}-\gamma_{i_k}\bigr)
 \bigl(t_{i_\ell}-t_{i_\ell}^g\bigr).
 \]
-Pour \(\ell<k\), les deux facteurs sont négatifs ou nuls, puisque
-\(t_{i_\ell}^g=q_{i_\ell}\) ; pour \(\ell>k\), ils sont positifs ou nuls,
-puisque \(t_{i_\ell}^g=0\). Le terme d'indice \(k\) est nul. Chaque terme
-de la somme est donc positif ou nul, d'où \(\Delta\geqslant0\).
+Pour \(\ell<k\), les deux facteurs sont négatifs ou nuls puisque
+\(t_{i_\ell}^g=q_{i_\ell}\). Pour \(\ell>k\), ils sont positifs ou nuls
+puisque \(t_{i_\ell}^g=0\). Le terme d'indice \(k\) est nul. Ainsi
+\(\Delta\geqslant0\).
 \end{proof}
 
-La concentration du trafic résulte de la linéarité des coûts variables.
-Si les $\gamma_i$ sont deux à deux distincts, la répartition optimale est
-unique ; en présence d'ex æquo, plusieurs répartitions optimales peuvent
-exister. Ce résultat vaut pour un ensemble de gardiens fixé et ne préjuge
-ni de leur sélection, étudiée ci-dessous, ni de la répartition des économies
-de coopération entre opérateurs.
+La concentration du trafic résulte de la linéarité des coûts variables. Si
+les \(\gamma_i\) sont distincts, la répartition optimale est unique ; en
+présence d'ex æquo, la règle de départage sélectionne un représentant sans
+modifier le coût.
 
-En particulier, si tous les gardiens de \(G\) ont le même coût variable
-unitaire \(\gamma\), l'objectif variable vaut \(\gamma d(S)\) pour toute
-répartition admissible : chaque élément de \(\mathcal T(S,G)\) est donc
-optimal. La règle de départage déterministe sélectionne seulement un
-représentant opérationnel, sans modifier le coût minimal de la coalition.
-
-Une fois les gardiens ordonnés, un parcours de la liste construit la
-répartition gloutonne en $O(|G|)$. Si cet ordre doit être calculé, le tri
-coûte en outre $O(|G|\log |G|)$ ; un tri global préalable des opérateurs
-coûte $O(n\log n)$.
+Une fois les gardiens ordonnés, la répartition est calculée en \(O(|G|)\).
+Le tri initial coûte \(O(|G|\log|G|)\). Ainsi, lorsque l'ensemble des gardiens
+est connu, sa meilleure répartition du trafic est obtenue rapidement et de
+manière explicite.
 
 
-
-
-
-
-
-\subsection{Sélection persistante des gardiens sur la fenêtre}
+\subsection{Sélection horaire des gardiens}
 \label{subsec:selection_gardiens}
+
+
+Il reste maintenant à choisir l'ensemble de gardiens qui minimise le coût de
+la coalition. Pour chaque ensemble candidat, la sous-section précédente donne
+déjà sa meilleure répartition du trafic.
+
+Fixons \(S\in\mathcal S\) et \(h\in H\). Pour \(i\in S\), l'indicateur
+binaire \(x_i^h\) vaut un si l'équipement est actif à l'heure \(h\), et zéro
+sinon. Le coût horaire optimal est la valeur du programme linéaire en nombres
+entiers mixtes (MILP) suivant :
+
+\begin{equation}
+\label{eq:milp_horaire}
+\begin{aligned}
+C_h^*(S)
+=
+\min_{\substack{\mathbf x^h\in\{0,1\}^S\\
+                \mathbf t^h\in\mathbb R_+^N}}\quad
+    & \sum_{i\in S}\left(F_i x_i^h+\gamma_i t_i^h\right),\\
+\text{s.c.}\quad
+    & \sum_{i\in S}t_i^h=d^h(S),\\
+    & 0\leqslant t_i^h\leqslant q_i x_i^h,
+      \qquad \forall i\in S,\\
+    & t_i^h=0,
+      \qquad \forall i\in N\setminus S.
+\end{aligned}
+\end{equation}
+
+Les variables \(x_i^h\) sont propres à l'heure considérée. Le programme est
+donc résolu indépendamment pour chaque \(h\in H\).
+
+\subsection{Complexité et algorithme exact}
+
+\begin{proposition}[NP-difficulté]
+\label{prop:np_difficulte_gardiens}
+Le problème de sélection optimale des gardiens à une heure est NP-difficile,
+même lorsque tous les coûts variables unitaires sont identiques.
+\end{proposition}
+
+\emph{Démonstration : voir l'Annexe~\ref{app:preuve_np_difficulte}.}
+
+\begin{remarque}
+Comme \textsc{Subset Sum} est faiblement NP-complet, la réduction établit la
+NP-difficulté, mais pas la NP-difficulté forte.
+\end{remarque}
+
+La NP-difficulté indique qu'aucun algorithme exact de complexité polynomiale
+n'est connu dans le cas général. Dans notre application, le nombre
+d'opérateurs présents sur un site est faible ; nous retenons donc une
+énumération exacte. Pour chaque heure \(h\) et chaque
+\(\varnothing \neq G\subseteq S\) :
+\begin{enumerate}
+    \item on teste si $(S, G)$ est faisable : \(q(G)\geqslant d^h(S)\) ;
+    \item si tel est le cas, on calcule
+    \(\mathbf t^{g,h}(S,G)\) ;
+    \item on évalue \(C_h(S,G,\mathbf t^{g,h}(S,G))\) ;
+    \item si ce coût est inférieur au meilleur coût déjà obtenu, on conserve
+    \(G\) comme meilleur ensemble courant.
+\end{enumerate}
+Un représentant optimal est noté \(G_h^*(S)\), et
+\(\mathbf t^{h,*}(S):=\mathbf t^{g,h}(S,G_h^*(S))\). La somme des coûts
+retenus donne \(C_H^*(S)\).
+
+\begin{proposition}[Complexité de l'énumération]
+\label{prop:complexite_enumeration}
+Pour \(S\in\mathcal S\) de taille \(s\), la méthode d'énumération exacte de \(C_H^*(S)\) requiert
+\(O(|H|\,s\,2^s)\) opérations arithmétiques et comparaisons. Le calcul de
+\(C_H^*(S)\) pour toute $S \in \mathcal S$ requiert
+\(O(|H|\,n\,3^n)\) telles opérations.
+\end{proposition}
+
+\emph{Démonstration : voir l'Annexe~\ref{app:preuve_complexite_enumeration}.}
+
+\begin{remarque}
+Pour \(n=4\), les \(3^4-2^4=65\) couples \((S,G)\) sont examinés à chaque
+heure. L'énumération reste négligeable et fournit un optimum exact,
+indépendant des tolérances d'un solveur MILP.
+\end{remarque}
+
+\subsection{Extension : engagement persistant des gardiens}
 \label{subsec:optimisation_fenetre}
 
-Fixons \(S\in\mathcal S\). La sous-section précédente fournit la répartition
-optimale du trafic à chaque heure lorsque l'ensemble de gardiens est fixé. Il
-reste à choisir un même ensemble de gardiens pour toute la fenêtre.
-
-Pour chaque opérateur $i\in S$, on introduit un indicateur binaire
-d'activité $x_i$, égal à $1$ si son équipement est actif et à $0$ s'il
-est en veille. Pour chaque \(h\in H\), la répartition du trafic est
-représentée par \(\mathbf t^h\in\mathbb R_+^N\). Le vecteur
-\(\mathbf x\) est commun à toutes les heures.
-
-Le coût persistant optimal de la coalition $S$ est la valeur du programme
-linéaire en nombres entiers mixtes suivant :
+Cette extension est conservée comme comparaison opérationnelle : elle mesure
+le coût de l'obligation de garder les mêmes équipements actifs pendant toute
+la fenêtre. La variante de la
+Sous-section~\ref{subsec:extension_persistante} utilise donc un unique vecteur
+binaire \(\mathbf x\), commun à toutes les heures :
 \begin{equation}
 \label{eq:milp_gardiens}
 \begin{aligned}
-C_H^*(S)
+C_{H,\mathrm{pers}}^*(S)
 =
 \min_{\substack{\mathbf x\in\{0,1\}^S\\
                 \mathbf t^h\in\mathbb R_+^N,\ h\in H}}\quad
@@ -162,106 +205,22 @@ C_H^*(S)
       \qquad \forall i\in N\setminus S,\ \forall h\in H.
 \end{aligned}
 \end{equation}
-
-La formulation \eqref{eq:milp_gardiens} est exacte : toute solution
-réalisable définit
-\(G=\{i\in S\mid x_i=1\}\in\mathcal G_H(S)\) et une répartition de
-\(\mathcal T_h(S,G)\) à chaque heure. Réciproquement, toute solution
-persistante admissible fournit une solution du programme en posant
-\(x_i=\mathds{1}_{i\in G}\). Les fonctions objectif coïncident.
-
-
-
-\subsection{Complexité et algorithme exact}
-
-La présence des coûts fixes de fonctionnement et des indicateurs binaires d'activité rend le problème
-combinatoire.
-
-\begin{proposition}[NP-difficulté]
-\label{prop:np_difficulte_gardiens}
-Le problème de sélection persistante des gardiens est NP-difficile, même
-lorsque tous les coûts variables unitaires sont identiques.
-\end{proposition}
-
-\emph{Démonstration : voir l'Annexe~\ref{app:preuve_np_difficulte}.}
-
-\begin{remarque}
-\textsc{Subset Sum} étant faiblement NP-complet, cette réduction établit
-la NP-difficulté du problème, mais pas sa NP-difficulté forte.
-\end{remarque}
-
-Dans le cadre étudié, le nombre d'opérateurs présents sur un site est très
-faible. Nous retenons donc une méthode exacte par énumération.
-
-Pour chaque \(G\in\mathcal S\) tel que \(G\subseteq S\) :
-\begin{enumerate}
-    \item on teste sa faisabilité en vérifiant
-    \(q(G)\geqslant d^h(S)\) pour tout \(h\in H\) ;
-    \item si oui, on calcule la répartition gloutonne
-    \(\mathbf t^{g,h}(S,G)\) à chaque heure ;
-    \item on évalue son coût total
-    \(\sum_{h\in H}C_h(S,G,\mathbf t^{g,h}(S,G))\) ;
-    \item on conserve un ensemble de gardiens minimisant le coût.
-\end{enumerate}
-
-On obtient ainsi $C_H^*(S)$. Dans la suite, $G_H^*(S)$ désigne un
-représentant arbitraire de
+L'énumération teste ici chaque \(G\subseteq S\) sur toutes les heures avant
+de sommer les allocations gloutonnes. Nous notons
+\(G_{H,\mathrm{pers}}^*(S)\) un représentant optimal. Cette contrainte
+temporelle ne change ni l'allocation gloutonne à gardiens fixés, ni la borne
 \[
-\operatorname*{arg\,min}_{G\in\mathcal G_H(S)}
-\sum_{h\in H}C_h\bigl(S,G,\mathbf t^{g,h}(S,G)\bigr),
+    C_H^*(S)\leqslant C_{H,\mathrm{pers}}^*(S).
 \]
-sans présumer son unicité, et
-\(\mathbf t^{h,*}(S):=\mathbf t^{g,h}(S,G_H^*(S))\) désigne la répartition
-associée à l'heure \(h\).
-
-\begin{proposition}[Complexité de l'énumération]
-\label{prop:complexite_enumeration}
-Pour $S \in \mathcal S$ de taille $s$, l'énumération exacte des ensembles
-de gardiens requiert \(O(|H|\,s\,2^s)\) opérations arithmétiques et
-comparaisons. Le calcul des valeurs $C_H^*(S)$ pour toutes les
-$S \in \mathcal S$ requiert \(O(|H|\,n\,3^n)\) telles opérations.
-\end{proposition}
-
-\emph{Démonstration : voir l'Annexe~\ref{app:preuve_complexite_enumeration}.}
-
-\begin{remarque}
-Le nombre de couples candidats $(S,G)$ est $\sum_{s=1}^{n}\binom ns(2^s - 1) = 3^n - 2^n.$
-Cette quantité compte les configurations de gardiens à examiner, tandis que
-la borne $O(|H|\,n\,3^n)$ tient également compte du coût de leur évaluation
-sur la fenêtre.
-
-Pour l'application numérique visée, $n=4$. Le nombre total de couples
-candidats $(S,G)$ est donc $3^4-2^4=65$.
-L'énumération exhaustive est ainsi négligeable et présente l'avantage
-d'être exacte, transparente et indépendante des tolérances d'un solveur
-MILP.
-\end{remarque}
-
-\subsection{Politique horairement reconfigurable}
-
-Dans la politique reconfigurable définie par
-\eqref{eq:cout_horaire_borne}, le choix des gardiens se décompose par heure.
-La Proposition~\ref{pro:opt} et l'énumération précédente sont donc
-appliquées indépendamment à chaque \(h\in H\). Cette politique peut changer
-de gardiens au sein de \(H\), contrairement à la politique persistante qui
-définit \(C_H^*\).
 
 \subsection{Sous-additivité du coût opérationnel minimal}
 
-La propriété structurelle centrale du coût optimal est maintenant établie.
-Elle compare directement le fonctionnement d'une coalition réunie à celui de
-deux coalitions séparées.
-
-Les fonctions \(C_H^*\) et \(C_{H,\mathrm{hor}}^*\), définies sur
-\(\mathcal S\), sont prolongées à \(2^N\) par la convention
-\[
-    C_H^*(\varnothing)
-    =C_{H,\mathrm{hor}}^*(\varnothing)
-    :=0.
-\]
+Nous comparons maintenant le coût de deux coalitions séparées à celui de leur
+réunion. La fonction \(C_H^*\) est prolongée à \(2^N\) en posant
+\(C_H^*(\varnothing)=0\).
 
 \begin{definition}[Sous-additivité]
-Soit $f:2^N\to\mathbb R$ telle que $f(\varnothing)=0$. La fonction $f$ est dite
+Une fonction \(f:2^N\to\mathbb R\), avec \(f(\varnothing)=0\), est
 \textbf{sous-additive} si, pour tous \(A,B\subseteq N\) disjoints,
 \[
     f(A\cup B)\leqslant f(A)+f(B).
@@ -270,268 +229,189 @@ Soit $f:2^N\to\mathbb R$ telle que $f(\varnothing)=0$. La fonction $f$ est dite
 
 \begin{theorem}[Sous-additivité des coûts sur la fenêtre]
 \label{thm:sousadd}
-Les fonctions \(C_H^*\) et \(C_{H,\mathrm{hor}}^*\) sont sous-additives.
+La fonction \(C_H^*\) est sous-additive.
 \end{theorem}
 
 \begin{proof}
-Soient \(A,B\subseteq N\) disjoints. Si \(A=\varnothing\) ou
-\(B=\varnothing\), l'inégalité résulte immédiatement de la convention
-précédente. Supposons désormais \(A,B\in\mathcal S\).
-
-Pour la politique persistante, posons
-\(G:=G_H^*(A)\cup G_H^*(B)\). À chaque heure,
-\(\mathbf t^h:=\mathbf t^{h,*}(A)+\mathbf t^{h,*}(B)\) sert
-\(d^h(A\cup B)\). Les coalitions étant disjointes, les ensembles de gardiens
-et les supports des répartitions le sont également. Ainsi,
-\(G\in\mathcal G_H(A\cup B)\) et la solution construite a pour coût
-\(C_H^*(A)+C_H^*(B)\). Par minimalité,
+Soient \(A,B\subseteq N\) disjoints et non vides. À chaque heure \(h\), la
+réunion de \(G_h^*(A)\) et \(G_h^*(B)\), avec la somme de leurs répartitions,
+est admissible pour \(A\cup B\). Par optimalité,
 \[
-    C_H^*(A\cup B)
-    \leqslant C_H^*(A)+C_H^*(B).
+    C_h^*(A\cup B)\leqslant C_h^*(A)+C_h^*(B).
 \]
-
-Pour la politique horairement reconfigurable, le même argument est appliqué
-indépendamment à chaque heure, puis sommé sur \(H\). Il donne
-\[
-    C_{H,\mathrm{hor}}^*(A\cup B)
-    \leqslant
-    C_{H,\mathrm{hor}}^*(A)+C_{H,\mathrm{hor}}^*(B).
-\]
+La somme sur \(H\) donne la sous-additivité de \(C_H^*\).
+Si l'une des deux coalitions est vide, l'inégalité découle directement de la
+convention \(C_H^*(\varnothing)=0\).
 \end{proof}
 
-\begin{remarque}[La sous-additivité peut être non stricte]
-Supposons que chaque opérateur sature sa capacité à chaque heure, c'est-à-dire
-que \(d_i^h=q_i\) pour tous \(i\in N\) et \(h\in H\). Pour tout
-\(S\in\mathcal S\), on a alors \(d^h(S)=q(S)\), de sorte qu'aucun
-sous-ensemble strict de \(S\) ne peut servir sa demande. Par conséquent,
-\[
-    C_H^*(S)=C_{H,\mathrm{hor}}^*(S)
-    =|H|\sum_{i\in S}\left(F_i+\gamma_iq_i\right).
-\]
-Les deux inégalités du Théorème~\ref{thm:sousadd} sont donc des égalités pour
-toutes les coalitions disjointes. Leur réunion ne crée alors aucune économie
-supplémentaire.
+\begin{remarque}[Extension persistante]
+Le même résultat vaut pour \(C_{H,\mathrm{pers}}^*\), prolongée par une valeur
+nulle sur \(\varnothing\). En effet, la réunion de deux ensembles persistants
+de gardiens reste admissible pour la réunion de deux coalitions disjointes.
+Cette propriété secondaire permet notamment de comparer l'engagement
+persistant au fonctionnement autonome.
 \end{remarque}
 
-La sous-additivité stricte requiert ainsi une hypothèse supplémentaire. La
-condition locale suivante isole un mécanisme suffisant : un seul des gardiens
-retenus séparément peut acheminer toute la demande réunie sur la fenêtre.
-
-\begin{proposition}[Condition locale de gain strict]
-\label{prop:sousadd_stricte_locale}
-Soient \(A,B\in\mathcal S\) deux coalitions disjointes. Supposons qu'il existe
+\begin{remarque}[La sous-additivité peut être non stricte]
+Si \(d_i^h=q_i\) pour tout \(i\) et tout \(h\), aucune coalition ne peut
+placer en veille l'un de ses membres. Les coûts horaire et persistant valent
+alors
 \[
-    \alpha\in
-    \operatorname*{arg\,min}_{i\in G_H^*(A)\cup G_H^*(B)}\gamma_i
-    \qquad\text{tel que}\qquad
-    d^h(A\cup B)\leqslant q_\alpha,
-    \quad \forall h\in H.
+    C_H^*(S)=C_{H,\mathrm{pers}}^*(S)
+    =|H|\sum_{i\in S}(F_i+\gamma_iq_i),
 \]
-Alors
-\[
-    C_H^*(A)+C_H^*(B)-C_H^*(A\cup B)
-    \geqslant
-    |H|\sum_{i\in\left(G_H^*(A)\cup G_H^*(B)\right)
-    \setminus\{\alpha\}}F_i
-    >0.
-\]
-En particulier, \(C_H^*(A\cup B)<C_H^*(A)+C_H^*(B)\).
-\end{proposition}
+et toutes les inégalités de sous-additivité sont des égalités.
+\end{remarque}
 
-\begin{proof}
-Dans les solutions optimales séparées, le coût variable total est au moins
-\(\gamma_\alpha D(A\cup B)\), puisque \(\gamma_\alpha\) est le plus faible
-coût variable unitaire parmi les gardiens utilisés. Sous l'hypothèse de
-capacité, \(\alpha\) peut servir seul \(A\cup B\) à chaque heure. Cette
-solution admissible coûte
-\[
-    |H|F_\alpha+\gamma_\alpha D(A\cup B).
-\]
-La différence entre le coût des solutions séparées et celui de cette solution
-donne la borne annoncée. Enfin, les deux coalitions étant disjointes, leurs
-ensembles de gardiens le sont également et contiennent chacun au moins un
-élément ; la stricte positivité découle donc de \(F_i>0\) pour tout \(i\in N\).
-\end{proof}
-
+La sous-additivité n'est donc pas toujours stricte. Dans le régime nocturne
+qui nous intéresse, une condition simple garantit au contraire un gain à
+chaque fusion.
 \begin{corollaire}[Sous-additivité stricte en régime de faible trafic]
 \label{cor:sousadd_stricte_faible_trafic}
-Supposons que
+Si
 \[
     d^h(N)\leqslant\min_{i\in N}q_i,
-    \qquad \forall h\in H.
+    \qquad \forall h\in H,
 \]
-Alors, pour toutes les coalitions disjointes \(A,B\in\mathcal S\),
+alors, pour toutes \(A,B\in\mathcal S\) disjointes,
 \[
-    C_H^*(A\cup B)<C_H^*(A)+C_H^*(B)
-\]
-et
-\[
-    C_{H,\mathrm{hor}}^*(A\cup B)
-    <C_{H,\mathrm{hor}}^*(A)+C_{H,\mathrm{hor}}^*(B).
+    C_H^*(A\cup B)<C_H^*(A)+C_H^*(B).
 \]
 \end{corollaire}
 
 \begin{proof}
-Pour la politique persistante, tout opérateur \(\alpha\in N\) vérifie
-\(d^h(A\cup B)\leqslant d^h(N)\leqslant q_\alpha\) à chaque heure. La
-Proposition~\ref{prop:sousadd_stricte_locale} s'applique donc au gardien de
-plus faible \(\gamma_i\) parmi ceux des solutions optimales séparées. Pour la
-politique horairement reconfigurable, le même raisonnement est appliqué à
-chaque heure aux deux solutions horaires optimales. Il fournit une inégalité
-stricte à chaque heure, dont la somme sur \(H\) reste stricte.
+À chaque heure \(h\), choisissons un gardien \(\alpha_h\) de coût variable
+unitaire minimal parmi les gardiens optimaux de \(A\) et de \(B\). Par
+hypothèse, il peut servir seul \(A\cup B\). Son coût variable est au plus égal
+à celui des deux solutions séparées, puisque tous leurs gardiens ont un coût
+variable unitaire supérieur ou égal à \(\gamma_{\alpha_h}\). Réunir les deux
+coalitions permet en outre d'éviter les coûts fixes de tous les autres
+gardiens. Comme \(A\) et \(B\) sont non vides et disjointes, au moins un coût
+fixe strictement positif est évité à chaque heure. La somme sur \(H\) donne
+l'inégalité stricte.
 \end{proof}
 
-\begin{remarque}[Portée et interprétation économique]
-La sous-additivité garantit en général, sous chacune des deux politiques, que
-la réunion de coalitions disjointes n'augmente pas leur coût opérationnel
-total. L'exemple de saturation montre que ce gain peut être nul, tandis que le
-Corollaire~\ref{cor:sousadd_stricte_faible_trafic} garantit un gain strict
-lorsque chaque opérateur peut servir seul toute la demande. Ces propriétés
-établissent l'intérêt collectif de la coopération, mais ne garantissent pas
-que l'économie obtenue puisse être répartie de manière stable contre les
-déviations de sous-coalitions. Comme le coût est une valorisation linéaire
-positive de l'énergie consommée, la même conclusion vaut pour la consommation
-énergétique totale.
+\begin{remarque}[Condition locale plus générale]
+\label{prop:sousadd_stricte_locale}
+La condition de faible trafic est suffisante, mais plus forte que nécessaire.
+Pour deux coalitions disjointes \(A,B\), il suffit qu'à chaque heure il existe
+\[
+    \alpha_h\in
+    \operatorname*{arg\,min}_{i\in G_h^*(A)\cup G_h^*(B)}\gamma_i
+    \quad\text{tel que}\quad
+    d^h(A\cup B)\leqslant q_{\alpha_h}.
+\]
+Le raisonnement précédent donne alors la borne explicite
+\[
+\begin{aligned}
+    C_H^*(A)+C_H^*(B)-C_H^*(A\cup B)
+    \geqslant
+    \sum_{h\in H}
+    \sum_{i\in(G_h^*(A)\cup G_h^*(B))\setminus\{\alpha_h\}}F_i
+    >0.
+\end{aligned}
+\]
+\end{remarque}
+
+\begin{remarque}[Cas de l'engagement persistant]
+Pour l'extension persistante, il suffit qu'un gardien de coût variable
+unitaire minimal parmi les deux solutions séparées puisse servir la demande
+réunie à toutes les heures. Si ce gardien est noté \(\alpha\), alors
+\[
+\begin{aligned}
+&C_{H,\mathrm{pers}}^*(A)+C_{H,\mathrm{pers}}^*(B)
+-C_{H,\mathrm{pers}}^*(A\cup B)\\
+&\qquad\geqslant
+|H|\sum_{i\in
+(G_{H,\mathrm{pers}}^*(A)\cup G_{H,\mathrm{pers}}^*(B))
+\setminus\{\alpha\}}F_i>0.
+\end{aligned}
+\]
+En particulier, la condition de faible trafic du corollaire précédent rend
+également \(C_{H,\mathrm{pers}}^*\) strictement sous-additive.
 \end{remarque}
 
 \begin{corollaire}[Comparaison avec le fonctionnement autonome]
 \label{cor:comparaison_autonome}
-Pour tout $S\in\mathcal S$,
+Pour tout \(S\in\mathcal S\),
 \[
-C_H^*(S)
-\leqslant
-\sum_{i\in S}C_H^*(\{i\}),
+    C_H^*(S)
+    \leqslant
+    \sum_{i\in S}C_H^*(\{i\}),
 \qquad
-C_{H,\mathrm{hor}}^*(S)
-\leqslant
-\sum_{i\in S}C_H^*(\{i\}).
+    C_{H,\mathrm{pers}}^*(S)
+    \leqslant
+    \sum_{i\in S}C_H^*(\{i\}).
 \]
 \end{corollaire}
 
 \begin{proof}
-Il suffit d'appliquer successivement la sous-additivité de chaque fonction de
-coût aux singletons disjoints qui composent $S$, puis d'utiliser
-\(C_{H,\mathrm{hor}}^*(\{i\})=C_H^*(\{i\})\).
+Pour le coût horaire, il suffit d'appliquer successivement la
+sous-additivité aux singletons qui composent \(S\). Le même raisonnement
+s'applique au coût persistant, qui est lui aussi sous-additif. Enfin, pour un
+singleton, les deux modes de fonctionnement coïncident avec le fonctionnement
+autonome.
 \end{proof}
+
+Ce corollaire donne la première conséquence directe pour le jeu : coopérer ne
+peut pas réduire les économies par rapport au fonctionnement autonome. Nous
+pouvons maintenant comparer les économies créées par plusieurs coalitions.
 
 \subsection{Superadditivité du jeu des économies}
 
-La sous-additivité du coût doit être traduite dans le jeu défini à la
-Sous-section~\ref{subsec:modele_jeu_economies}. La superadditivité obtenue
-compare l'économie de la coalition réunie à la somme des économies que ses
-membres pourraient réaliser en restant séparés.
-
-\begin{proposition}[Propriétés des jeux sur la fenêtre]
+\begin{proposition}[Propriétés du jeu sur la fenêtre]
 \label{prop:proprietes_jeu_economies}
 \label{prop:proprietes_jeu_fenetre}
-Pour \(w\in\{v_H,v_{H,\mathrm{hor}}\}\),
+Le jeu \(v_H\) vérifie
 \[
-w(\varnothing)=0,
-\qquad
-w(\{i\})=0,
-\qquad \forall i\in N,
+v_H(\varnothing)=0,\qquad
+v_H(\{i\})=0,\qquad
+v_H(S)\geqslant0,
 \]
-et
+pour tout \(i\in N\) et \(S\in\mathcal S\). Il est superadditif : pour tous
+\(A,B\subseteq N\) disjoints,
 \[
-w(S)\geqslant0,
-\qquad \forall S\in\mathcal S.
-\]
-En outre, les deux jeux sont superadditifs : pour tous \(A,B\subseteq N\)
-disjoints,
-\[
-w(A\cup B)\geqslant w(A)+w(B).
+    v_H(A\cup B)\geqslant v_H(A)+v_H(B).
 \]
 Sous l'hypothèse du
-Corollaire~\ref{cor:sousadd_stricte_faible_trafic}, cette inégalité est
-stricte pour toutes les coalitions disjointes \(A,B\in\mathcal S\).
+Corollaire~\ref{cor:sousadd_stricte_faible_trafic}, l'inégalité est stricte
+pour \(A,B\in\mathcal S\).
 \end{proposition}
 
 \begin{proof}
-Les identités sur les singletons découlent de la référence autonome commune.
-La non-négativité résulte du
-Corollaire~\ref{cor:comparaison_autonome}. Pour chacun des deux jeux, la
-superadditivité s'obtient en substituant la sous-additivité du coût
-correspondant dans sa définition. La stricte sous-additivité établie au
-Corollaire~\ref{cor:sousadd_stricte_faible_trafic} donne de même la stricte
-superadditivité lorsque \(A,B\in\mathcal S\).
+Les identités sur les singletons découlent de la référence autonome. La
+non-négativité résulte du Corollaire~\ref{cor:comparaison_autonome}. Pour deux
+coalitions disjointes \(A\) et \(B\), la définition de \(v_H\) donne
+\[
+\begin{aligned}
+v_H(A\cup B)-v_H(A)-v_H(B)
+&=C_H^*(A)+C_H^*(B)-C_H^*(A\cup B)\\
+&\geqslant 0,
+\end{aligned}
+\]
+où la dernière inégalité est précisément la sous-additivité de \(C_H^*\).
+Sous l'hypothèse de faible trafic, cette sous-additivité est stricte.
 \end{proof}
 
 \begin{corollaire}[Efficacité globale de la grande coalition]
 \label{cor:efficacite_grande_coalition}
 Pour toute partition \(\mathcal P\) de \(N\),
 \[
-    v_H(N)\geqslant\sum_{S\in\mathcal P}v_H(S),
-    \qquad
-    v_{H,\mathrm{hor}}(N)
-    \geqslant
-    \sum_{S\in\mathcal P}v_{H,\mathrm{hor}}(S).
+    v_H(N)\geqslant\sum_{S\in\mathcal P}v_H(S).
 \]
-Sous l'hypothèse du
-Corollaire~\ref{cor:sousadd_stricte_faible_trafic}, ces deux inégalités sont
-strictes dès que \(\mathcal P\neq\{N\}\).
+Sous l'hypothèse de faible trafic, l'inégalité est stricte dès que
+\(\mathcal P\neq\{N\}\).
 \end{corollaire}
 
 \begin{proof}
-Il suffit d'appliquer successivement la superadditivité de chaque jeu aux
-coalitions disjointes de la partition \(\mathcal P\). Sous l'hypothèse de
-faible trafic, la stricte superadditivité établie dans la
-Proposition~\ref{prop:proprietes_jeu_economies} implique que toute fusion
-successive des blocs d'une partition non triviale produit une inégalité
-stricte.
+La superadditivité s'applique successivement aux blocs de la partition. Sous
+l'hypothèse de faible trafic, chaque fusion est stricte.
 \end{proof}
 
-Ce corollaire donne le sens précis de l'efficacité collective : parmi toutes
-les partitions des opérateurs, la grande coalition maximise l'économie totale.
-L'inégalité est stricte sous la condition de faible trafic précédente, mais
-l'efficacité, même stricte, ne garantit pas que l'économie puisse être répartie
-de manière à satisfaire simultanément toutes les sous-coalitions. Cette
-question constitue l'objet de la section suivante.
-
-% \subsection{Cas particulier des capacités égales}
-
-% Dans le cas particulier où les capacités sont égales, le problème de sélection optimale des gardiens se résout en temps polynomial, comme le montre la proposition suivante.
-
-% \begin{proposition}[Cas de capacités égales]
-% \label{prop:capacites_egales}
-% Supposons que $\forall i\in S$, $q_i=q$.
-% Alors le problème de sélection optimale des gardiens peut être résolu en temps $O(s^2\log s)$, où $s=|S|$.
-% \end{proposition}
-
-% \begin{proof}
-% Posons
-% \[
-% k:=\left\lceil\frac{d(S)}{q}\right\rceil,
-% \qquad
-% \delta:=d(S)-(k-1)q\in(0,q].
-% \]
-% La faisabilité impose au moins $k$ gardiens. Réciproquement, la
-% répartition gloutonne n'achemine du trafic que sur $k$ équipements lorsque
-% les capacités valent toutes $q$. Si une solution activait davantage de
-% gardiens, on pourrait choisir une répartition gloutonne de même coût
-% variable, puis placer en veille tout équipement n'acheminant aucun trafic,
-% ce qui réduirait strictement le coût fixe. Toute solution optimale active
-% donc exactement $\lceil d(S)/q\rceil$ gardiens.
-
-% Dans un ordre glouton, les $k-1$ premiers gardiens sont saturés et le
-% pivot achemine $\delta$. Pour chaque opérateur $j\in S$ candidat au rôle
-% de pivot, posons
-% \[
-% P_j:=\{i\in S\setminus\{j\}\mid\gamma_i\leqslant\gamma_j\}.
-% \]
-% Le candidat est admissible si $|P_j|\geqslant k-1$. La meilleure solution
-% ayant $j$ pour pivot choisit alors dans $P_j$ les $k-1$ opérateurs de plus
-% faible valeur $F_i+\gamma_iq$. Si $A_j$ désigne cet ensemble, son coût est
-% \[
-% F_j+\gamma_j\delta
-% +\sum_{i\in A_j}\left(F_i+\gamma_iq\right).
-% \]
-% Pour chacun des $s$ pivots candidats, la sélection de $A_j$ peut être
-% effectuée par un tri en $O(s\log s)$. Tous les candidats sont donc examinés
-% en $O(s^2\log s)$.
-% \end{proof}
-
-% En répétant cette optimisation pour chaque coalition, nous obtenons le coût de
-% la coopération globale ainsi que ceux des accords que pourraient former des
-% groupes plus petits. La section suivante transforme ces coûts en économies de
-% coopération et les utilise pour étudier l'intérêt collectif et la stabilité de
-% l'accord global.
+La grande coalition crée donc collectivement au moins autant d'économies que
+toute partition des opérateurs. Comme le prix de l'énergie est commun et
+strictement positif, les mêmes comparaisons valent pour l'énergie consommée :
+une baisse du coût correspond ici à une baisse de la consommation. Ce résultat
+ne dit toutefois pas comment répartir les économies pour qu'aucune
+sous-coalition ne préfère agir seule. Cette question de stabilité est l'objet
+de la section suivante.

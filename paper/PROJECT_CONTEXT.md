@@ -4,7 +4,7 @@ L’article étudie le partage opportuniste d’infrastructures RAN entre
 opérateurs mobiles, à l’aide de l’optimisation combinatoire et de la
 théorie des jeux coopératifs.
 
-# Décisions éditoriales et scientifiques au 5 août 2026
+# Décisions éditoriales et scientifiques au 17 août 2026
 
 - Cible principale : IEEE Transactions on Green Communications and
   Networking (TGCN).
@@ -18,20 +18,22 @@ théorie des jeux coopératifs.
 - Veille : puissance supposée nulle ; \(F_i\) est calibré directement à partir
   de l'intercept actif.
 - Fenêtre numérique : sept créneaux nocturnes [00:00, 07:00) pour chacun des
-  cinq jours ; les gardiens sont fixes pendant une nuit et peuvent changer la
-  nuit suivante. Cette fenêtre ne varie pas entre les scénarios de la campagne
-  principale, mais ses bornes restent des paramètres du code.
+  cinq jours ; les gardiens sont reconfigurables à chaque heure. Cette fenêtre
+  ne varie pas entre les scénarios de la campagne principale, mais ses bornes
+  restent des paramètres du code.
 - Période empirique : les cinq premiers jours observés, soit 120 créneaux
   horaires par antenne, sont utilisés dans toutes les expériences.
 - Population simulée : 1 000 sites virtuels de quatre antennes, générés une
   fois avec la graine 20260814 puis réutilisés dans tous les scénarios.
-- Politique opérationnelle principale : même ensemble de gardiens sur toute
-  la fenêtre, allocations de trafic horaires.
+- Politique opérationnelle principale : ensemble de gardiens et allocation du
+  trafic optimisés indépendamment à chaque heure, puis coûts sommés sur la
+  fenêtre.
 - Référence énergétique : l'absence de partage sert uniquement à normaliser
   l'énergie évitée. Les comparaisons opérationnelles portent sur l'activation
   par capacité décroissante et la répartition proportionnelle sur les gardiens optimaux.
-  L'optimum principal fixe les gardiens sur la nuit et applique l'allocation
-  gloutonne à chaque heure ; l'optimum horaire est seulement une borne basse.
+  L'optimum principal est horaire et applique l'allocation gloutonne à chaque
+  heure. L'optimum avec gardiens fixes sur la nuit est une extension secondaire
+  dont le surcoût mesure le prix de la persistance.
 - Capacité : paramètre de scénario construit de sorte que le pic observé
   représente entre 70 % et 100 % de \(q_i\) ; aucune capacité physique
   n’est prétendue observée. La demande n’est pas multipliée dans la campagne
@@ -63,9 +65,12 @@ Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
 - v(S) : économie réalisée par la coalition
 - H : fenêtre finie d'heures
 - d_i^h : demande de l'opérateur i à l'heure h
-- G_H^*(S) : ensemble de gardiens optimal, fixe sur H
-- C_H^*(S) : coût optimal de S sur H avec gardiens fixes
-- \underline C_H^*(S) : borne obtenue en choisissant les gardiens à chaque heure
+- G_h^*(S) : ensemble de gardiens optimal de S à l'heure h
+- C_h^*(S) : coût optimal de S à l'heure h
+- C_H^*(S) : somme des coûts horaires optimaux de S sur H
+- G_{H,pers}^*(S) : ensemble optimal imposé fixe sur H dans l'extension
+- C_{H,pers}^*(S) : coût de l'extension avec gardiens persistants
+- Delta_pers(S) : C_{H,pers}^*(S)-C_H^*(S)
 - v_H(S) : jeu des économies construit à partir de C_H^*
 - z_i : part de la cagnotte attribuée à l’opérateur
 - y_i : coût net final supporté par l’opérateur
@@ -84,7 +89,7 @@ Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
 - Partie 3 : modèle du système et ensembles admissibles
 - Partie 4 : optimisation opérationnelle d’une coalition
 - Partie 5 : analyse en théorie des jeux coopératifs
-- Partie 6 : résultats numériques, encore à développer
+- Partie 6 : protocole, résultats numériques, sensibilité et cas représentatifs
 
 # Résultats centraux
 
@@ -92,41 +97,45 @@ Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
   capacités par ordre croissant des coûts variables unitaires.
 - La sélection globale des gardiens est un problème à coûts fixes.
 - Pour les petites coalitions, l’énumération exacte est acceptable.
-- Sur les 20 000 instances de la Section 6.3, l'optimum persistant évite une
-  médiane de 67,7 % de l'énergie autonome et retient un seul gardien dans
-  64,5 % des cas.
-- Sur ces mêmes 20 000 instances, le cœur est vide dans 25,2 % des cas ; il
-  est non vide mais exclut Shapley dans 12,0 % des cas, et Shapley appartient
-  au cœur dans 62,9 % des cas.
+- Sur les 20 000 instances de la Section 6.3, l'optimum horaire évite une
+  médiane de 70,6 % de l'énergie autonome. Un seul gardien est actif dans
+  93,6 % des 140 000 décisions horaires.
+- Le coût médian de la persistance vaut 0,98 point d'économie, et son quantile
+  95 vaut 17,2 points ; l'optimum persistant coïncide avec l'horaire dans
+  39,9 % des instances.
+- Sur ces mêmes 20 000 instances, aucun cœur vide n'est observé ; le cœur est
+  non vide mais exclut Shapley dans 3,405 % des cas, et Shapley appartient au
+  cœur dans 96,595 % des cas.
 - L'analyse de sensibilité repose sur 1 000 sites (5 jours, et 4 nuits communes
   pour la position de la fenêtre) et sur 1 000 sites stratifiés pour chaque
   taille de coalition entre 2 et 6, soit 182 000 lignes de résultats.
-- Sur les plages testées, la position et la durée de la fenêtre sont les
-  principaux leviers opérationnels. Les perturbations uniformes de +/-20 % de
-  F_i ou gamma_i changent l'économie médiane de moins de 3 points et la
-  fréquence de stabilité de moins d'un point.
-- Entre quatre et six opérateurs, l'économie médiane reste voisine de 69 %,
+- Sur les plages testées, le nombre d'opérateurs domine les amplitudes
+  d'efficacité et de stabilité ; la position et la durée de la fenêtre
+  influencent fortement l'efficacité et le coût de la persistance.
+- Entre quatre et six opérateurs, l'économie médiane passe de 70,8 % à 77,7 %,
   tandis que la fréquence d'une valeur de Shapley dans le cœur passe de
-  63,2 % à 32,7 %.
+  96,6 % à 79,4 %.
 - La condition de capacité individuelle suffisante garantit bien un cœur non
-  vide dans toutes les instances où elle s'applique, sans garantir Shapley ;
-  le certificat leave-one-out détecte 71,5 % des cœurs vides sans faux positif.
+  vide dans toutes les instances où elle s'applique, sans garantir Shapley.
+  Aucun cœur vide n'apparaît dans la campagne principale ; ils réapparaissent
+  dans certaines sensibilités à la taille et à la fenêtre.
 - La sous-additivité est stricte lorsque l’un des gardiens de coût variable
   minimal des deux solutions séparées peut acheminer toute la demande réunie.
-- Le coût \(C_H^*\) avec gardiens fixes est sous-additif et le jeu \(v_H\)
+- Le coût horaire agrégé \(C_H^*\) est sous-additif et le jeu \(v_H\)
   est superadditif.
 - Le jeu d’économies est défini par :
   v(S) = somme des coûts individuels de référence - coût coopératif minimal.
 - Le nucléole et la valeur de Shapley sont étudiés.
 - Si chaque opérateur peut servir la demande totale à chaque heure de \(H\),
   le cœur de \((N,v_H)\) est non vide.
-- La non-vacuité générale du cœur n’est pas encore démontrée.
+- La non-vacuité générale est fausse, comme le montre le contre-exemple à
+  cœur vide ; seules des conditions suffisantes ou des sous-classes peuvent
+  être recherchées.
 
 # Points ouverts
 
 - justification et interprétation physique de la charge ;
 - usure induite par une allocation déterministe répétée ;
 - équité temporelle entre gardiens ;
-- conditions de non-vacuité du cœur ;
-- validation puis exécution du protocole numérique gelé ;
+- autres conditions suffisantes de non-vacuité du cœur ;
 - cohérence entre optimisation opérationnelle et répartition des économies de coopération.

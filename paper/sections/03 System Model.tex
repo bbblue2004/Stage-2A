@@ -1,15 +1,11 @@
-\section{Modèle du système et formulation du problème}
+\section{Modèle du système}
 
-Cette section traduit le scénario présenté dans l'introduction en un modèle
-opérationnel et coopératif précis. Elle introduit les opérateurs, leurs
-demandes, leurs capacités et leurs coûts, caractérise les décisions
-admissibles, puis définit le jeu des économies et son critère de stabilité.
-
-L'accord finalement recherché réunit tous les opérateurs présents sur le site.
-Le même problème opérationnel doit néanmoins être défini pour chaque groupe
-susceptible de coopérer seul. Il devient ainsi possible de comparer la
-coopération globale aux options de repli dont disposent ses membres. Les
-notations nécessaires à cette comparaison sont introduites ci-dessous.
+Dans cette partie, nous décrivons le modèle mathématique utilisé. Nous
+introduisons d'abord les paramètres et les coûts opérationnels pour une heure.
+Nous définissons ensuite les coalitions, les gardiens et la répartition du
+trafic. Le coût minimal est défini ici, puis calculé dans la section suivante.
+Enfin, le modèle est étendu à plusieurs heures consécutives, avant
+l'introduction du jeu des économies et de son cœur.
 
 
 \subsection{Cadre et hypothèses}
@@ -17,16 +13,17 @@ notations nécessaires à cette comparaison sont introduites ci-dessous.
 Nous considérons un ensemble d'opérateurs de réseaux mobiles
 \(N=\{1,\dots,n\}\), avec \(n\geqslant2\), présents sur un même site radio et
 desservant une même zone géographique. Chaque opérateur \(i\in N\) dispose
-d'un équipement radio agrégé qui peut être maintenu actif ou placé en veille.
+d'un équipement radio qui peut être soit maintenu actif, soit placé en veille.
 
-L'horizon fondamental est une fenêtre \(H\), finie, non vide et composée
+On considère une fenêtre \(H\), finie, non vide et composée
 d'heures consécutives. La demande de l'opérateur \(i\) à l'heure \(h\in H\)
 est notée \(d_i^h\). Afin
 d'introduire les briques opérationnelles sans alourdir les notations, nous
-fixons d'abord une heure arbitraire \(h\in H\) et écrivons
+considérons d'abord une heure arbitraire \(h\in H\) et écrivons
 \(d_i:=d_i^h\). Les objets sans indice \(h\) définis ci-dessous sont donc
-horaires ; ils ne constituent pas un second modèle. La décision sur la fenêtre
-est ensuite obtenue en les articulant sous une contrainte commune de gardiens.
+horaires. Leur optimisation est répétée indépendamment à chaque heure, puis
+les coûts correspondants sont agrégés sur la fenêtre.
+
 Dans les hypothèses suivantes, un groupe coopérant est simplement appelé
 \emph{coalition} ; sa définition formelle et les décisions qui lui sont
 associées sont introduites dans les sous-sections suivantes.
@@ -40,7 +37,7 @@ associées sont introduites dans les sous-sections suivantes.
     configuration de gardiens dépend donc uniquement de la capacité
     effective agrégée de leurs équipements à acheminer le trafic.
 
-    \item \textbf{Fongibilité du trafic, qualité de service et capacités
+    \item \textbf{Transfert du trafic, qualité de service et capacités
     effectives.}
     Le trafic des membres d'une coalition peut être acheminé
     indifféremment par chacun de ses opérateurs actifs. Les mécanismes
@@ -76,13 +73,13 @@ associées sont introduites dans les sous-sections suivantes.
     représente la consommation active à vide ; la composante variable,
     l'accroissement de consommation lié aux ressources mobilisées.
 
-    Le volume descendant horaire est utilisé comme proxy de la charge servie,
-    et les coefficients sont estimés à partir des couples mesurés de trafic et
-    de puissance. L'hypothèse est que, sur le domaine observé, leur relation
-    agrégée est affine au premier ordre ; sa validité empirique est évaluée
-    dans la Section~\ref{sec:simulations_numeriques}.
+    Le volume descendant horaire est utilisé comme indicateur de la charge
+    servie, et les coefficients sont estimés à partir des couples mesurés de
+    trafic et de puissance. Nous supposons que leur relation est
+    approximativement affine sur le domaine observé. Cette hypothèse est
+    évaluée dans la Section~\ref{sec:simulations_numeriques}.
 
-    \item \textbf{Neutralité des revenus et utilité transférable.}
+    \item \textbf{Revenus inchangés et transferts monétaires.}
     Toute solution opérationnelle admissible sert la même demande totale. Les
     revenus tirés des abonnés sont donc supposés indépendants de
     l'équipement qui achemine physiquement leur trafic et n'interviennent
@@ -97,57 +94,53 @@ paramètres associés sont introduits ci-dessous.
 
 \subsection{Opérateurs et fonctionnement autonome}
 
-Pour l'heure arbitraire fixée ci-dessus, toutes les grandeurs de trafic
-désignent des volumes cumulés sur une heure et sont exprimées en gigaoctets
-(\(\mathrm{Go}\)). Toutes les grandeurs monétaires désignent les coûts
-supportés pendant cette heure et sont exprimées en euros (\(\text{€}\)).
+Toutes les grandeurs de trafic désignent des volumes cumulés pendant l'heure
+\(h\) et sont exprimées en gigaoctets (\(\mathrm{Go}\)). Toutes les grandeurs
+monétaires désignent les coûts supportés pendant cette heure et sont exprimées
+en euros (\(\text{€}\)).
 
 \begin{definition}[Paramètres individuels et coût opérationnel autonome]
-Pour tout opérateur \(i\in N\), les paramètres primitifs du modèle sont :
+Pour tout opérateur \(i\in N\), les paramètres du modèle sont :
 \begin{itemize}
     \item \textbf{Demande \(d_i > 0\).}
     Quantité de trafic engendrée par les clients de l'opérateur \(i\)
-    pendant l'heure considérée, exprimée en \(\mathrm{Go}\).
+    pendant l'heure \(h\), exprimée en \(\mathrm{Go}\).
 
     \item \textbf{Capacité effective \(q_i>0\).}
     Quantité maximale de trafic que l'équipement actif de l'opérateur
-    \(i\) peut acheminer pendant cette heure, également exprimée en
+    \(i\) peut acheminer pendant l'heure \(h\), également exprimée en
     \(\mathrm{Go}\).
 
     \item \textbf{Coût fixe de fonctionnement en état actif \(F_i>0\).}
     Coût énergétique évitable supporté pendant l'heure considérée dès
     que l'équipement de l'opérateur \(i\) est actif, indépendamment du
-    trafic acheminé. Il
-    correspond à la valorisation monétaire de la consommation électrique
+    trafic acheminé. Il correspond au prix de la consommation électrique
     incompressible en fonctionnement. Le paramètre \(F_i\) est exprimé en
     \(\text{€}\).
 
     \item \textbf{Surcoût variable à pleine charge \(\beta_i>0\).}
-    Surcoût énergétique supporté pendant l'heure considérée lorsque le taux
-    de charge de l'équipement vaut un. Il correspond à la valorisation
-    monétaire de la consommation électrique additionnelle liée au trafic.
-    Le paramètre \(\beta_i\) est exprimé en \(\text{€}\) ; il ne constitue pas
-    un coût variable unitaire par \(\mathrm{Go}\).
+    Surcoût énergétique supporté pendant l'heure \(h\) lorsque l'équipement
+    est utilisé à pleine capacité. Il correspond au coût de la consommation
+    électrique additionnelle liée au trafic.
+    Le paramètre \(\beta_i\) est exprimé en \(\text{€}\).
 \end{itemize}
 
-\paragraph{Périmètre du coût.}
-Dans tout l'article, le coût opérationnel désigne la valorisation monétaire
-de l'énergie électrique consommée pendant une heure. Sous un
-prix de l'électricité commun et strictement positif, le passage de l'énergie
-au coût est une multiplication par une constante positive. La minimisation
-du coût, ses comparaisons entre coalitions et les économies qui en découlent
-sont donc exactement équivalentes à leurs contreparties énergétiques.
+\paragraph{Remarque sur les coûts.}
+Dans tout le document, le coût opérationnel désigne le prix de l'énergie
+électrique consommée pendant une heure. Le prix de l'électricité est supposé
+commun et strictement positif. Le passage de l'énergie au coût revient donc à
+multiplier par une constante positive : minimiser le coût équivaut à minimiser
+l'énergie consommée.
 
 Seuls les coûts énergétiques qui dépendent de la décision opérationnelle
-sont retenus. Les charges non énergétiques et les consommations supportées
-indépendamment de l'état de l'équipement sont omises. Le coût de la veille
-est nul, tandis que celui de l'état actif au taux de charge
-\(\rho\in[0,1]\) vaut \(F_i+\beta_i\rho\).
-Sous l'hypothèse de veille nulle, \(F_i\) représente directement la composante
-fixe évitable de l'état actif. Les coûts structurels indépendants de l'état
-restent exclus.
+sont retenus. Les charges non énergétiques et les consommations indépendantes
+de l'état de l'équipement sont exclues, car elles ne peuvent pas être évitées
+par la mise en veille. Le coût de la veille est nul, tandis que celui de l'état
+actif au taux de charge \(\rho\in[0,1]\) vaut \(F_i+\beta_i\rho\). Sous
+l'hypothèse de veille nulle, \(F_i\) représente donc directement la composante
+fixe évitable de l'état actif.
 
-Le fonctionnement autonome est supposé réalisable :
+On suppose que chaque opérateur peut acheminer seul sa propre demande :
 \[
     d_i\leqslant q_i,\qquad \forall i\in N.
 \]
@@ -166,9 +159,9 @@ Les grandeurs dérivées associées à l'opérateur \(i\) sont les suivantes :
         \gamma_i:=\frac{\beta_i}{q_i}.
     \]
     Il représente l'accroissement du coût opérationnel par \(\mathrm{Go}\)
-    supplémentaire de trafic. Il est exprimé en
-    \(\text{€}/\mathrm{Go}\). Ainsi, pour un trafic \(t_i\), le coût variable
-    \(\beta_i(t_i/q_i)\) s'écrit également \(\gamma_i t_i\).
+    supplémentaire de trafic. Il est exprimé en \(\text{€}/\mathrm{Go}\).
+    Ainsi, pour un trafic \(t_i\), le coût variable
+    \(\beta_i(t_i/q_i)\) peut s'écrire \(\gamma_i t_i\).
 
     \item \textbf{Coût opérationnel autonome \(C_i^0\).}
     \[
@@ -194,7 +187,7 @@ elle représente un groupe d'opérateurs coopérant sur le site. Ainsi,
 \end{definition}
 
 Pour tout $A\subseteq N$, sa \textbf{demande de trafic totale} et sa
-\textbf{capacité effective agrégée} sont respectivement
+\textbf{capacité effective totale} sont respectivement
 \[
     d(A):=\sum_{i\in A}d_i,
     \qquad
@@ -202,20 +195,27 @@ Pour tout $A\subseteq N$, sa \textbf{demande de trafic totale} et sa
 \]
 
 \begin{definition}[Configuration de gardiens]
-Dans une coalition $S \in \mathcal S$, un ensemble d'\textbf{opérateurs
-gardiens} est un \(G\in\mathcal S\) tel que \(G\subseteq S\), dont les
+Dans une coalition \(S\in\mathcal S\), un ensemble d'\textbf{opérateurs
+gardiens} est un ensemble \(G\in\mathcal S\) tel que \(G\subseteq S\), dont les
 équipements restent actifs et acheminent la totalité de la demande de trafic
 \(d(S)\).
 
-Le couple $(S,G)$ est appelé \textbf{configuration de gardiens}. Il est dit \textbf{faisable} si la capacité effective agrégée des équipements des gardiens est suffisante pour acheminer le trafic de la coalition, soit $d(S) \leqslant q(G)$.
-Pour tout $S \in \mathcal S$, on note $\mathcal G(S)$ l'ensemble des
-configurations de gardiens faisables :
+Le couple \((S,G)\) est appelé \textbf{configuration de gardiens}. Il est dit
+\textbf{faisable} si la capacité totale des gardiens suffit à acheminer le
+trafic de la coalition, c'est-à-dire si \(d(S)\leqslant q(G)\).
+Pour tout \(S\in\mathcal S\), on note \(\mathcal G(S)\) l'ensemble des
+ensembles de gardiens faisables :
 \[
     \mathcal G(S)
     :=\left\{G\in\mathcal S\mid G\subseteq S,\ d(S)\leqslant q(G)\right\}.
 \]
 
-On note $\mathcal{E} = \left\{ (S, G) \;\middle|\; S \in \mathcal S \text{ et } G \in \mathcal G(S) \right\}$ l'ensemble de toutes les configurations de gardiens faisables.
+On note
+\[
+    \mathcal E:=
+    \left\{(S,G)\ \middle|\ S\in\mathcal S,\ G\in\mathcal G(S)\right\}
+\]
+l'ensemble de toutes les configurations de gardiens faisables.
 
 L'hypothèse \(d_i\leqslant q_i\) pour tout \(i\in N\) implique
 \(d(S)\leqslant q(S)\). Ainsi, \(S\in\mathcal G(S)\), de sorte que
@@ -227,7 +227,7 @@ L'hypothèse \(d_i\leqslant q_i\) pour tout \(i\in N\) implique
 
 \begin{definition}[Vecteur de répartition du trafic admissible]
 Soit $(S,G)\in\mathcal E$. Un \textit{vecteur de répartition du trafic}
-est un vecteur global $\mathbf t=(t_i)_{i\in N}\in\mathbb R_+^N$, où
+est un vecteur $\mathbf t=(t_i)_{i\in N}\in\mathbb R_+^N$, où
 $t_i$ désigne le volume de trafic, exprimé en \(\mathrm{Go}\), acheminé par
 l'équipement de l'opérateur $i$. L'ensemble des répartitions admissibles
 pour $(S,G)$ est
@@ -244,51 +244,56 @@ pour $(S,G)$ est
 \]
 \end{definition}
 
-Pour toute répartition \(\mathbf t\in\mathcal T(S,G)\), le
-\textbf{taux de charge} de l'équipement de l'opérateur \(i\) est
+Pour toute répartition \(\mathbf t\in\mathcal T(S,G)\), le vecteur des
+\textbf{taux de charge} est \(\boldsymbol\rho(\mathbf t)\in[0,1]^N\), avec
 \[
     \rho_i(\mathbf t):=\frac{t_i}{q_i}\in[0,1].
 \]
 En particulier, \(\rho_i(\mathbf t)=0\) pour \(i\notin G\), tandis que
 \(\rho_i(\mathbf t)=1\) caractérise un équipement saturé.
 
-    
+
 \subsection{Coût opérationnel et solution optimale}
 
 
 \begin{definition}[Coût d'une solution opérationnelle admissible]
-Soit $(S, G)\in\mathcal E$ et $\mathbf{t}\in\mathcal{T}(S, G)$. Le triplet $(S,G,\mathbf t)$ est appelé \textbf{solution opérationnelle admissible}. Son \textbf{coût opérationnel total} est défini par
+Soit $(S, G)\in\mathcal E$ et $\mathbf{t}\in\mathcal{T}(S, G)$.
+Le triplet $(S,G,\mathbf t)$ est appelé \textbf{solution opérationnelle admissible}.
+Son \textbf{coût opérationnel total} est défini par
 \[
 C(S,G , \mathbf{t})
 =\sum_{i\in G}\left(F_i+\beta_i\rho_i(\mathbf t)\right)
 =\underbrace{\sum_{i\in G}F_i}_{\text{coûts fixes}}
-+\underbrace{\sum_{i\in G}\gamma_i t_i}_{\text{coûts variables}}
++\underbrace{\sum_{i\in G}\gamma_i t_i}_{\text{coûts variables}}.
 \]
 \end{definition}
 
 \begin{definition}[Coût minimal d'une coalition]
 Soit $S\in \mathcal S$. On définit le coût minimal de $S$ par
 \[
-C^{*}(S)=\min_{G \in\mathcal{G}(S)}\min_{\mathbf{t}\in\mathcal T(S, G)}C(S, G, \mathbf{t})
+C^{*}(S)=\min_{G \in\mathcal{G}(S)}\min_{\mathbf{t}\in\mathcal T(S, G)}C(S, G, \mathbf{t}).
 \]
-c'est-à-dire le plus faible coût opérationnel que la coalition $S$ puisse atteindre en choisissant une configuration de gardiens faisable et une répartition du trafic admissible.
+Il s'agit du plus faible coût opérationnel que la coalition \(S\) puisse
+atteindre en choisissant des gardiens et une répartition du trafic admissibles.
 \end{definition}
 
-Pour tout \(G\in\mathcal G(S)\), l'ensemble \(\mathcal T(S,G)\) est un
-polytope non vide et compact ; comme \(C(S,G,\cdot)\) est continue et
-\(\mathcal G(S)\) est fini, les deux minima intervenant dans la définition
-de \(C^*(S)\) sont atteints.
+Pour tout \(G\in\mathcal G(S)\), l'ensemble \(\mathcal T(S,G)\) est non vide,
+fermé et borné. Comme \(C(S,G,\cdot)\) est continue et que
+\(\mathcal G(S)\) contient un nombre fini d'ensembles, le coût minimal
+\(C^*(S)\) est toujours atteint.
 
 
 \begin{remarque}
 \label{rem:eq}
-Pour tout opérateur $i\in N$, l'unique ensemble de gardiens admissible pour la coalition singleton $\{i\}$ est $\{i\}$, et l'unique répartition admissible satisfait $t_i=d_i$. Par conséquent,
+Pour tout opérateur \(i\in N\), l'unique ensemble de gardiens admissible pour
+la coalition réduite à \(\{i\}\) est \(\{i\}\),
+et l'unique répartition admissible satisfait $t_i=d_i$. Par conséquent,
 \[
 C^*(\{i\})=F_i+\gamma_i d_i=C_i^0.
 \]
 \end{remarque}
 
-\subsection{Fenêtre de décision et politiques opérationnelles}
+\subsection{Agrégation horaire sur la fenêtre}
 \label{subsec:fenetre_decision}
 
 Pour tout \(h\in H\) et tout \(S\in\mathcal S\), posons
@@ -307,121 +312,54 @@ Le fonctionnement autonome est réalisable à chaque heure :
     \qquad \forall i\in N,\ \forall h\in H.
 \]
 Les capacités \(q_i\) et les paramètres de coût horaire
-\(F_i,\gamma_i\) sont supposés constants sur \(H\). Ainsi, le coût fixe
-\(F_i\) est supporté à chaque heure pendant laquelle l'équipement reste
-actif ; il ne s'agit pas d'un coût ponctuel de commutation. À chaque heure,
-les définitions précédentes s'appliquent en remplaçant \(d_i\) par
-\(d_i^h\). Les ensembles de gardiens, les répartitions admissibles, le coût
-et le coût optimal horaires sont respectivement notés
+\(F_i,\gamma_i\) sont supposés constants sur \(H\). À chaque heure, les
+définitions précédentes s'appliquent en remplaçant \(d_i\) par \(d_i^h\).
+Les ensembles de gardiens, les répartitions admissibles, le coût et le coût
+optimal horaires sont respectivement notés
 \(\mathcal G_h(S)\), \(\mathcal T_h(S,G)\),
-\(C_h(S,G,\mathbf t^h)\) et \(C_h^*(S)\).
+\(C_h(S,G,\mathbf t^h)\) et \(C_h^*(S)\). Un représentant optimal est noté
+\(G_h^*(S)\), et sa répartition associée \(\mathbf t^{h,*}(S)\).
 
-La politique principale impose qu'un même ensemble de gardiens reste actif
-pendant toute la fenêtre. Pour tout \(S\in\mathcal S\), les ensembles
-admissibles sont donc
-\[
-    \mathcal G_H(S)
-    :=
-    \left\{
-        G\in\mathcal S
-        \ \middle|\
-        G\subseteq S,\ d^h(S)\leqslant q(G),\ \forall h\in H
-    \right\}.
-\]
-Une solution sur \(H\) est formée d'un ensemble
-\(G\in\mathcal G_H(S)\) et d'une répartition
-\(\mathbf t^h\in\mathcal T_h(S,G)\) pour chaque heure. Les gardiens sont
-fixes sur la fenêtre, mais les volumes qu'ils acheminent peuvent varier avec
-la demande. Cette persistance constitue une contrainte d'engagement
-opérationnel sur \(H\), et non la conséquence d'un coût de commutation inclus
-dans la fonction objectif.
-
-Le coût optimal de cette politique, dite \emph{persistante}, est
+La coalition peut choisir un nouvel ensemble de gardiens à chaque heure. Son
+coût minimal sur toute la fenêtre est donc
 \begin{equation}
-\begin{aligned}
     C_H^*(S)
     :=
-    \min_{G\in\mathcal G_H(S)}
-    \min_{(\mathbf t^h)_{h\in H}
-    \in\prod_{h\in H}\mathcal T_h(S,G)}
-    \sum_{h\in H}C_h(S,G,\mathbf t^h).
-    \label{eq:cout_persistant}
-\end{aligned}
+    \sum_{h\in H}C_h^*(S).
+    \label{eq:cout_horaire_principal}
 \end{equation}
+La fenêtre \(H\) sert à additionner les coûts horaires, sans imposer le même
+choix de gardiens d'une heure à l'autre.
 
-Une politique alternative autorise au contraire un nouvel ensemble de
-gardiens à chaque heure. Son coût optimal est
-\begin{equation}
-    C_{H,\mathrm{hor}}^*(S)
-    :=
-    \sum_{h\in H}C_h^*(S)
-    \leqslant C_H^*(S).
-    \label{eq:cout_horaire_borne}
-\end{equation}
-Cette politique \emph{horairement reconfigurable} est un problème
-opérationnel distinct, et non une autre interprétation de la politique
-persistante. En l'absence de coût de commutation, elle fournit la référence
-optimiste à laquelle la politique persistante peut être comparée. Lorsque
-\(H\) contient une seule heure, les deux politiques coïncident avec le
-problème horaire défini plus haut.
 
 \subsection{Jeu des économies et critère de stabilité}
 \label{subsec:modele_jeu_economies}
 
 Le fonctionnement autonome fournit une référence naturelle pour mesurer les
-gains de la coopération sur \(H\). Pour un singleton, les deux politiques
-coïncident et
+gains de la coopération sur \(H\). Pour un singleton,
 \[
     C_H^*(\{i\})
-    =C_{H,\mathrm{hor}}^*(\{i\})
     =\sum_{h\in H}\left(F_i+\gamma_i d_i^h\right).
 \]
 
-\begin{definition}[Jeux des économies sur la fenêtre]
+\begin{definition}[Jeu des économies sur la fenêtre]
 \label{def:jeu_economies}
-Le jeu principal, associé à la politique persistante, est défini par
+Le jeu coopératif sur la fenêtre $H$ est défini par
 \begin{equation}
     v_H(S)
     :=
     \sum_{i\in S}C_H^*(\{i\})-C_H^*(S),
     \qquad S\in\mathcal S.
-    \label{eq:jeu_persistant}
+    \label{eq:jeu_principal}
 \end{equation}
-Le jeu associé à la politique horairement reconfigurable est
-\begin{equation}
-    v_{H,\mathrm{hor}}(S)
-    :=
-    \sum_{i\in S}C_H^*(\{i\})-C_{H,\mathrm{hor}}^*(S),
-    \qquad S\in\mathcal S,
-    \label{eq:jeu_horaire}
-\end{equation}
-On pose \(v_H(\varnothing)=v_{H,\mathrm{hor}}(\varnothing)=0\). Ces valeurs
-représentent les économies de coût énergétique relativement au fonctionnement
-autonome et, à un facteur de conversion positif près, l'énergie évitée.
+On pose \(v_H(\varnothing)=0\). La valeur \(v_H(S)\) mesure l'économie réalisée
+par \(S\) par rapport au fonctionnement autonome de ses membres. Comme le prix
+de l'électricité est commun, elle mesure aussi, à un facteur positif près,
+l'énergie évitée.
 \end{definition}
 
-La référence autonome étant commune aux deux jeux, la borne
-\eqref{eq:cout_horaire_borne} implique, pour tout \(S\in\mathcal S\),
-\[
-    v_{H,\mathrm{hor}}(S)-v_H(S)
-    =
-    C_H^*(S)-C_{H,\mathrm{hor}}^*(S)
-    \geqslant0.
-\]
-Cet écart mesure exactement l'économie supplémentaire permise par un changement
-de gardiens au sein de la fenêtre.
-
-L'analyse de stabilité de la Section~\ref{sec:jeu_cooperatif} porte sur le
-jeu principal \((N,v_H)\). Le jeu \((N,v_{H,\mathrm{hor}})\) sert à isoler
-l'effet opérationnel de la possibilité de changer de gardiens au sein de la
-fenêtre ; il n'est jamais confondu avec \((N,v_H)\).
-
-Une répartition peut être acceptable pour chaque opérateur pris
-isolément, tout en étant rejetée par un groupe d'opérateurs. En effet, une
-sous-coalition $Q$ a intérêt à quitter $N$ si ses membres reçoivent
-ensemble moins que l'économie $v_H(Q)$ qu'ils pourraient réaliser seuls.
-Nous cherchons donc une répartition qui distribue toute l'économie de
-$N$ et écarte toute déviation collective.
+Cette économie totale doit ensuite être répartie entre les membres de la
+coalition.
 
 Pour $z=(z_i)_{i\in N}\in\mathbb R^N$ et $A\subseteq N$, notons
 \[
@@ -442,11 +380,16 @@ L'ensemble de ces allocations est noté $\mathcal A(N,v_H)$.
 
 La condition $z_i\geqslant0$ exprime la rationalité individuelle puisque
 $v_H(\{i\})=0$ : aucun opérateur ne doit supporter un coût net supérieur à
-son coût autonome.
+son coût autonome, sans quoi il n'aurait pas intérêt à entrer dans la coalition.
 
-\begin{definition}[Coeur du jeu des économies]
+Une allocation efficace et individuellement acceptable n'est toutefois pas
+nécessairement stable. S'il existe une coalition \(Q\subsetneq N\) telle que
+\(z(Q)<v_H(Q)\), ses membres peuvent obtenir davantage en quittant la grande
+coalition. On introduit donc le cœur du jeu.
+
+\begin{definition}[Cœur du jeu des économies]
 \label{def:coeur_v}
-Le coeur du jeu $(N,v_H)$ est l'ensemble
+Le cœur du jeu $(N,v_H)$ est l'ensemble
 \[
 \mathcal C(N,v_H)
 :=
@@ -460,12 +403,53 @@ z(Q)\geqslant v_H(Q),
 \]
 \end{definition}
 
-Pour tout groupe susceptible de faire sécession, la contrainte
-$z(Q)\geqslant v_H(Q)$ garantit que ses membres reçoivent collectivement au
-moins l'économie qu'ils pourraient obtenir en coopérant séparément.
+Si le cœur est vide, aucune répartition des économies ne peut empêcher toutes
+les sous-coalitions de vouloir se retirer. Cette question est étudiée dans la
+Section~\ref{sec:jeu_cooperatif}.
 
-Le problème comporte désormais deux étapes logiquement distinctes. La
-Section suivante calcule les coûts optimaux et établit si la réunion de
-coalitions crée au moins autant d'économies que leur fonctionnement séparé.
-La Section~\ref{sec:jeu_cooperatif} détermine ensuite si ces économies peuvent
-être réparties de manière stable entre tous les opérateurs.
+
+\subsection{Extension : engagement persistant des gardiens}
+\label{subsec:extension_persistante}
+
+Une contrainte supplémentaire peut imposer le même ensemble de gardiens
+pendant toute la fenêtre. Pour \(S\in\mathcal S\), posons
+\[
+    \mathcal G_{H,\mathrm{pers}}(S)
+    :=
+    \left\{
+        G\in\mathcal S
+        \ \middle|\
+        G\subseteq S,\ d^h(S)\leqslant q(G),\ \forall h\in H
+    \right\}.
+\]
+Le coût optimal sous cet engagement est
+\begin{equation}
+\begin{aligned}
+    C_{H,\mathrm{pers}}^*(S)
+    &:=
+    \min_{G\in\mathcal G_{H,\mathrm{pers}}(S)}
+    \min_{(\mathbf t^h)_{h\in H}
+    \in\prod_{h\in H}\mathcal T_h(S,G)}
+    \sum_{h\in H}C_h(S,G,\mathbf t^h).
+    \label{eq:cout_persistant}
+\end{aligned}
+\end{equation}
+Toute politique persistante est admissible heure par heure. Son coût ne peut
+donc pas être inférieur à la somme des coûts minimaux horaires :
+\begin{equation}
+    C_H^*(S)\leqslant C_{H,\mathrm{pers}}^*(S),
+    \qquad
+    \Delta_{\mathrm{pers}}(S)
+    :=
+    C_{H,\mathrm{pers}}^*(S)-C_H^*(S)
+    \geqslant0.
+    \label{eq:cout_persistance}
+\end{equation}
+Cette extension mesure le coût de l'obligation de conserver les mêmes gardiens
+sur toute la fenêtre.
+
+Le modèle définit ainsi ce que chaque coalition peut réaliser en opérant
+seule. La section suivante calcule exactement ces coûts et les économies
+correspondantes ; la
+Section~\ref{sec:jeu_cooperatif} déterminera ensuite si ce surplus peut être
+réparti de manière stable entre tous les opérateurs.
