@@ -14,7 +14,10 @@ from src.experiments.coalition_stability import (
     _savings_from_costs,
     _shapley_value,
 )
-from src.core.window_optimiser import persistent_coalition_costs
+from src.core.window_optimiser import (
+    hourly_coalition_costs,
+    persistent_coalition_costs,
+)
 
 
 class StabilityEvaluationTests(unittest.TestCase):
@@ -25,10 +28,25 @@ class StabilityEvaluationTests(unittest.TestCase):
 
     def _game(self, demands: list[float]) -> tuple[np.ndarray, np.ndarray]:
         demand_array = np.asarray(demands, dtype=float)[:, None]
-        costs = persistent_coalition_costs(
+        costs = hourly_coalition_costs(
             self.capacities, self.fixed, self.slopes, demand_array
         )
         return costs, _savings_from_costs(costs)
+
+    def test_constant_profiles_make_hourly_and_persistent_games_equal(self) -> None:
+        demands = np.repeat(
+            np.asarray([1.0, 3.0, 4.0, 5.0])[:, None],
+            3,
+            axis=1,
+        )
+        hourly = hourly_coalition_costs(
+            self.capacities, self.fixed, self.slopes, demands
+        )
+        persistent = persistent_coalition_costs(
+            self.capacities, self.fixed, self.slopes, demands
+        )
+
+        np.testing.assert_allclose(hourly, persistent)
 
     def test_empty_core_counterexample_matches_section_five(self) -> None:
         costs, savings = self._game([1.0, 3.0, 4.0, 5.0])

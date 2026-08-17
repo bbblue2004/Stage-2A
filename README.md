@@ -106,13 +106,17 @@ by the article.
 
 ## Model and implementation
 
-For a non-empty coalition `S`, the program enumerates feasible guardian sets,
-allocates traffic greedily by increasing variable cost, and computes the
-minimal operational cost `C*(S)`. The transferable-utility savings game is
+For a non-empty coalition `S`, the program enumerates feasible guardian sets
+at every hour, allocates traffic greedily by increasing variable cost, and
+computes `C_H*(S) = sum_h C_h*(S)`. The transferable-utility savings game is
 
 ```text
-v(S) = sum_{i in S} C_i^0 - C*(S),   v(empty) = 0.
+v_H(S) = sum_{i in S} C_H*({i}) - C_H*(S),   v_H(empty) = 0.
 ```
+
+The exact policy with one guardian set fixed over the whole window is also
+computed as a secondary operational benchmark, not as the game used for the
+main stability analysis.
 
 The implementation evaluates convexity, the core, balancedness, the Shapley
 value, the least core and the nucleolus. The full notation and numerical

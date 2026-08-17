@@ -15,9 +15,16 @@ from scipy.optimize import linprog
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from src.core.game import bondareva_shapley_test, least_core_allocation
+from src.core.game import (
+    bondareva_shapley_test,
+    least_core_allocation,
+    nucleolus_allocation,
+)
 from src.core.time_window import inclusive_hour_window
-from src.core.window_optimiser import persistent_coalition_costs
+from src.core.window_optimiser import (
+    hourly_coalition_costs,
+    optimal_hourly_policy,
+)
 from src.data_processing.data_loader import ROOT
 from src.data_processing.power_validation import load_calibrated_population
 from src.data_processing.virtual_sites import load_virtual_sites
@@ -35,7 +42,7 @@ DEFAULT_RESULTS_DIR = ROOT / "results" / "coalition_stability"
 DEFAULT_FIGURES_DIR = ROOT / "figures" / "coalition_stability"
 CAPACITY_RATES = (0.70, 0.80, 0.90, 1.00)
 BOOTSTRAP_SEED = 20_260_814
-ALGORITHM_VERSION = 2
+ALGORITHM_VERSION = 5
 NUM_PLAYERS = 4
 NUM_MASKS = 1 << NUM_PLAYERS
 GRAND_MASK = NUM_MASKS - 1
@@ -116,7 +123,7 @@ def _load_operational_rows(path: Path) -> dict[tuple[str, str, float], tuple[flo
         return {
             (raw["site_id"], raw["day"], float(raw["capacity_rate"])): (
                 float(raw["standalone_energy_wh"]),
-                float(raw["optimal_energy_wh"]),
+                float(raw["hourly_optimal_energy_wh"]),
             )
             for raw in csv.DictReader(file)
         }
@@ -323,7 +330,9 @@ def _run(
             demands = population.traffic_gb[indices, day_index][:, hours]
             for rate in CAPACITY_RATES:
                 capacities = peaks / rate
-                costs = persistent_coalition_costs(capacities, fixed, slopes, demands)
+                costs = hourly_coalition_costs(
+                    capacities, fixed, slopes, demands
+                )
                 savings = _savings_from_costs(costs)
                 diagnostics = _diagnose(costs, savings, capacities, demands)
                 standalone = float(
@@ -429,6 +438,8 @@ def _summary_rows(
 
 
 def _quantiles(values: np.ndarray) -> dict[str, float]:
+    if values.size == 0:
+        return {}
     q05, median, q95 = np.quantile(values, (0.05, 0.50, 0.95))
     return {
         "mean": float(np.mean(values)),
@@ -463,6 +474,8 @@ def _analysis(
     ]
 
     def fractions(selected: list[dict[str, object]]) -> dict[str, float]:
+        if not selected:
+            return {category: float("nan") for category in CATEGORIES}
         return {
             category: float(
                 np.mean([row["category"] == category for row in selected])
@@ -534,6 +547,305 @@ def _analysis(
         },
         "validation": validation,
     }
+
+
+def _representative_rows(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Select one deterministic multivariate medoid in each category."""
+    selected_rows: list[dict[str, object]] = []
+    for category in CATEGORIES:
+        candidates = [
+            row for row in rows if str(row["category"]) == category
+        ]
+        if not candidates:
+            continue
+        features = np.asarray(
+            [
+                [
+                    float(row["savings_pct"]),
+                    (
+                        float(row["least_core_epsilon_normalized"])
+                        if np.isfinite(
+                            float(row["least_core_epsilon_normalized"])
+                        )
+                        else 0.0
+                    ),
+                    max(
+                        0.0,
+                        float(row["shapley_max_excess_normalized"]),
+                    ),
+                ]
+                for row in candidates
+            ],
+            dtype=float,
+        )
+        center = np.median(features, axis=0)
+        q25, q75 = np.quantile(features, (0.25, 0.75), axis=0)
+        scale = q75 - q25
+        scale[scale <= 1e-12] = 1.0
+        distances = np.sum(np.abs((features - center) / scale), axis=1)
+        order = sorted(
+            range(len(candidates)),
+            key=lambda index: (
+                float(distances[index]),
+                str(candidates[index]["site_id"]),
+                str(candidates[index]["day"]),
+                float(candidates[index]["capacity_rate"]),
+            ),
+        )
+        representative = dict(candidates[order[0]])
+        representative["medoid_distance"] = float(distances[order[0]])
+        selected_rows.append(representative)
+    return selected_rows
+
+
+def _case_outputs(
+    rows: list[dict[str, object]],
+    cache_path: Path,
+    sites_path: Path,
+    hours: tuple[int, ...],
+    results_dir: Path,
+    figures_dir: Path,
+) -> tuple[list[Path], list[Path]]:
+    """Recompute Shapley, nucleolus and transfers for representative cases."""
+    representatives = _representative_rows(rows)
+    if not representatives:
+        return ([], [])
+    population = load_calibrated_population(cache_path)
+    sites = load_virtual_sites(sites_path, population)
+    site_lookup = {
+        str(site_id): index for index, site_id in enumerate(sites.site_ids)
+    }
+    day_lookup = {
+        str(day): index for index, day in enumerate(population.days)
+    }
+    players = list(range(NUM_PLAYERS))
+    case_rows: list[dict[str, object]] = []
+    allocation_rows: list[dict[str, object]] = []
+    blocking_rows: list[dict[str, object]] = []
+
+    for case_index, representative in enumerate(representatives, start=1):
+        site_id = str(representative["site_id"])
+        day = str(representative["day"])
+        rate = float(representative["capacity_rate"])
+        indices = sites.antenna_indices[site_lookup[site_id]]
+        fixed = population.p_fixed_w[indices]
+        slopes = population.slope_w_per_gb[indices]
+        capacities = population.peak_traffic_gb[indices] / rate
+        demands = population.traffic_gb[
+            indices, day_lookup[day]
+        ][:, hours]
+        costs = hourly_coalition_costs(
+            capacities, fixed, slopes, demands
+        )
+        savings = _savings_from_costs(costs)
+        diagnostics = _diagnose(costs, savings, capacities, demands)
+        if diagnostics["category"] != representative["category"]:
+            raise RuntimeError("representative case did not reproduce its category")
+        hourly = optimal_hourly_policy(
+            capacities, fixed, slopes, demands
+        )
+        physical = np.asarray(
+            [
+                float(
+                    np.sum(
+                        (
+                            hourly.guardian_masks & (1 << player)
+                            != 0
+                        )
+                        * fixed[player]
+                    )
+                    + slopes[player]
+                    * np.sum(hourly.allocations_gb[player])
+                )
+                for player in players
+            ],
+            dtype=float,
+        )
+        standalone = np.asarray(
+            [costs[1 << player] for player in players], dtype=float
+        )
+        shapley = _shapley_value(savings)
+        game_scale = max(1.0, float(savings[GRAND_MASK]))
+        nucleolus_result = nucleolus_allocation(
+            players, _as_game_map(savings / game_scale)
+        )
+        if nucleolus_result.status != "Optimal":
+            raise RuntimeError(
+                "representative nucleolus failed: "
+                f"{nucleolus_result.status}"
+            )
+        nucleolus = np.asarray(
+            [nucleolus_result.allocation[player] for player in players],
+            dtype=float,
+        ) * game_scale
+        nucleolus *= float(savings[GRAND_MASK]) / float(np.sum(nucleolus))
+        tolerance = 1e-8 * max(1.0, float(savings[GRAND_MASK]))
+        if abs(float(np.sum(physical)) - float(costs[GRAND_MASK])) > tolerance:
+            raise RuntimeError("hourly physical costs do not recover grand cost")
+        case_id = f"case_{case_index}_{representative['category']}"
+        case_rows.append(
+            {
+                "case_id": case_id,
+                "category": representative["category"],
+                "site_id": site_id,
+                "day": day,
+                "capacity_rate": rate,
+                "savings_pct": representative["savings_pct"],
+                "least_core_epsilon_normalized": (
+                    representative["least_core_epsilon_normalized"]
+                ),
+                "shapley_max_excess_normalized": (
+                    representative["shapley_max_excess_normalized"]
+                ),
+                "medoid_distance": representative["medoid_distance"],
+                "hourly_guardian_masks": "|".join(
+                    str(int(mask)) for mask in hourly.guardian_masks
+                ),
+            }
+        )
+        for rule, allocation in (
+            ("shapley", shapley),
+            ("nucleolus", nucleolus),
+        ):
+            net = standalone - allocation
+            transfers = physical - net
+            if (
+                abs(float(np.sum(allocation)) - float(savings[GRAND_MASK]))
+                > tolerance
+                or abs(float(np.sum(transfers))) > tolerance
+            ):
+                raise RuntimeError(
+                    f"representative {rule} allocation violates efficiency"
+                )
+            excesses = savings[PROPER_MASKS] - (
+                MEMBERSHIP[PROPER_MASKS] @ allocation
+            )
+            for player in players:
+                allocation_rows.append(
+                    {
+                        "case_id": case_id,
+                        "category": representative["category"],
+                        "rule": rule,
+                        "operator": player + 1,
+                        "standalone_cost_wh": standalone[player],
+                        "physical_cost_wh": physical[player],
+                        "allocated_savings_wh": allocation[player],
+                        "net_cost_wh": net[player],
+                        "transfer_received_wh": transfers[player],
+                    }
+                )
+            for mask, excess in zip(
+                PROPER_MASKS, excesses, strict=True
+            ):
+                if excess > tolerance:
+                    blocking_rows.append(
+                        {
+                            "case_id": case_id,
+                            "category": representative["category"],
+                            "rule": rule,
+                            "coalition_mask": int(mask),
+                            "coalition": "|".join(
+                                str(player + 1)
+                                for player in MASK_MEMBERS[int(mask)]
+                            ),
+                            "excess_wh": float(excess),
+                        }
+                    )
+
+    results_dir.mkdir(parents=True, exist_ok=True)
+    case_path = results_dir / "representative_cases.csv"
+    allocation_path = results_dir / "representative_allocations.csv"
+    blocking_path = results_dir / "representative_blocking_coalitions.csv"
+    _write_rows(case_path, case_rows)
+    _write_rows(allocation_path, allocation_rows)
+    if blocking_rows:
+        _write_rows(blocking_path, blocking_rows)
+    else:
+        with blocking_path.open("w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(
+                file,
+                fieldnames=[
+                    "case_id",
+                    "category",
+                    "rule",
+                    "coalition_mask",
+                    "coalition",
+                    "excess_wh",
+                ],
+            )
+            writer.writeheader()
+
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    figure, axes = plt.subplots(
+        2,
+        len(case_rows),
+        figsize=(10.0, 5.6),
+        squeeze=False,
+    )
+    x = np.arange(NUM_PLAYERS)
+    width = 0.36
+    for column, case in enumerate(case_rows):
+        case_allocations = [
+            row
+            for row in allocation_rows
+            if row["case_id"] == case["case_id"]
+        ]
+        for rule_index, (rule, label, color) in enumerate(
+            (
+                ("shapley", "Shapley", "#3677B8"),
+                ("nucleolus", "Nucléole", "#D98E04"),
+            )
+        ):
+            selected = [
+                row for row in case_allocations if row["rule"] == rule
+            ]
+            positions = x + (rule_index - 0.5) * width
+            axes[0, column].bar(
+                positions,
+                [row["allocated_savings_wh"] for row in selected],
+                width,
+                color=color,
+                label=label,
+            )
+            axes[1, column].bar(
+                positions,
+                [row["transfer_received_wh"] for row in selected],
+                width,
+                color=color,
+                label=label,
+            )
+        axes[0, column].set_title(
+            CATEGORY_LABELS[str(case["category"])], fontsize=9
+        )
+        axes[0, column].set_xticks(x, [f"O{i + 1}" for i in x])
+        axes[1, column].set_xticks(x, [f"O{i + 1}" for i in x])
+        axes[0, column].grid(axis="y", alpha=0.22)
+        axes[1, column].grid(axis="y", alpha=0.22)
+        axes[1, column].axhline(0.0, color="0.25", linewidth=0.8)
+    axes[0, 0].set_ylabel("Économie attribuée (Wh)")
+    axes[1, 0].set_ylabel("Transfert reçu (Wh)")
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    figure.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=2,
+        frameon=False,
+    )
+    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
+    figure_paths = [
+        figures_dir / "representative_allocations.pdf",
+        figures_dir / "representative_allocations.png",
+    ]
+    figure.savefig(figure_paths[0], bbox_inches="tight")
+    figure.savefig(figure_paths[1], dpi=220, bbox_inches="tight")
+    plt.close(figure)
+    return (
+        [case_path, allocation_path, blocking_path],
+        figure_paths,
+    )
 
 
 def _figure(rows: list[dict[str, object]], output_dir: Path) -> list[Path]:
@@ -690,6 +1002,15 @@ def main() -> None:
     summaries = _summary_rows(rows, args.bootstrap_replications)
     analysis = _analysis(rows, summaries, validation)
     figures = _figure(rows, args.figures_dir)
+    case_tables, case_figures = _case_outputs(
+        rows,
+        cache_path,
+        sites_path,
+        hours,
+        args.results_dir,
+        args.figures_dir,
+    )
+    figures.extend(case_figures)
     _write_rows(summary_path, summaries)
     analysis_path.write_text(
         json.dumps(analysis, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -701,6 +1022,9 @@ def main() -> None:
             "summary": portable_path(summary_path),
             "analysis": portable_path(analysis_path),
             "figures": [portable_path(path) for path in figures],
+            "representative_tables": [
+                portable_path(path) for path in case_tables
+            ],
         },
     }
     manifest_path.write_text(

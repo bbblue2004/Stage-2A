@@ -15,7 +15,7 @@ from scipy.optimize import linprog
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from src.core.window_optimiser import persistent_coalition_solutions
+from src.core.window_optimiser import coalition_window_solutions
 from src.data_processing.data_loader import ROOT
 from src.data_processing.power_validation import (
     CalibratedPopulation,
@@ -43,7 +43,7 @@ WINDOW_DURATIONS = (5, 7, 9)
 OPERATOR_COUNTS = (2, 3, 4, 5, 6)
 BASELINE_RATE = 0.80
 SITE_SEED = 20_260_814
-ALGORITHM_VERSION = 1
+ALGORITHM_VERSION = 2
 FACTOR_LABELS = {
     "capacity_margin": "Marge de capacité",
     "traffic_level": "Niveau de trafic",
@@ -224,27 +224,31 @@ def _evaluate_instance(
     num_operators = capacities.size
     grand_mask = (1 << num_operators) - 1
     effective_fixed = (1.0 - sleep_rate) * fixed
-    solutions = persistent_coalition_solutions(
+    solutions = coalition_window_solutions(
         capacities, effective_fixed, slopes, demands
     )
     sleep_constants = (
         demands.shape[1] * sleep_rate * _subset_sums(fixed)
     )
-    costs = solutions.costs_wh + sleep_constants
+    costs = solutions.hourly_costs_wh + sleep_constants
     savings = _savings_from_costs(costs, num_operators)
     standalone = float(
         sum(costs[1 << player] for player in range(num_operators))
     )
     grand_cost = float(costs[grand_mask])
-    hourly_oracle = (
-        solutions.grand_hourly_oracle_wh + float(sleep_constants[grand_mask])
+    persistent_cost = (
+        solutions.persistent_costs_wh[grand_mask]
+        + float(sleep_constants[grand_mask])
     )
+    hourly_masks = solutions.hourly_guardian_masks[grand_mask]
     core_nonempty, shapley_in_core = _core_status(savings, num_operators)
     return {
         "savings_pct": 100.0 * (standalone - grand_cost) / standalone,
-        "guardians": int(solutions.guardian_masks[grand_mask]).bit_count(),
-        "oracle_gap_pp": max(
-            0.0, 100.0 * (grand_cost - hourly_oracle) / standalone
+        "guardians_mean": float(
+            np.mean([int(mask).bit_count() for mask in hourly_masks])
+        ),
+        "persistence_gap_pp": max(
+            0.0, 100.0 * (persistent_cost - grand_cost) / standalone
         ),
         "core_empty": int(not core_nonempty),
         "shapley_stable": int(shapley_in_core),
@@ -268,13 +272,18 @@ def _load_main_metrics(
         for raw in csv.DictReader(file):
             key = (raw["site_id"], raw["day"], float(raw["capacity_rate"]))
             standalone = float(raw["standalone_energy_wh"])
-            optimum = float(raw["optimal_energy_wh"])
-            oracle = float(raw["hourly_oracle_energy_wh"])
+            optimum = float(raw["hourly_optimal_energy_wh"])
+            persistent = float(raw["persistent_energy_wh"])
             core_empty, shapley_stable = stability[key]
             metrics[key] = {
                 "savings_pct": 100.0 * (standalone - optimum) / standalone,
-                "guardians": int(raw["optimal_guardians"]),
-                "oracle_gap_pp": max(0.0, 100.0 * (optimum - oracle) / standalone),
+                "guardians_mean": float(
+                    raw["hourly_optimal_guardians_mean"]
+                ),
+                "persistence_gap_pp": max(
+                    0.0,
+                    100.0 * (persistent - optimum) / standalone,
+                ),
                 "core_empty": core_empty,
                 "shapley_stable": shapley_stable,
             }
@@ -533,7 +542,7 @@ def _write_rows(path: Path, rows: list[dict[str, object]]) -> None:
 def _read_rows(path: Path) -> list[dict[str, object]]:
     string_columns = {"factor", "setting", "site_id", "day"}
     integer_columns = {
-        "num_operators", "guardians", "core_empty", "shapley_stable"
+        "num_operators", "core_empty", "shapley_stable"
     }
     with path.open(newline="", encoding="utf-8") as file:
         return [
@@ -584,8 +593,12 @@ def _summaries(rows: list[dict[str, object]]) -> list[dict[str, object]]:
         groups.items(), key=lambda item: (item[0][0], float(item[1][0]["setting_value"]))
     ):
         savings = np.asarray([row["savings_pct"] for row in selected], dtype=float)
-        guardians = np.asarray([row["guardians"] for row in selected], dtype=float)
-        oracle = np.asarray([row["oracle_gap_pp"] for row in selected], dtype=float)
+        guardians = np.asarray(
+            [row["guardians_mean"] for row in selected], dtype=float
+        )
+        persistence = np.asarray(
+            [row["persistence_gap_pp"] for row in selected], dtype=float
+        )
         summaries.append(
             {
                 "factor": factor,
@@ -594,7 +607,9 @@ def _summaries(rows: list[dict[str, object]]) -> list[dict[str, object]]:
                 "instances": len(selected),
                 "savings_pct_median": float(np.median(savings)),
                 "guardians_mean": float(np.mean(guardians)),
-                "oracle_gap_pp_median": float(np.median(oracle)),
+                "persistence_gap_pp_median": float(
+                    np.median(persistence)
+                ),
                 "empty_core_pct": 100.0
                 * float(np.mean([row["core_empty"] for row in selected])),
                 "shapley_stable_pct": 100.0
@@ -619,7 +634,7 @@ def _factor_effects(summaries: list[dict[str, object]]) -> list[dict[str, object
         for metric in (
             "savings_pct_median",
             "guardians_mean",
-            "oracle_gap_pp_median",
+            "persistence_gap_pp_median",
             "empty_core_pct",
             "shapley_stable_pct",
         ):

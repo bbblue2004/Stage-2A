@@ -36,8 +36,8 @@ class SensitivityEvaluationTests(unittest.TestCase):
         )
 
         self.assertGreater(off["savings_pct"], sleep["savings_pct"])
-        self.assertEqual(off["guardians"], 1)
-        self.assertEqual(sleep["guardians"], 1)
+        self.assertEqual(off["guardians_mean"], 1)
+        self.assertEqual(sleep["guardians_mean"], 1)
         self.assertEqual(off["core_empty"], 0)
         self.assertEqual(sleep["core_empty"], 0)
 
