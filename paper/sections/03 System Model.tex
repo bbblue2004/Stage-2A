@@ -142,7 +142,7 @@ fixe évitable de l'état actif.
 
 On suppose que chaque opérateur peut acheminer seul sa propre demande :
 \[
-    d_i\leqslant q_i,\qquad \forall i\in N.
+    \forall i\in N,\qquad d_i\leqslant q_i.
 \]
 
 Les grandeurs dérivées associées à l'opérateur \(i\) sont les suivantes :
@@ -236,9 +236,9 @@ pour $(S,G)$ est
 \left\{
 \mathbf t\in\mathbb R_+^N\ \middle|\
 \begin{aligned}
-    &0\leqslant t_i\leqslant q_i, &&\forall i\in G,\\
+    &\forall i\in G, &&0\leqslant t_i\leqslant q_i,\\
     &\sum_{i\in G}t_i=d(S),\\
-    &t_i=0, &&\forall i\in N\setminus G
+    &\forall i\in N\setminus G, &&t_i=0
 \end{aligned}
 \right\}.
 \]
@@ -308,8 +308,8 @@ La demande cumulée sur la fenêtre est notée
 \]
 Le fonctionnement autonome est réalisable à chaque heure :
 \[
-    d_i^h\leqslant q_i,
-    \qquad \forall i\in N,\ \forall h\in H.
+    \forall i\in N,\ \forall h\in H,\qquad
+    d_i^h\leqslant q_i.
 \]
 Les capacités \(q_i\) et les paramètres de coût horaire
 \(F_i,\gamma_i\) sont supposés constants sur \(H\). À chaque heure, les
@@ -372,8 +372,8 @@ $z=(z_i)_{i\in N}\in\mathbb R^N$ tel que
 \[
     z(N)=v_H(N)
     \qquad\text{et}\qquad
-    z_i\geqslant0,
-    \quad \forall i \in N.
+    \forall i \in N,\quad
+    z_i\geqslant0.
 \]
 L'ensemble de ces allocations est noté $\mathcal A(N,v_H)$.
 \end{definition}
@@ -396,9 +396,8 @@ Le cœur du jeu $(N,v_H)$ est l'ensemble
 \left\{
 z\in\mathcal A(N,v_H)
 \;\middle|\;
-z(Q)\geqslant v_H(Q),
-\quad
-\forall\,Q\in\mathcal S
+\forall\,Q\in\mathcal S,\quad
+z(Q)\geqslant v_H(Q)
 \right\}.
 \]
 \end{definition}
@@ -419,7 +418,7 @@ pendant toute la fenêtre. Pour \(S\in\mathcal S\), posons
     \left\{
         G\in\mathcal S
         \ \middle|\
-        G\subseteq S,\ d^h(S)\leqslant q(G),\ \forall h\in H
+        G\subseteq S,\ \forall h\in H,\ d^h(S)\leqslant q(G)
     \right\}.
 \]
 Le coût optimal sous cet engagement est

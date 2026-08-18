@@ -21,10 +21,10 @@ le coût de la configuration revient donc à résoudre
         & \sum_{i\in G}\gamma_i t_i,\\
     \text{s.c.}\quad
         & \sum_{i\in G} t_i=d(S),\\
-        & 0\leqslant t_i\leqslant q_i,
-        \qquad \forall i\in G,\\
-        & t_i=0,
-        \qquad \forall i\in N\setminus G.
+        & \forall i\in G,\qquad
+        0\leqslant t_i\leqslant q_i,\\
+        & \forall i\in N\setminus G,\qquad
+        t_i=0.
 \end{aligned}
 \end{equation}
 
@@ -121,10 +121,10 @@ C_h^*(S)
     & \sum_{i\in S}\left(F_i x_i^h+\gamma_i t_i^h\right),\\
 \text{s.c.}\quad
     & \sum_{i\in S}t_i^h=d^h(S),\\
-    & 0\leqslant t_i^h\leqslant q_i x_i^h,
-      \qquad \forall i\in S,\\
-    & t_i^h=0,
-      \qquad \forall i\in N\setminus S.
+    & \forall i\in S,\qquad
+      0\leqslant t_i^h\leqslant q_i x_i^h,\\
+    & \forall i\in N\setminus S,\qquad
+      t_i^h=0.
 \end{aligned}
 \end{equation}
 
@@ -197,12 +197,12 @@ C_{H,\mathrm{pers}}^*(S)
     & \sum_{h\in H}\sum_{i\in S}\gamma_i t_i^h
     + |H|\sum_{i\in S}F_i x_i,\\
 \text{s.c.}\quad
-    & \sum_{i\in S}t_i^h=d^h(S),
-      \qquad \forall h\in H,\\
-    & 0\leqslant t_i^h\leqslant q_i x_i,
-      \qquad \forall i\in S,\ \forall h\in H,\\
-    & t_i^h=0,
-      \qquad \forall i\in N\setminus S,\ \forall h\in H.
+    & \forall h\in H,\qquad
+      \sum_{i\in S}t_i^h=d^h(S),\\
+    & \forall i\in S,\ \forall h\in H,\qquad
+      0\leqslant t_i^h\leqslant q_i x_i,\\
+    & \forall i\in N\setminus S,\ \forall h\in H,\qquad
+      t_i^h=0.
 \end{aligned}
 \end{equation}
 L'énumération teste ici chaque \(G\subseteq S\) sur toutes les heures avant
@@ -266,18 +266,18 @@ et toutes les inégalités de sous-additivité sont des égalités.
 La sous-additivité n'est donc pas toujours stricte. Dans le régime nocturne
 qui nous intéresse, une condition simple garantit au contraire un gain à
 chaque fusion.
-\begin{corollaire}[Sous-additivité stricte en régime de faible trafic]
+\begin{proposition}[Sous-additivité stricte en régime de faible trafic]
 \label{cor:sousadd_stricte_faible_trafic}
 Si
 \[
+    \forall h\in H,\qquad
     d^h(N)\leqslant\min_{i\in N}q_i,
-    \qquad \forall h\in H,
 \]
 alors, pour toutes \(A,B\in\mathcal S\) disjointes,
 \[
     C_H^*(A\cup B)<C_H^*(A)+C_H^*(B).
 \]
-\end{corollaire}
+\end{proposition}
 
 \begin{proof}
 À chaque heure \(h\), choisissons un gardien \(\alpha_h\) de coût variable
@@ -327,7 +327,7 @@ réunie à toutes les heures. Si ce gardien est noté \(\alpha\), alors
 \setminus\{\alpha\}}F_i>0.
 \end{aligned}
 \]
-En particulier, la condition de faible trafic du corollaire précédent rend
+En particulier, la condition de faible trafic de la proposition précédente rend
 également \(C_{H,\mathrm{pers}}^*\) strictement sous-additive.
 \end{remarque}
 
@@ -374,7 +374,7 @@ pour tout \(i\in N\) et \(S\in\mathcal S\). Il est superadditif : pour tous
     v_H(A\cup B)\geqslant v_H(A)+v_H(B).
 \]
 Sous l'hypothèse du
-Corollaire~\ref{cor:sousadd_stricte_faible_trafic}, l'inégalité est stricte
+Proposition~\ref{cor:sousadd_stricte_faible_trafic}, l'inégalité est stricte
 pour \(A,B\in\mathcal S\).
 \end{proposition}
 

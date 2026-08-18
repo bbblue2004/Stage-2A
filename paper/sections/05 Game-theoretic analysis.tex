@@ -34,13 +34,12 @@ contributions marginales moyennes des opérateurs
 Une condition classique suffit à relier cette règle à la stabilité.
 
 \begin{definition}[Jeu convexe]
-Le jeu $v_H$ est convexe, ou supermodulaire, si
+Le jeu $v_H$ est convexe s'il vérifie
 \[
+\forall A,B\subseteq N,\qquad
 v_H(A)+v_H(B)
 \leqslant
-v_H(A\cup B)+v_H(A\cap B),
-\qquad
-\forall A,B\subseteq N.
+v_H(A\cup B)+v_H(A\cap B).
 \]
 \end{definition}
 
@@ -63,87 +62,82 @@ d'aucune de ces garanties, bien que son jeu soit superadditif.
 
 \subsubsection{Un coeur peut être vide}
 
-\begin{proposition}[Absence de garantie générale]
+\begin{proposition}[Superadditivité sans stabilité]
 \label{prop:contre_exemple_coeur_vide}
-Considérons la fenêtre \(H\), $N=\{1,2,3,4\}$ et, pour tout \(h\in H\),
+Considérons une fenêtre réduite à une heure, \(H=\{h\}\), et
+$N=\{1,2,3,4\}$, avec
 \[
-q_i=6,\qquad F_i=1,\qquad \gamma_i=1,\qquad \forall i\in N,
+\forall i\in N,\qquad q_i=6,\qquad F_i=1,\qquad \gamma_i=1,
 \]
-avec des demandes constantes sur la fenêtre données par
+et les demandes
 \[
-    (d_1^h,d_2^h,d_3^h,d_4^h)=(1,3,4,5).
+    (d_1,d_2,d_3,d_4)=(1,3,4,5).
 \]
-Le jeu horaire $v_H$ est superadditif, mais il n'est pas convexe et son
+Le jeu $v_H$ est superadditif, mais il n'est pas convexe et son
 coeur est vide.
 \end{proposition}
 
 \begin{proof}
 Une coalition \(S\in\mathcal S\) requiert
-\(\lceil d^h(S)/6\rceil\) gardiens. Comme les coûts variables unitaires sont
-identiques, son coût variable vaut \(|H|d^h(S)\), indépendamment de la
-répartition. Les demandes étant constantes, l'optimum horaire répète la même
-décision à chaque heure et coïncide ici avec l'optimum persistant. Par
-conséquent,
+\(\lceil d(S)/6\rceil\) gardiens. Comme les coûts variables unitaires sont
+identiques, son coût variable vaut \(d(S)\), indépendamment de la répartition.
+Par conséquent,
 \[
     v_H(S)
-    =|H|\left(|S|-\left\lceil\frac{d^h(S)}6\right\rceil\right).
+    =|S|-\left\lceil\frac{d(S)}6\right\rceil.
 \]
 La superadditivité découle de la
 Proposition~\ref{prop:proprietes_jeu_fenetre}. Posons
 \(A=\{1,2,3\}\) et \(B=\{2,3,4\}\). On obtient
 \[
-v_H(A)=v_H(B)=|H|,
+v_H(A)=v_H(B)=1,
 \qquad
 v_H(A\cap B)=0,
 \qquad
-v_H(A\cup B)=|H|.
+v_H(A\cup B)=1.
 \]
 L'inégalité de convexité est donc violée.
 
 Par ailleurs, chacune des quatre coalitions de trois opérateurs a une valeur
-égale à \(|H|\), tout comme la grande coalition. Si
+égale à \(1\), tout comme la grande coalition. Si
 \(z\in\mathcal C(N,v_H)\), la somme des quatre contraintes correspondantes
 donnerait
 \[
     3z(N)
     =
     \sum_{i\in N}z(N\setminus\{i\})
-    \geqslant4|H|,
+    \geqslant4,
 \]
-alors que l'efficacité impose \(3z(N)=3|H|\). Le coeur est donc vide.
+alors que l'efficacité impose \(3z(N)=3\). Le coeur est donc vide.
 \end{proof}
 
-Ce contre-exemple ne repose ni sur une hétérogénéité des capacités ni sur une
-hétérogénéité des coûts. Les activations binaires et indivisibles créent des
-économies par paliers : toutes les coalitions de trois opérateurs peuvent
-réclamer la valeur entière de la grande coalition. La grande coalition reste
-efficace au sens de la superadditivité, mais cette valeur ne peut pas être
-répartie de manière stable.
+Le mécanisme est le suivant. Les activations indivisibles font varier les
+économies par paliers : ici, chacune des quatre coalitions de trois opérateurs
+peut réclamer l'unique unité d'économie créée par la grande coalition. Ces
+revendications se recouvrent et excèdent ensemble le surplus disponible. La
+superadditivité garantit donc l'efficacité de la grande coalition, mais pas
+l'existence d'une répartition stable de sa valeur.
 
 \subsubsection{Un coeur non vide peut exclure Shapley}
 
 \begin{proposition}[Non-stabilité possible de Shapley]
 \label{prop:shapley_hors_coeur_semi_homogene}
 \label{prop:shapley_hors_coeur_tres_faible_trafic}
-Considérons les mêmes paramètres communs \(q_i=6\), \(F_i=1\) et
-\(\gamma_i=1\), mais les demandes constantes
+Sur la fenêtre \(H=\{h\}\), considérons les mêmes paramètres
+\(q_i=6\), \(F_i=1\) et \(\gamma_i=1\), mais les demandes
 \[
-    (d_1^h,d_2^h,d_3^h,d_4^h)=(1,2,3,4),
-    \qquad \forall h\in H.
+    (d_1,d_2,d_3,d_4)=(1,2,3,4).
 \]
-Le coeur est réduit à l'allocation \(|H|(1,1,0,0)\), tandis que
+Alors \(\mathcal C(N,v_H)=\{(1,1,0,0)\}\), tandis que
 \[
     \phi(v_H)
-    =|H|\left(\frac23,\frac23,\frac12,\frac16\right)
-    \notin\mathcal C(N,v_H).
+    =\left(\frac23,\frac23,\frac12,\frac16\right).
 \]
+Cette valeur n'appartient pas à \(\mathcal C(N,v_H)\).
 \end{proposition}
 
-Ici encore, la constance des demandes rend les optima horaire et persistant
-identiques ; le contre-exemple porte donc bien sur le jeu principal.
-
 \begin{proof}
-En unités de \(|H|\), les singletons valent zéro, et les autres valeurs sont
+Les singletons valent zéro, et les autres valeurs sont
 \[
 \begin{aligned}
 v_H(\{1,2\})=v_H(\{1,3\})=v_H(\{1,4\})
@@ -154,24 +148,22 @@ v_H(\{1,2,4\})=v_H(\{1,3,4\})=v_H(\{2,3,4\})&=1,\\
 v_H(N)&=2.
 \end{aligned}
 \]
-Si \(z\) appartient au coeur, la coalition \(\{1,2,3\}\) et l'efficacité
-imposent \(z_4=0\). Les coalitions \(\{1,4\}\) et \(\{2,4\}\) imposent
-alors \(z_1\geqslant1\) et \(z_2\geqslant1\). L'efficacité et la rationalité
-individuelle donnent nécessairement \(z=(1,1,0,0)\), qui satisfait bien les
-autres contraintes du coeur.
+Soit \(z\in\mathcal C(N,v_H)\). Les contraintes de \(N\) et de
+\(\{1,2,3\}\), puis celles de \(\{1,4\}\) et de \(\{2,4\}\), donnent
+\[
+0\leqslant z_4=z(N)-z(\{1,2,3\})\leqslant2-2=0,
+\qquad z_1\geqslant1,
+\qquad z_2\geqslant1.
+\]
+Comme \(z(N)=2\) et \(z_i\geqslant0\), on obtient nécessairement
+\(z=(1,1,0,0)\), qui satisfait toutes les contraintes du coeur. Ainsi,
+\(\mathcal C(N,v_H)=\{(1,1,0,0)\}\).
 
 L'application directe de la formule de Shapley aux valeurs précédentes donne
 \[
-    \phi(v_H)=|H|\left(\frac23,\frac23,\frac12,\frac16\right).
+    \phi(v_H)=\left(\frac23,\frac23,\frac12,\frac16\right).
 \]
-Or
-\[
-    \phi_1(v_H)+\phi_4(v_H)
-    =\frac56|H|
-    <|H|
-    =v_H(\{1,4\}).
-\]
-La contrainte du coeur associée à \(\{1,4\}\) est donc violée.
+Ce vecteur étant distinct de \((1,1,0,0)\), il n'appartient pas au coeur.
 \end{proof}
 
 Ces deux exemples distinguent les questions étudiées dans la suite. La
@@ -191,10 +183,10 @@ repose sur les familles équilibrées
 Une famille de poids \((\lambda_Q)_{Q\in\mathcal S}\) est dite équilibrée si
 \[
 \begin{aligned}
-    \lambda_Q&\geqslant0,
-    &&\forall Q\in\mathcal S,\\
-    \sum_{\substack{Q\in\mathcal S\\i\in Q}}\lambda_Q&=1,
-    &&\forall i\in N.
+    \forall Q\in\mathcal S,\qquad
+    &\lambda_Q\geqslant0,\\
+    \forall i\in N,\qquad
+    &\sum_{\substack{Q\in\mathcal S\\i\in Q}}\lambda_Q=1.
 \end{aligned}
 \]
 \end{definition}
@@ -218,8 +210,8 @@ programme linéaire de faisabilité
     & z\in\mathbb R^N,\\
 \text{s.c.}\quad
     & z(N)=v_H(N),\\
-    & z(Q)\geqslant v_H(Q),
-      \qquad \forall Q\in\mathcal S\setminus\{N\}.
+    & \forall Q\in\mathcal S\setminus\{N\},\qquad
+      z(Q)\geqslant v_H(Q).
 \end{aligned}
 \end{equation}
 Les contraintes des singletons imposent directement
@@ -247,20 +239,21 @@ B_H(N)
 \max_{\boldsymbol\lambda}\quad
     & \sum_{Q\in\mathcal S}\lambda_Qv_H(Q),\\
 \text{s.c.}\quad
-    & \sum_{\substack{Q\in\mathcal S\\i\in Q}}\lambda_Q=1,
-      \qquad \forall i\in N,\\
-    & \lambda_Q\geqslant0,
-      \qquad \forall Q\in\mathcal S.
+    & \forall i\in N,\qquad
+      \sum_{\substack{Q\in\mathcal S\\i\in Q}}\lambda_Q=1,\\
+    & \forall Q\in\mathcal S,\qquad
+      \lambda_Q\geqslant0.
 \end{aligned}
 \end{equation}
-Comme \(\lambda_N=1\) est admissible, \(B_H(N)\geqslant v_H(N)\), et
+Le choix \(\lambda_N=1\) et \(\lambda_Q=0\) pour \(Q\neq N\) satisfait
+les contraintes, donc \(B_H(N)\geqslant v_H(N)\). Le
+Théorème~\ref{thm:bondareva_shapley} donne alors
 \[
     \mathcal C(N,v_H)\neq\varnothing
     \quad\Longleftrightarrow\quad
     B_H(N)=v_H(N).
 \]
-Lorsque \(B_H(N)>v_H(N)\), une solution optimale fournit un certificat
-explicite de vacuité du coeur.
+Ainsi, \(B_H(N)>v_H(N)\) certifie directement que le coeur est vide.
 
 La famille équilibrée formée des coalitions auxquelles manque un seul
 opérateur donne un certificat particulièrement simple.
@@ -305,62 +298,17 @@ On a exactement
 Le test du coeur et le test de Shapley répondent donc à deux questions
 successives : une allocation stable existe-t-elle, puis Shapley en est-elle
 une ?
-
-\subsection{Conditions structurelles dans des régimes interprétables}
+\subsection{Conditions structurelles de stabilité}
 
 Les critères précédents sont exacts, mais exigent la valeur de toutes les
 coalitions. Nous considérons maintenant des restrictions motivées par le
 modèle opérationnel afin d'isoler les mécanismes qui favorisent ou empêchent
 la stabilité.
 
-\subsubsection{Cas semi-homogène et seuils de capacité}
-\label{subsubsec:cas_semi_homogene}
-
-Le cas semi-homogène conserve des profils de trafic propres à chaque
-opérateur, mais suppose des équipements comparables.
-
-\begin{proposition}[Réduction semi-homogène]
-\label{prop:reduction_semi_homogene}
-Supposons
-\[
-    q_i=q,\qquad F_i=F,\qquad \gamma_i=\gamma,
-    \qquad \forall i\in N,
-\]
-avec \(F>0\). Pour tout \(S\in\mathcal S\), posons
-\[
-    K_H(S)
-    :=
-    \sum_{h\in H}
-    \left\lceil\frac{d^h(S)}q\right\rceil.
-\]
-Alors
-\begin{equation}
-\label{eq:valeur_semi_homogene}
-    C_H^*(S)=FK_H(S)+\gamma D(S),
-    \qquad
-    v_H(S)=F\bigl(|H||S|-K_H(S)\bigr).
-\end{equation}
-En prolongeant \(K_H\) par \(K_H(\varnothing)=0\), le jeu \(v_H\) est
-convexe si et seulement si \(K_H\) est sous-modulaire.
-\end{proposition}
-
-\emph{Démonstration : voir l'Annexe~\ref{app:preuve_semi_homogene}.}
-
-Le terme de coût variable commun s'annule dans les économies de coopération :
-les profils \(d_i^h\) interviennent dans la stabilité par les franchissements
-des seuils entiers \(K_H(S)\). Dans ce terme, le plafond
-\(\lceil d^h(S)/q\rceil\) compte les gardiens indivisibles nécessaires : son
-saut à chaque seuil de capacité produit précisément les discontinuités du coût
-et les économies par paliers. Les deux contre-exemples précédents appartiennent
-à ce cas semi-homogène ; l'homogénéité des équipements ne suffit donc pas à
-garantir la stabilité. En revanche, si \(K_H\) est sous-modulaire, la
-Proposition~\ref{prop:shapley_coeur_convexe} garantit que Shapley appartient au
-coeur.
-
 \subsubsection{Très faible trafic}
 \label{subsec:shapley_tres_faible_trafic}
 
-Le Corollaire~\ref{cor:sousadd_stricte_faible_trafic} montre déjà que la
+La Proposition~\ref{cor:sousadd_stricte_faible_trafic} montre déjà que la
 condition suivante rend la grande coalition strictement plus efficace que
 toute partition non triviale. Elle garantit en outre l'existence d'une
 allocation stable, même lorsque les paramètres des opérateurs sont
@@ -372,28 +320,10 @@ hétérogènes.
 Supposons que la demande totale puisse être acheminée par chacun des
 opérateurs à chaque heure :
 \[
-    d^h(N)\leqslant \min_{i\in N}q_i,
-    \qquad \forall h\in H.
+    \forall h\in H,\qquad
+    d^h(N)\leqslant \min_{i\in N}q_i.
 \]
-Alors, pour tout \(S\in\mathcal S\),
-\begin{equation}
-    C_H^*(S)
-    =\sum_{h\in H}\min_{i\in S}
-      \left\{F_i+\gamma_i d^h(S)\right\}.
-    \label{eq:cout_tres_faible_trafic}
-\end{equation}
-Le coeur du jeu horaire est non vide. Plus précisément, en posant
-\[
-    p_h:=\frac{C_h^*(N)}{d^h(N)},
-\]
-l'allocation
-\[
-    z_i
-    :=
-    C_H^*(\{i\})-\sum_{h\in H}p_h d_i^h,
-    \qquad i\in N,
-\]
-appartient à \(\mathcal C(N,v_H)\).
+Alors le coeur du jeu \((N,v_H)\) est non vide.
 \end{theorem}
 
 \emph{Démonstration : voir l'Annexe~\ref{app:preuve_capacite_fenetre}.}
@@ -402,63 +332,71 @@ La réduction à un gardien garantit donc la non-vacuité du coeur, mais pas à
 elle seule la stabilité de toute règle de partage. Sous homogénéité des coûts,
 elle donne toutefois une conclusion explicite pour Shapley.
 
+\begin{remarque}[Absence de garantie pour Shapley sans homogénéité]
+Sans homogénéité des coûts, la condition du théorème ne garantit pas que
+Shapley appartienne au coeur. Considérons la fenêtre
+\(H=\{h\}\), \(N=\{1,2,3\}\), et
+\[
+\forall i\in N,\qquad d_i=1,\qquad q_i=3,\qquad \gamma_i=1,
+\qquad (F_1,F_2,F_3)=(1,1,4).
+\]
+La condition du théorème est satisfaite. Un calcul direct donne
+\[
+\phi(v_H)=\left(\frac76,\frac76,\frac83\right),
+\qquad
+\phi_1(v_H)+\phi_3(v_H)=\frac{23}{6}<4=v_H(\{1,3\}).
+\]
+La valeur de Shapley n'appartient donc pas au coeur.
+\end{remarque}
+
 \begin{corollaire}[Stabilité de Shapley sous homogénéité des coûts]
 \label{cor:shapley_coeur_tres_faible_trafic_homogene}
 Supposons \(F_i=F>0\) et \(\gamma_i=\gamma\) pour tout \(i\in N\), et
 \[
-    d^h(N)\leqslant\min_{i\in N}q_i,
-    \qquad \forall h\in H.
+    \forall h\in H,\qquad
+    d^h(N)\leqslant\min_{i\in N}q_i.
 \]
-Alors
-\[
-    v_H(S)=|H|F(|S|-1),
-    \qquad \forall S\in\mathcal S,
-\]
-et \(\phi(v_H)\in\mathcal C(N,v_H)\).
+Alors \(\phi(v_H)\in\mathcal C(N,v_H)\).
 \end{corollaire}
 
 \emph{Démonstration : voir l'Annexe~\ref{app:preuve_shapley_homogene}.}
 
 Ce régime fournit ainsi une garantie positive tout en autorisant des profils
-de trafic différents. Il constitue un benchmark stable naturel pour
-l'évaluation numérique.
+de trafic différents. Nous examinons enfin le cas plus restrictif où les
+trafics sont également homogènes.
 
-\subsubsection{Benchmark parfaitement homogène}
+\subsubsection{Cas parfaitement homogène}
 \label{subsubsec:cas_homogene}
 
-L'homogénéité complète des trafics est moins réaliste, mais elle fournit une
-caractérisation exacte et concise de l'effet des seuils de capacité.
+Lorsque les capacités et les coûts sont communs, le coût variable s'annule
+dans les économies de coopération : celles-ci dépendent uniquement du nombre
+entier de gardiens requis. Si les demandes sont elles aussi homogènes, ce
+nombre ne dépend plus que de la taille de la coalition, ce qui fournit une
+caractérisation exacte du coeur.
 
-\begin{corollaire}[Caractérisation du cas parfaitement homogène]
+\begin{proposition}[Caractérisation du cas parfaitement homogène]
 \label{prop:coeur_cas_homogene}
 \label{cor:partages_cas_homogene}
-Sous les hypothèses de la
-Proposition~\ref{prop:reduction_semi_homogene}, supposons en outre
-\(d_i^h=d^h\) pour tout \(i\in N\) et tout \(h\in H\). Pour
-\(s\in\{1,\ldots,n\}\), posons
-\[
-    K_{H,s}:=\sum_{h\in H}
-    \left\lceil\frac{sd^h}{q}\right\rceil,
-    \qquad
-    v_{H,s}:=F\bigl(|H|s-K_{H,s}\bigr).
-\]
-Alors \(v_H(S)=v_{H,s}\) pour toute coalition de taille \(s\), et
+Supposons \(q_i=q\), \(F_i=F>0\) et \(\gamma_i=\gamma\) pour tout
+\(i\in N\), ainsi que \(d_i^h=d^h\) pour tout \(i\in N\) et tout
+\(h\in H\). Alors \(v_H(S)\) ne dépend que de \(s=|S|\). En notant
+\(v_{H,s}\) cette valeur commune, on a
 \[
     \mathcal C(N,v_H)\neq\varnothing
     \quad\Longleftrightarrow\quad
     \frac{v_{H,s}}s\leqslant\frac{v_{H,n}}n,
     \qquad s=1,\ldots,n-1.
 \]
-La valeur de Shapley et le nucléole attribuent tous deux
-\(v_{H,n}/n\) à chaque opérateur ; cette allocation appartient au coeur si et
-seulement si les inégalités précédentes sont satisfaites.
-\end{corollaire}
+La valeur de Shapley et le nucléole attribuent tous deux \(v_{H,n}/n\) à
+chaque opérateur. Cette allocation appartient au coeur exactement lorsque les
+inégalités précédentes sont satisfaites.
+\end{proposition}
 
 \emph{Démonstration : voir l'Annexe~\ref{app:preuve_cas_homogene}.}
 
-Ce benchmark ne constitue pas une garantie pour les trafics hétérogènes. Son
-rôle est de fournir une frontière analytique exacte et des valeurs de
-référence pour valider les calculs numériques.
+Cette caractérisation ne s'étend pas aux trafics hétérogènes ; elle isole le
+rôle des seuils de capacité lorsque les coalitions de même taille sont
+symétriques.
 
 % Résultat secondaire conservé pour une éventuelle annexe :
 % \begin{corollaire}[Famille homogène à coeur vide]
@@ -472,16 +410,20 @@ référence pour valider les calculs numériques.
 \subsection{Choix d'une allocation et traitement de l'instabilité}
 
 Les résultats précédents conduisent à distinguer le diagnostic de stabilité
-du choix de la répartition. Shapley est retenue lorsqu'elle satisfait les
-contraintes du coeur. Dans les autres cas, le moindre coeur mesure
-l'instabilité inévitable et le nucléole fournit une règle de partage définie
-dans tous les régimes.
+du choix de la répartition. Shapley sert de règle de référence parce qu'elle
+attribue les économies selon les contributions marginales moyennes et traite
+symétriquement les opérateurs équivalents \cite{shapley1953value}. Elle est
+retenue lorsqu'elle satisfait les contraintes du coeur. Dans les autres cas,
+le moindre coeur mesure l'instabilité inévitable et le nucléole fournit une
+règle de partage définie dans tous les régimes.
 
 \subsubsection{Moindre coeur et nucléole}
 \label{subsubsec:nucleole}
 
-Le moindre coeur et le nucléole sont employés comme outils classiques de
-diagnostic et de partage, et non comme des contributions méthodologiques.
+Le moindre coeur mesure la plus faible relaxation uniforme des contraintes de
+stabilité. Le nucléole affine ce critère en départageant les allocations selon
+l'ensemble de leurs objections coalitionnelles \cite{schmeidler1969}. Ces
+outils sont appliqués ici sans modification méthodologique.
 
 \begin{definition}[Excès d'une coalition]
 Pour une allocation $z\in\mathcal A(N,v_H)$ et
@@ -504,10 +446,10 @@ obtenue par le programme linéaire
     & \varepsilon,\\
 \text{s.c.}\quad
     & z(N)=v_H(N),\\
-    & z_i\geqslant0,
-      \qquad \forall i\in N,\\
-    & z(Q)\geqslant v_H(Q)-\varepsilon,
-      \qquad \forall Q\in\mathcal S\setminus\{N\}.
+    & \forall i\in N,\qquad
+      z_i\geqslant0,\\
+    & \forall Q\in\mathcal S\setminus\{N\},\qquad
+      z(Q)\geqslant v_H(Q)-\varepsilon.
 \end{aligned}
 \end{equation}
 
@@ -531,7 +473,12 @@ Proposition~\ref{prop:certificat_leave_one_out},
 \]
 \end{corollaire}
 
-\emph{Démonstration : voir l'Annexe~\ref{app:preuve_leave_one_out}.}
+\emph{Démonstration : voir l'Annexe~\ref{app:preuve_borne_leave_one_out}.}
+
+Le moindre coeur contrôle uniquement la plus grande objection et peut donc
+contenir plusieurs allocations. Le nucléole lève cette indétermination : une
+fois la plus grande objection minimisée, il minimise successivement les
+suivantes.
 
 \begin{definition}[Nucléole]
 \label{def:nucleole}
@@ -585,7 +532,7 @@ Le coût optimal de la grande coalition se décompose donc comme
 C_H^*(N)=\sum_{i\in N}C_{i,H}^*(N).
 \]
 Les transferts sont calculés et réglés une fois pour l'ensemble de la fenêtre.
-
+Le choix de \(H\) définit donc aussi l'horizon de règlement.
 Soit $z=(z_i)_{i\in N}\in\mathbb R^N$ une répartition des économies de
 la grande coalition. La part $z_i$ réduit le coût autonome de l'opérateur
 $i$. Le vecteur des coûts nets finaux $y=(y_i)_{i\in N}\in\mathbb R^N$
@@ -615,6 +562,11 @@ transfert est équilibré :
 
 \emph{Démonstration : voir l'Annexe~\ref{app:preuve_equilibre_budgetaire}.}
 
+La proposition suivante traduit la stabilité, formulée jusqu'ici en parts
+d'économies, en contraintes directement interprétables sur les coûts nets. Elle
+justifie notamment la construction utilisée dans la preuve du
+Théorème~\ref{thm:capacite_coeur_non_vide}.
+
 \begin{proposition}[Équivalence entre économies attribuées et coûts nets]
 \label{prop:translation_coeur}
 Soit $z\in\mathcal A(N,v_H)$ une allocation et $y$ le vecteur de coûts
@@ -622,8 +574,8 @@ nets qui lui est associé. Alors \(z\in\mathcal C(N,v_H)\) si et seulement si
 \[
     \sum_{i\in N}y_i=C_H^*(N)
     \qquad\text{et}\qquad
-    \sum_{i\in Q}y_i\leqslant C_H^*(Q),
-    \quad \forall Q\in\mathcal S.
+    \forall Q\in\mathcal S,\quad
+    \sum_{i\in Q}y_i\leqslant C_H^*(Q).
 \]
 \end{proposition}
 

@@ -81,72 +81,10 @@ ensemble sont évaluées en \(O(s)\). En sommant sur les coalitions, on obtient
 \]
 \end{proof}
 
-\subsection{Réduction semi-homogène}
-\label{app:preuve_semi_homogene}
-
-\begin{proof}[Démonstration de la Proposition~\ref{prop:reduction_semi_homogene}]
-Fixons \(S\in\mathcal S\). À chaque \(h\in H\), puisque tous les équipements
-ont la capacité \(q\), le nombre minimal de gardiens est
-\(\lceil d^h(S)/q\rceil\). Tous les coûts fixes étant égaux à \(F>0\), une
-solution horaire optimale active exactement ce nombre d'équipements. De plus,
-pour toute famille de répartitions faisables,
-\[
-    \sum_{h\in H}\sum_{i\in G_h}\gamma t_i^h
-    =\gamma\sum_{h\in H}d^h(S)
-    =\gamma D(S).
-\]
-Il en résulte
-\[
-    C_H^*(S)=F\sum_{h\in H}
-    \left\lceil\frac{d^h(S)}q\right\rceil+\gamma D(S)
-    =FK_H(S)+\gamma D(S).
-\]
-L'hypothèse de faisabilité individuelle donne
-\(C_H^*(\{i\})=|H|F+\gamma D_i\). En sommant ces coûts autonomes et en
-utilisant \(D(S)=\sum_{i\in S}D_i\), on obtient
-\[
-    v_H(S)=F\bigl(|H||S|-K_H(S)\bigr).
-\]
-
-Enfin, la fonction \(S\mapsto |S|\) est modulaire. Pour tous
-\(A,B\subseteq N\), l'inégalité de supermodularité de \(v_H\) est donc
-équivalente à
-\[
-    K_H(A)+K_H(B)
-    \geqslant
-    K_H(A\cup B)+K_H(A\cap B),
-\]
-qui est la sous-modularité de \(K_H\).
-\end{proof}
-
-\subsection{Caractérisation du cas homogène}
-\label{app:preuve_cas_homogene}
-
-\begin{proof}[Démonstration du Corollaire~\ref{prop:coeur_cas_homogene}]
-La Proposition~\ref{prop:reduction_semi_homogene} donne
-\(K_H(S)=K_{H,s}\) et \(v_H(S)=v_{H,s}\) pour toute coalition de taille
-\(s\).
-
-Si \(z\in\mathcal C(N,v_H)\), la somme des contraintes du coeur sur toutes les
-coalitions de taille \(s\) donne
-\[
-\binom{n-1}{s-1}v_{H,n}
-=
-\sum_{\substack{S\in\mathcal S\\|S|=s}}z(S)
-\geqslant
-\binom{n}{s}v_{H,s},
-\]
-soit \(v_{H,s}/s\leqslant v_{H,n}/n\). Réciproquement, sous ces inégalités,
-l'allocation \(z_i=v_{H,n}/n\) satisfait toutes les contraintes du coeur.
-La symétrie et l'efficacité donnent les expressions de Shapley et du
-nucléole.
-\end{proof}
-
 \subsection{Certificat leave-one-out}
 \label{app:preuve_leave_one_out}
 
-\begin{proof}[Démonstration de la Proposition~\ref{prop:certificat_leave_one_out}
-et du Corollaire~\ref{cor:borne_leave_one_out}]
+\begin{proof}[Démonstration de la Proposition~\ref{prop:certificat_leave_one_out}]
 Attribuons le poids \(1/(n-1)\) à chaque coalition
 \(N\setminus\{i\}\), et un poids nul aux autres coalitions. Cette famille est
 équilibrée. En utilisant la définition de \(v_H\), on obtient
@@ -162,30 +100,6 @@ Attribuons le poids \(1/(n-1)\) à chaque coalition
 \end{align*}
 Ainsi, \(\Delta_{\mathrm{LOO},H}(N)>0\) viole la condition de
 Bondareva--Shapley.
-
-Considérons maintenant toute solution admissible \((z,\varepsilon)\) du
-programme \eqref{eq:lp_moindre_coeur}. En sommant ses contraintes pour les
-\(n\) coalitions \(N\setminus\{i\}\), il vient
-\[
-    (n-1)v_H(N)
-    =
-    \sum_{i\in N}z(N\setminus\{i\})
-    \geqslant
-    \sum_{i\in N}v_H(N\setminus\{i\})-n\varepsilon.
-\]
-Par conséquent,
-\[
-    \varepsilon
-    \geqslant
-    \frac{1}{n}
-    \left[
-        \sum_{i\in N}v_H(N\setminus\{i\})-(n-1)v_H(N)
-    \right]
-    =
-    \frac{n-1}{n}\Delta_{\mathrm{LOO},H}(N).
-\]
-Cette borne valant pour toute solution admissible, elle vaut en particulier
-pour \(\varepsilon^*\).
 \end{proof}
 
 \subsection{Capacité individuelle suffisante sur une fenêtre}
@@ -207,7 +121,13 @@ résulte
 \[
     C_h^*(Q)=\min_{j\in Q}\left\{F_j+\gamma_jd^h(Q)\right\},
 \]
-et la somme sur les heures donne \eqref{eq:cout_tres_faible_trafic}.
+et, en sommant sur les heures,
+\begin{equation}
+    C_H^*(Q)
+    =\sum_{h\in H}\min_{j\in Q}
+      \left\{F_j+\gamma_jd^h(Q)\right\}.
+    \label{eq:cout_tres_faible_trafic}
+\end{equation}
 
 Posons \(p_h:=C_h^*(N)/d^h(N)\) et
 \(y_i:=\sum_{h\in H}p_hd_i^h\). Pour tout \(Q\in\mathcal S\), tout
@@ -242,10 +162,9 @@ Par \eqref{eq:cout_tres_faible_trafic},
     =|H|F(|S|-1).
 \]
 Le jeu ne dépend que du cardinal des coalitions. Par symétrie et efficacité,
-si \(n=|N|\),
 \[
-    \phi_i(v_H)=\frac{v_H(N)}{n}=\frac{|H|F(n-1)}{n},
-    \qquad \forall i\in N.
+    \forall i\in N,\qquad
+    \phi_i(v_H)=\frac{v_H(N)}{n}=\frac{|H|F(n-1)}{n}.
 \]
 Pour tout \(Q\in\mathcal S\) de cardinal \(k\),
 \[
@@ -256,6 +175,72 @@ Pour tout \(Q\in\mathcal S\) de cardinal \(k\),
 \]
 L'efficacité de la valeur de Shapley et les contraintes précédentes donnent
 \(\phi(v_H)\in\mathcal C(N,v_H)\).
+\end{proof}
+
+\subsection{Caractérisation du cas homogène}
+\label{app:preuve_cas_homogene}
+
+\begin{proof}[Démonstration de la Proposition~\ref{prop:coeur_cas_homogene}]
+Pour \(s\in\{1,\ldots,n\}\), posons
+\[
+K_{H,s}:=\sum_{h\in H}\left\lceil\frac{sd^h}{q}\right\rceil.
+\]
+Fixons une coalition \(S\) de taille \(s\). À chaque heure, le nombre minimal
+de gardiens est \(\lceil sd^h/q\rceil\), tandis que le coût variable commun
+vaut \(\gamma sd^h\), quelle que soit la répartition. Ainsi,
+\[
+C_H^*(S)=FK_{H,s}+\gamma s\sum_{h\in H}d^h.
+\]
+Comme
+\(C_H^*(\{i\})=|H|F+\gamma\sum_{h\in H}d^h\), le coût variable s'annule
+dans les économies et
+\[
+v_H(S)=F\bigl(|H|s-K_{H,s}\bigr).
+\]
+Cette quantité ne dépend que de \(s\) et définit donc \(v_{H,s}\).
+
+Si \(z\in\mathcal C(N,v_H)\), la somme des contraintes du coeur sur toutes les
+coalitions de taille \(s\) donne
+\[
+\binom{n-1}{s-1}v_{H,n}
+=
+\sum_{\substack{S\in\mathcal S\\|S|=s}}z(S)
+\geqslant
+\binom{n}{s}v_{H,s},
+\]
+soit \(v_{H,s}/s\leqslant v_{H,n}/n\). Réciproquement, sous ces inégalités,
+l'allocation \(z_i=v_{H,n}/n\) satisfait toutes les contraintes du coeur.
+La symétrie et l'efficacité donnent les expressions de Shapley et du
+nucléole.
+\end{proof}
+
+\subsection{Borne leave-one-out du moindre coeur}
+\label{app:preuve_borne_leave_one_out}
+
+\begin{proof}[Démonstration du Corollaire~\ref{cor:borne_leave_one_out}]
+Considérons toute solution \((z,\varepsilon)\) du programme
+\eqref{eq:lp_moindre_coeur}. En sommant ses contraintes pour les \(n\)
+coalitions \(N\setminus\{i\}\), il vient
+\[
+    (n-1)v_H(N)
+    =
+    \sum_{i\in N}z(N\setminus\{i\})
+    \geqslant
+    \sum_{i\in N}v_H(N\setminus\{i\})-n\varepsilon.
+\]
+Par conséquent,
+\[
+    \varepsilon
+    \geqslant
+    \frac{1}{n}
+    \left[
+        \sum_{i\in N}v_H(N\setminus\{i\})-(n-1)v_H(N)
+    \right]
+    =
+    \frac{n-1}{n}\Delta_{\mathrm{LOO},H}(N).
+\]
+Cette borne valant pour toute solution du programme, elle vaut en particulier
+pour \(\varepsilon^*\).
 \end{proof}
 
 \subsection{Équilibre budgétaire des transferts}
