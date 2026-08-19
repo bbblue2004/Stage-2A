@@ -16,6 +16,11 @@ STAGES = (
         "--rebuild-cache",
     ),
     (
+        "instance diagnostics",
+        "src.experiments.instance_diagnostics",
+        "--rebuild",
+    ),
+    (
         "operational efficiency",
         "src.experiments.operational_efficiency",
         "--rebuild",

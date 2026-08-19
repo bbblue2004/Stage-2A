@@ -21,16 +21,25 @@ from src.core.window_optimiser import (
     standalone_energy,
 )
 from src.data_processing.data_loader import ROOT
-from src.data_processing.power_validation import load_calibrated_population
-from src.data_processing.virtual_sites import load_virtual_sites
+from src.data_processing.instance_generator import (
+    CAMPAIGN_A_RATES,
+    DEFAULT_NUM_SITES,
+    capacities_for_site,
+    iter_materialized_sites,
+)
 from src.experiments.common import file_signature, inputs_match, portable_path
+from src.experiments.protocol_io import (
+    is_central_campaign_a,
+    load_protocol_inputs,
+    scenarios_for_grid,
+)
 
 
 DEFAULT_CALIBRATION_DIR = ROOT / "results" / "power_calibration"
 DEFAULT_RESULTS_DIR = ROOT / "results" / "operational_efficiency"
 DEFAULT_FIGURES_DIR = ROOT / "figures" / "operational_efficiency"
-CAPACITY_RATES = (0.70, 0.80, 0.90, 1.00)
-ALGORITHM_VERSION = 2
+CAPACITY_RATES = CAMPAIGN_A_RATES
+ALGORITHM_VERSION = 3
 POLICIES = (
     (
         "hourly_optimal",
@@ -60,6 +69,12 @@ POLICIES = (
 STRING_COLUMNS = {
     "site_id",
     "day",
+    "scenario",
+    "campaign",
+    "volume_level",
+    "shape_level",
+    "equipment_level",
+    "guardian_target",
     "hourly_optimal_guardian_masks",
     "hourly_capacity_guardian_masks",
     "persistent_guardian_set",
@@ -180,7 +195,7 @@ def _analysis(rows: list[dict[str, object]]) -> dict[str, object]:
         0.0, 100.0 * (persistent - optimum) / baseline
     )
     first_half = np.asarray(
-        [str(row["site_id"]) <= "site_0500" for row in rows]
+        [str(row["site_id"]) <= "site_0200" for row in rows]
     )
     optimal_counts = np.concatenate(
         [
@@ -261,10 +276,10 @@ def _analysis(rows: list[dict[str, object]]) -> dict[str, object]:
             )
         ),
         "convergence": {
-            "median_savings_first_500_sites_pct": float(
+            "median_savings_first_200_sites_pct": float(
                 np.median(savings[first_half])
             ),
-            "median_savings_1000_sites_pct": float(np.median(savings)),
+            "median_savings_all_sites_pct": float(np.median(savings)),
             "absolute_difference_pp": float(
                 abs(
                     np.median(savings[first_half])
@@ -369,89 +384,103 @@ def _figure(
 
 
 def _run(
-    cache_path: Path,
-    sites_path: Path,
+    calibration_dir: Path,
     num_sites: int,
     hours: tuple[int, ...],
+    grid: str,
 ) -> list[dict[str, object]]:
-    population = load_calibrated_population(cache_path)
-    sites = load_virtual_sites(sites_path, population)
-    if not 1 <= num_sites <= sites.num_sites:
-        raise ValueError(f"num_sites must be between 1 and {sites.num_sites}")
+    population, blueprints, protocol = load_protocol_inputs(calibration_dir)
+    if not 1 <= num_sites <= blueprints.num_sites:
+        raise ValueError(f"num_sites must be between 1 and {blueprints.num_sites}")
+    scenarios = scenarios_for_grid(grid)
     rows: list[dict[str, object]] = []
-    for site_index in range(num_sites):
-        indices = sites.antenna_indices[site_index]
-        fixed = population.p_fixed_w[indices]
-        slopes = population.slope_w_per_gb[indices]
-        peaks = population.peak_traffic_gb[indices]
+    evaluated = 0
+    for site in iter_materialized_sites(
+        blueprints, population, scenarios, protocol, num_sites=num_sites
+    ):
+        spec = site.scenario
         for day_index, day in enumerate(population.days):
-            demands = population.traffic_gb[indices, day_index][:, hours]
-            for rate in CAPACITY_RATES:
-                capacities = peaks / rate
-                autonomous = standalone_energy(fixed, slopes, demands)
-                optimum, persistent = optimal_hourly_with_persistent(
-                    capacities, fixed, slopes, demands
+            demands = site.traffic_gb[:, day_index][:, hours]
+            capacities = capacities_for_site(site, demands)
+            autonomous = standalone_energy(
+                site.p_fixed_w, site.slope_w_per_gb, demands
+            )
+            optimum, persistent = optimal_hourly_with_persistent(
+                capacities, site.p_fixed_w, site.slope_w_per_gb, demands
+            )
+            capacity = descending_capacity_hourly_policy(
+                capacities, site.p_fixed_w, site.slope_w_per_gb, demands
+            )
+            proportional = proportional_hourly_policy(
+                optimum.guardian_masks,
+                capacities,
+                site.p_fixed_w,
+                site.slope_w_per_gb,
+                demands,
+            )
+            tolerance = 1e-7 * max(1.0, autonomous)
+            if not (
+                optimum.energy_wh <= persistent.energy_wh + tolerance
+                and optimum.energy_wh <= capacity.energy_wh + tolerance
+                and optimum.energy_wh <= proportional.energy_wh + tolerance
+                and optimum.energy_wh <= autonomous + tolerance
+            ):
+                raise RuntimeError(
+                    "operational cost ordering failed for "
+                    f"{site.site_id}, {spec.key}, {day}"
                 )
-                capacity = descending_capacity_hourly_policy(
-                    capacities, fixed, slopes, demands
-                )
-                proportional = proportional_hourly_policy(
-                    optimum.guardian_masks,
-                    capacities,
-                    fixed,
-                    slopes,
-                    demands,
-                )
-                tolerance = 1e-7 * max(1.0, autonomous)
-                if not (
-                    optimum.energy_wh <= persistent.energy_wh + tolerance
-                    and optimum.energy_wh <= capacity.energy_wh + tolerance
-                    and optimum.energy_wh <= proportional.energy_wh + tolerance
-                    and optimum.energy_wh <= autonomous + tolerance
-                ):
-                    raise RuntimeError(
-                        "operational cost ordering failed for "
-                        f"{sites.site_ids[site_index]}, {day}, r={rate}"
-                    )
-                optimal_masks = optimum.guardian_masks.astype(int)
-                capacity_masks = capacity.guardian_masks.astype(int)
-                rows.append(
-                    {
-                        "site_id": str(sites.site_ids[site_index]),
-                        "day": str(day),
-                        "capacity_rate": rate,
-                        "standalone_energy_wh": autonomous,
-                        "hourly_optimal_energy_wh": optimum.energy_wh,
-                        "hourly_capacity_energy_wh": capacity.energy_wh,
-                        "hourly_proportional_energy_wh": proportional.energy_wh,
-                        "persistent_energy_wh": persistent.energy_wh,
-                        "hourly_optimal_guardians_mean": optimum.mean_guardians,
-                        "hourly_capacity_guardians_mean": capacity.mean_guardians,
-                        "persistent_guardians": persistent.num_guardians,
-                        "hourly_optimal_guardian_masks": "|".join(
-                            str(mask) for mask in optimal_masks
-                        ),
-                        "hourly_capacity_guardian_masks": "|".join(
-                            str(mask) for mask in capacity_masks
-                        ),
-                        "persistent_guardian_set": "|".join(
-                            str(index + 1) for index in persistent.guardians
-                        ),
-                        "capacity_same_guardian_count_fraction": float(
-                            np.mean(
-                                optimum.guardian_counts
-                                == capacity.guardian_counts
-                            )
-                        ),
-                        "capacity_same_guardian_set_fraction": float(
-                            np.mean(optimal_masks == capacity_masks)
-                        ),
-                        "hourly_guardian_changes": optimum.guardian_changes,
-                    }
-                )
-        if (site_index + 1) % 100 == 0:
+            optimal_masks = optimum.guardian_masks.astype(int)
+            capacity_masks = capacity.guardian_masks.astype(int)
+            rows.append(
+                {
+                    "site_id": site.site_id,
+                    "scenario": spec.key,
+                    "campaign": spec.campaign,
+                    "volume_level": spec.volume_level,
+                    "shape_level": spec.shape_level,
+                    "equipment_level": spec.equipment_level,
+                    "day": str(day),
+                    "capacity_rate": (
+                        spec.capacity_rate
+                        if spec.campaign == "A"
+                        else spec.window_peak_rate
+                    ),
+                    "guardian_target": (
+                        spec.guardian_target if spec.campaign == "B" else ""
+                    ),
+                    "standalone_energy_wh": autonomous,
+                    "hourly_optimal_energy_wh": optimum.energy_wh,
+                    "hourly_capacity_energy_wh": capacity.energy_wh,
+                    "hourly_proportional_energy_wh": proportional.energy_wh,
+                    "persistent_energy_wh": persistent.energy_wh,
+                    "hourly_optimal_guardians_mean": optimum.mean_guardians,
+                    "hourly_capacity_guardians_mean": capacity.mean_guardians,
+                    "persistent_guardians": persistent.num_guardians,
+                    "hourly_optimal_guardian_masks": "|".join(
+                        str(mask) for mask in optimal_masks
+                    ),
+                    "hourly_capacity_guardian_masks": "|".join(
+                        str(mask) for mask in capacity_masks
+                    ),
+                    "persistent_guardian_set": "|".join(
+                        str(index + 1) for index in persistent.guardians
+                    ),
+                    "capacity_same_guardian_count_fraction": float(
+                        np.mean(
+                            optimum.guardian_counts
+                            == capacity.guardian_counts
+                        )
+                    ),
+                    "capacity_same_guardian_set_fraction": float(
+                        np.mean(optimal_masks == capacity_masks)
+                    ),
+                    "hourly_guardian_changes": optimum.guardian_changes,
+                }
+            )
+        evaluated += 1
+        if evaluated % 100 == 0:
             print(
-                f">> {site_index + 1}/{num_sites} sites evaluated",
+                f">> {evaluated}/{num_sites * len(scenarios)} site-scenarios evaluated",
                 flush=True,
             )
     return rows
@@ -468,7 +497,13 @@ def main() -> None:
     parser.add_argument(
         "--figures-dir", type=Path, default=DEFAULT_FIGURES_DIR
     )
-    parser.add_argument("--num-sites", type=int, default=1_000)
+    parser.add_argument("--num-sites", type=int, default=DEFAULT_NUM_SITES)
+    parser.add_argument(
+        "--grid",
+        choices=("central", "full", "thresholds"),
+        default="full",
+        help="central: campaign A rates only; full: protocol grid; thresholds: campaign B",
+    )
     parser.add_argument(
         "--hours",
         nargs=2,
@@ -481,8 +516,9 @@ def main() -> None:
     args = parser.parse_args()
     hours = inclusive_hour_window(*args.hours)
     cache_path = args.calibration_dir / "calibrated_population.npz"
-    sites_path = args.calibration_dir / "virtual_sites.csv"
-    for path in (cache_path, sites_path):
+    sites_path = args.calibration_dir / "site_blueprints.csv"
+    protocol_path = args.calibration_dir / "protocol_parameters.json"
+    for path in (cache_path, sites_path, protocol_path):
         if not path.is_file():
             parser.error(f"missing calibrated input: {path}")
 
@@ -494,9 +530,11 @@ def main() -> None:
     expected = {
         "algorithm_version": ALGORITHM_VERSION,
         "calibrated_population": file_signature(cache_path),
-        "virtual_sites": file_signature(sites_path),
+        "site_blueprints": file_signature(sites_path),
+        "protocol_parameters": file_signature(protocol_path),
         "num_sites": args.num_sites,
         "hours": list(hours),
+        "grid": args.grid,
         "capacity_rates": list(CAPACITY_RATES),
     }
     current = False
@@ -514,7 +552,8 @@ def main() -> None:
                 expected,
                 {
                     "calibrated_population": cache_path,
-                    "virtual_sites": sites_path,
+                    "site_blueprints": sites_path,
+                    "protocol_parameters": protocol_path,
                 },
             )
         except (KeyError, ValueError, json.JSONDecodeError):
@@ -527,12 +566,15 @@ def main() -> None:
         )
         rows = _read_rows(rows_path)
     else:
-        rows = _run(cache_path, sites_path, args.num_sites, hours)
+        rows = _run(args.calibration_dir, args.num_sites, hours, args.grid)
         _write_rows(rows_path, rows)
 
-    summaries = _policy_summaries(rows)
-    analysis = _analysis(rows)
-    figures = _figure(rows, args.figures_dir)
+    figure_rows = [row for row in rows if is_central_campaign_a(row)] or rows
+    summaries = _policy_summaries(figure_rows)
+    analysis = _analysis(figure_rows)
+    analysis["grid"] = args.grid
+    analysis["instances_all_scenarios"] = len(rows)
+    figures = _figure(figure_rows, args.figures_dir)
     _write_rows(summary_path, summaries)
     analysis_path.write_text(
         json.dumps(analysis, indent=2, ensure_ascii=False),

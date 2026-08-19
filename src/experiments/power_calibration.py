@@ -22,11 +22,14 @@ from src.data_processing.power_validation import (
     save_calibrated_population,
     selection_counts,
 )
-from src.data_processing.virtual_sites import (
+from src.data_processing.instance_generator import (
     DEFAULT_NUM_SITES,
     DEFAULT_SITE_SEED,
-    generate_virtual_sites,
-    save_virtual_sites,
+    GENERATOR_VERSION,
+    calibrate_protocol,
+    generate_site_blueprints,
+    save_protocol_spec,
+    save_site_blueprints,
 )
 from src.data_processing.power_validation_figures import (
     generate_calibration_figure,
@@ -55,18 +58,13 @@ def _write_rows(path: Path, rows: list[dict[str, object]]) -> None:
         writer.writerows(rows)
 
 
-def _cache_is_current(
+def _population_cache_is_current(
     manifest_path: Path,
     cache_path: Path,
-    sites_path: Path,
     input_path: Path,
     num_days: int,
 ) -> bool:
-    if (
-        not manifest_path.is_file()
-        or not cache_path.is_file()
-        or not sites_path.is_file()
-    ):
+    if not manifest_path.is_file() or not cache_path.is_file():
         return False
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -75,11 +73,33 @@ def _cache_is_current(
             and recorded_path_matches(manifest["input_path"], input_path)
             and signature_matches(manifest["input_signature"], input_path)
             and manifest["parameters"]["num_days"] == num_days
-            and manifest["parameters"]["num_sites"] == DEFAULT_NUM_SITES
-            and manifest["parameters"]["site_seed"] == DEFAULT_SITE_SEED
         )
     except (KeyError, TypeError, ValueError, json.JSONDecodeError):
         return False
+
+
+def _blueprints_are_current(manifest: dict[str, object], sites_path: Path, protocol_path: Path) -> bool:
+    if not sites_path.is_file() or not protocol_path.is_file():
+        return False
+    try:
+        parameters = manifest["parameters"]
+        return (
+            parameters["num_sites"] == DEFAULT_NUM_SITES
+            and parameters["site_seed"] == DEFAULT_SITE_SEED
+            and parameters.get("generator_version") == GENERATOR_VERSION
+        )
+    except (KeyError, TypeError):
+        return False
+
+
+def _write_site_artefacts(population, results_dir: Path) -> tuple[Path, Path]:
+    sites_path = results_dir / "site_blueprints.csv"
+    protocol_path = results_dir / "protocol_parameters.json"
+    protocol = calibrate_protocol(population)
+    blueprints = generate_site_blueprints(population)
+    save_site_blueprints(blueprints, population, sites_path)
+    save_protocol_spec(protocol, protocol_path)
+    return sites_path, protocol_path
 
 
 def main() -> None:
@@ -114,28 +134,54 @@ def main() -> None:
     population_path = args.results_dir / "population_summary.csv"
     selection_path = args.results_dir / "selection_summary.csv"
     cache_path = args.results_dir / "calibrated_population.npz"
-    sites_path = args.results_dir / "virtual_sites.csv"
+    sites_path = args.results_dir / "site_blueprints.csv"
+    protocol_path = args.results_dir / "protocol_parameters.json"
     manifest_path = args.results_dir / "manifest.json"
-    if not args.rebuild_cache and _cache_is_current(
-        manifest_path, cache_path, sites_path, args.input, args.num_days
-    ):
+    population_ready = (
+        not args.rebuild_cache
+        and _population_cache_is_current(
+            manifest_path, cache_path, args.input, args.num_days
+        )
+    )
+    if population_ready:
         population = load_calibrated_population(cache_path)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if _blueprints_are_current(manifest, sites_path, protocol_path):
+            representative_paths, representative_id = generate_representative_fit_figure(
+                population, args.figures_dir
+            )
+            manifest["input_path"] = portable_path(args.input)
+            manifest["input_signature"] = file_signature(args.input)
+            manifest["outputs"] = portable_outputs(manifest["outputs"])
+            manifest["representative_antenna_id"] = representative_id
+            manifest["outputs"]["representative_figure"] = [
+                portable_path(path) for path in representative_paths
+            ]
+            manifest_path.write_text(
+                json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            print(f">> Reusing calibrated cache: {cache_path.resolve()}", flush=True)
+            print(">> Use --rebuild-cache to re-read the raw CSV.", flush=True)
+            return
+        print(">> Reusing power fits; rebuilding site blueprints", flush=True)
+        sites_path, protocol_path = _write_site_artefacts(population, args.results_dir)
         representative_paths, representative_id = generate_representative_fit_figure(
             population, args.figures_dir
         )
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        manifest["input_path"] = portable_path(args.input)
-        manifest["input_signature"] = file_signature(args.input)
-        manifest["outputs"] = portable_outputs(manifest["outputs"])
+        manifest["parameters"]["num_sites"] = DEFAULT_NUM_SITES
+        manifest["parameters"]["site_seed"] = DEFAULT_SITE_SEED
+        manifest["parameters"]["generator_version"] = GENERATOR_VERSION
         manifest["representative_antenna_id"] = representative_id
+        manifest["outputs"]["site_blueprints"] = portable_path(sites_path)
+        manifest["outputs"]["protocol_parameters"] = portable_path(protocol_path)
         manifest["outputs"]["representative_figure"] = [
             portable_path(path) for path in representative_paths
         ]
+        manifest["outputs"].pop("virtual_sites", None)
         manifest_path.write_text(
             json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
         )
-        print(f">> Reusing calibrated cache: {cache_path.resolve()}", flush=True)
-        print(">> Use --rebuild-cache to re-read the raw CSV.", flush=True)
+        print(f">> Results: {args.results_dir.resolve()}", flush=True)
         return
 
     print(f">> Calibrating affine power models from {args.input.resolve()}", flush=True)
@@ -144,8 +190,7 @@ def main() -> None:
     counts = selection_counts(campaign.antenna_results)
     population = calibrated_population(campaign)
     save_calibrated_population(population, cache_path)
-    virtual_sites = generate_virtual_sites(population)
-    save_virtual_sites(virtual_sites, population, sites_path)
+    sites_path, protocol_path = _write_site_artefacts(population, args.results_dir)
     _write_rows(
         antenna_path,
         [result.to_dict() for result in campaign.antenna_results],
@@ -172,6 +217,7 @@ def main() -> None:
             "num_days": args.num_days,
             "num_sites": DEFAULT_NUM_SITES,
             "site_seed": DEFAULT_SITE_SEED,
+            "generator_version": GENERATOR_VERSION,
             "fit": "ordinary least squares with intercept",
             "active_state_rule": "strictly positive observed power",
             "admissibility_rule": "strictly positive intercept and slope",
@@ -190,7 +236,8 @@ def main() -> None:
             "population_summary": portable_path(population_path),
             "selection_summary": portable_path(selection_path),
             "calibrated_population": portable_path(cache_path),
-            "virtual_sites": portable_path(sites_path),
+            "site_blueprints": portable_path(sites_path),
+            "protocol_parameters": portable_path(protocol_path),
             "figure": [portable_path(path) for path in figure_paths],
             "representative_figure": [
                 portable_path(path) for path in representative_paths

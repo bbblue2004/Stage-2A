@@ -17,17 +17,26 @@ import matplotlib.pyplot as plt
 
 from src.core.window_optimiser import coalition_window_solutions
 from src.data_processing.data_loader import ROOT
-from src.data_processing.power_validation import (
-    CalibratedPopulation,
-    load_calibrated_population,
+from src.data_processing.instance_generator import (
+    CAMPAIGN_A_RATES,
+    CENTRAL_RATE,
+    DEFAULT_NUM_SITES,
+    DEFAULT_SITE_SEED,
+    ScenarioSpec,
+    calibrate_protocol,
+    capacities_for_site,
+    generate_site_blueprints,
+    iter_materialized_sites,
+    materialize_site,
 )
-from src.data_processing.virtual_sites import load_virtual_sites
+from src.data_processing.power_validation import CalibratedPopulation
 from src.experiments.common import (
     file_signature,
     four_player_bondareva_gap,
     inputs_match,
     portable_path,
 )
+from src.experiments.protocol_io import is_central_campaign_a, load_protocol_inputs
 
 
 DEFAULT_CALIBRATION_DIR = ROOT / "results" / "power_calibration"
@@ -35,15 +44,15 @@ DEFAULT_OPERATIONAL_DIR = ROOT / "results" / "operational_efficiency"
 DEFAULT_STABILITY_DIR = ROOT / "results" / "coalition_stability"
 DEFAULT_RESULTS_DIR = ROOT / "results" / "parameter_sensitivity"
 DEFAULT_FIGURES_DIR = ROOT / "figures" / "parameter_sensitivity"
-CAPACITY_RATES = (0.70, 0.80, 0.90, 1.00)
+CAPACITY_RATES = CAMPAIGN_A_RATES
 TRAFFIC_MULTIPLIERS = (0.80, 1.00, 1.20)
 COEFFICIENT_MULTIPLIERS = (0.80, 1.00, 1.20)
 SLEEP_RATES = (0.00, 0.05, 0.10)
 WINDOW_DURATIONS = (5, 7, 9)
 OPERATOR_COUNTS = (2, 3, 4, 5, 6)
-BASELINE_RATE = 0.80
-SITE_SEED = 20_260_814
-ALGORITHM_VERSION = 2
+BASELINE_RATE = CENTRAL_RATE
+SITE_SEED = DEFAULT_SITE_SEED
+ALGORITHM_VERSION = 3
 FACTOR_LABELS = {
     "capacity_margin": "Marge de capacité",
     "traffic_level": "Niveau de trafic",
@@ -55,7 +64,7 @@ FACTOR_LABELS = {
     "operator_count": "Nombre d'opérateurs",
 }
 CENTRAL_SETTINGS = {
-    "capacity_margin": "0.80",
+    "capacity_margin": "0.70",
     "traffic_level": "1.00",
     "fixed_cost": "1.00",
     "variable_cost": "1.00",
@@ -64,62 +73,6 @@ CENTRAL_SETTINGS = {
     "window_duration": "7",
     "operator_count": "4",
 }
-
-
-def _largest_remainder(counts: np.ndarray, total: int) -> np.ndarray:
-    quotas = total * counts.astype(float) / np.sum(counts)
-    allocation = np.floor(quotas).astype(int)
-    remainder = total - int(np.sum(allocation))
-    if remainder:
-        order = np.argsort(-(quotas - allocation), kind="mergesort")
-        allocation[order[:remainder]] += 1
-    return allocation
-
-
-def _generate_stratified_indices(
-    population: CalibratedPopulation,
-    num_operators: int,
-    num_sites: int,
-    seed: int = SITE_SEED,
-) -> np.ndarray:
-    """Generate a reproducible stratified site sample of a given size."""
-    if num_operators < 2 or num_sites <= 0:
-        raise ValueError("at least two operators and one site are required")
-    groups = np.column_stack(
-        (population.traffic_group, population.fixed_power_group)
-    )
-    unique_groups, inverse, counts = np.unique(
-        groups, axis=0, return_inverse=True, return_counts=True
-    )
-    allocation = _largest_remainder(counts, num_sites)
-    rng = np.random.default_rng(seed)
-    rows: list[np.ndarray] = []
-    for group_index, target in enumerate(allocation):
-        if target == 0:
-            continue
-        candidates = np.flatnonzero(inverse == group_index)
-        if candidates.size < num_operators:
-            raise ValueError(
-                f"group {tuple(unique_groups[group_index])} has fewer than "
-                f"{num_operators} antennas"
-            )
-        if math.comb(int(candidates.size), num_operators) < int(target):
-            raise ValueError("not enough distinct coalitions in a stratum")
-        selected: set[tuple[int, ...]] = set()
-        while len(selected) < target:
-            selected.add(
-                tuple(
-                    sorted(
-                        int(index)
-                        for index in rng.choice(
-                            candidates, size=num_operators, replace=False
-                        )
-                    )
-                )
-            )
-        rows.extend(np.asarray(row, dtype=np.int32) for row in sorted(selected))
-    sample = np.stack(rows)
-    return sample[rng.permutation(num_sites)]
 
 
 def _mask_memberships(num_operators: int) -> np.ndarray:
@@ -262,6 +215,8 @@ def _load_main_metrics(
     stability: dict[tuple[str, str, float], tuple[int, int]] = {}
     with stability_path.open(newline="", encoding="utf-8") as file:
         for raw in csv.DictReader(file):
+            if "campaign" in raw and not is_central_campaign_a(raw):
+                continue
             key = (raw["site_id"], raw["day"], float(raw["capacity_rate"]))
             stability[key] = (
                 int(raw["category"] == "empty_core"),
@@ -270,6 +225,8 @@ def _load_main_metrics(
     metrics: dict[tuple[str, str, float], dict[str, float | int]] = {}
     with operational_path.open(newline="", encoding="utf-8") as file:
         for raw in csv.DictReader(file):
+            if "campaign" in raw and not is_central_campaign_a(raw):
+                continue
             key = (raw["site_id"], raw["day"], float(raw["capacity_rate"]))
             standalone = float(raw["standalone_energy_wh"])
             optimum = float(raw["hourly_optimal_energy_wh"])
@@ -316,16 +273,15 @@ def _result_row(
 
 
 def _main_site_rows(
-    site_index: int,
-    indices: np.ndarray,
-    site_id: str,
+    site,
     population: CalibratedPopulation,
     main_metrics: dict[tuple[str, str, float], dict[str, float | int]],
 ) -> list[dict[str, object]]:
-    fixed = population.p_fixed_w[indices]
-    slopes = population.slope_w_per_gb[indices]
-    peaks = population.peak_traffic_gb[indices]
-    traffic = population.traffic_gb[indices]
+    fixed = site.p_fixed_w
+    slopes = site.slope_w_per_gb
+    peaks = site.peak_traffic_gb
+    traffic = site.traffic_gb
+    site_id = site.site_id
     rows: list[dict[str, object]] = []
 
     for day_index, day_value in enumerate(population.days):
@@ -492,30 +448,49 @@ def _main_site_rows(
 
 def _operator_count_rows(
     population: CalibratedPopulation,
-    samples: dict[int, np.ndarray],
     num_sites: int,
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for num_operators in (2, 3, 5, 6):
-        sample = samples[num_operators]
-        for site_index in range(num_sites):
-            indices = sample[site_index]
-            fixed = population.p_fixed_w[indices]
-            slopes = population.slope_w_per_gb[indices]
-            capacities = population.peak_traffic_gb[indices] / BASELINE_RATE
+        protocol = calibrate_protocol(
+            population,
+            num_sites=num_sites,
+            seed=SITE_SEED,
+            num_operators=num_operators,
+        )
+        blueprints = generate_site_blueprints(
+            population,
+            num_sites=num_sites,
+            seed=SITE_SEED,
+            num_operators=num_operators,
+        )
+        spec = ScenarioSpec(
+            "A",
+            "moderate",
+            "moderate",
+            "moderate",
+            capacity_rate=BASELINE_RATE,
+        )
+        for site_index, site in enumerate(
+            iter_materialized_sites(
+                blueprints, population, [spec], protocol, num_sites=num_sites
+            )
+        ):
             for day_index, day_value in enumerate(population.days):
+                demands = site.traffic_gb[:, day_index, 0:7]
+                capacities = capacities_for_site(site, demands)
                 metrics = _evaluate_instance(
                     capacities,
-                    fixed,
-                    slopes,
-                    population.traffic_gb[indices, day_index, 0:7],
+                    site.p_fixed_w,
+                    site.slope_w_per_gb,
+                    demands,
                 )
                 rows.append(
                     _result_row(
                         "operator_count",
                         str(num_operators),
                         float(num_operators),
-                        f"n{num_operators}_site_{site_index + 1:04d}",
+                        site.site_id.replace("site_", f"n{num_operators}_site_"),
                         str(day_value),
                         metrics,
                         num_operators=num_operators,
@@ -558,30 +533,6 @@ def _read_rows(path: Path) -> list[dict[str, object]]:
             }
             for raw in csv.DictReader(file)
         ]
-
-
-def _save_operator_samples(
-    path: Path,
-    samples: dict[int, np.ndarray],
-    population: CalibratedPopulation,
-) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
-        writer.writerow(
-            ["num_operators", "site_id", *[f"antenna_{i}" for i in range(1, 7)]]
-        )
-        for num_operators, sample in sorted(samples.items()):
-            for site_index, indices in enumerate(sample):
-                identifiers = [str(value) for value in population.antenna_ids[indices]]
-                writer.writerow(
-                    [
-                        num_operators,
-                        f"n{num_operators}_site_{site_index + 1:04d}",
-                        *identifiers,
-                        *([""] * (6 - num_operators)),
-                    ]
-                )
 
 
 def _summaries(rows: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -777,20 +728,21 @@ def main() -> None:
     parser.add_argument("--stability-dir", type=Path, default=DEFAULT_STABILITY_DIR)
     parser.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS_DIR)
     parser.add_argument("--figures-dir", type=Path, default=DEFAULT_FIGURES_DIR)
-    parser.add_argument("--num-sites", type=int, default=1_000)
+    parser.add_argument("--num-sites", type=int, default=DEFAULT_NUM_SITES)
     parser.add_argument("--rebuild", action="store_true")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
     cache_path = args.calibration_dir / "calibrated_population.npz"
-    sites_path = args.calibration_dir / "virtual_sites.csv"
+    sites_path = args.calibration_dir / "site_blueprints.csv"
+    protocol_path = args.calibration_dir / "protocol_parameters.json"
     operational_path = args.operational_dir / "operational_instances.csv"
     stability_path = args.stability_dir / "stability_instances.csv"
-    for path in (cache_path, sites_path, operational_path, stability_path):
+    for path in (cache_path, sites_path, protocol_path, operational_path, stability_path):
         if not path.is_file():
             parser.error(f"missing input: {path}")
-    if not 1 <= args.num_sites <= 1_000:
-        parser.error("num-sites must lie between 1 and 1000")
+    if args.num_sites <= 0:
+        parser.error("num-sites must be positive")
 
     args.results_dir.mkdir(parents=True, exist_ok=True)
     rows_path = args.results_dir / "sensitivity_instances.csv"
@@ -801,7 +753,8 @@ def main() -> None:
     expected = {
         "algorithm_version": ALGORITHM_VERSION,
         "calibrated_population": file_signature(cache_path),
-        "virtual_sites": file_signature(sites_path),
+        "site_blueprints": file_signature(sites_path),
+        "protocol_parameters": file_signature(protocol_path),
         "operational_instances": file_signature(operational_path),
         "stability_instances": file_signature(stability_path),
         "num_sites": args.num_sites,
@@ -824,7 +777,8 @@ def main() -> None:
                 expected,
                 {
                     "calibrated_population": cache_path,
-                    "virtual_sites": sites_path,
+                    "site_blueprints": sites_path,
+                    "protocol_parameters": protocol_path,
                     "operational_instances": operational_path,
                     "stability_instances": stability_path,
                 },
@@ -836,34 +790,32 @@ def main() -> None:
         print(f">> Reusing sensitivity results: {rows_path.resolve()}", flush=True)
         rows = _read_rows(rows_path)
     else:
-        population = load_calibrated_population(cache_path)
-        main_sites = load_virtual_sites(sites_path, population)
+        population, blueprints, protocol = load_protocol_inputs(args.calibration_dir)
+        if args.num_sites > blueprints.num_sites:
+            parser.error(
+                f"num-sites cannot exceed the frozen list ({blueprints.num_sites})"
+            )
         main_metrics = _load_main_metrics(operational_path, stability_path)
+        central_spec = ScenarioSpec(
+            "A", "moderate", "moderate", "moderate", capacity_rate=BASELINE_RATE
+        )
         rows: list[dict[str, object]] = []
         for site_index in range(args.num_sites):
-            rows.extend(
-                _main_site_rows(
-                    site_index,
-                    main_sites.antenna_indices[site_index],
-                    str(main_sites.site_ids[site_index]),
-                    population,
-                    main_metrics,
-                )
+            site = materialize_site(
+                blueprints, site_index, population, central_spec, protocol
             )
+            rows.extend(_main_site_rows(site, population, main_metrics))
             if (site_index + 1) % 100 == 0:
                 print(
                     f">> n=4 sensitivity: {site_index + 1}/{args.num_sites} sites",
                     flush=True,
                 )
-
-        samples = {
-            count: _generate_stratified_indices(
-                population, count, args.num_sites, SITE_SEED
-            )
-            for count in (2, 3, 5, 6)
-        }
-        _save_operator_samples(samples_path, samples, population)
-        rows.extend(_operator_count_rows(population, samples, args.num_sites))
+        rows.extend(_operator_count_rows(population, args.num_sites))
+        samples_path.write_text(
+            "num_operators,construction\n"
+            "2-6,same generator as Section 6.1 with n operators\n",
+            encoding="utf-8",
+        )
         _write_rows(rows_path, rows)
 
     summaries = _summaries(rows)

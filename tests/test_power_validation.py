@@ -17,7 +17,6 @@ from src.data_processing.power_validation import (
     load_population,
     save_calibrated_population,
 )
-from src.data_processing.virtual_sites import generate_virtual_sites
 
 
 def _days(count: int = 5) -> tuple[date, ...]:
@@ -148,20 +147,6 @@ class AffinePowerCalibrationTests(unittest.TestCase):
         np.testing.assert_allclose(observed.traffic_gb, expected.traffic_gb)
         np.testing.assert_allclose(observed.p_fixed_w, expected.p_fixed_w)
         np.testing.assert_array_equal(observed.traffic_group, expected.traffic_group)
-
-    def test_virtual_sites_are_fixed_distinct_quadruplets(self) -> None:
-        population = _calibrated_population()
-        first = generate_virtual_sites(population, num_sites=20, seed=123)
-        second = generate_virtual_sites(population, num_sites=20, seed=123)
-
-        self.assertEqual(first.num_sites, 20)
-        np.testing.assert_array_equal(first.antenna_indices, second.antenna_indices)
-        self.assertEqual(len({tuple(row) for row in first.antenna_indices}), 20)
-        for row in first.antenna_indices:
-            self.assertEqual(len(set(row)), 4)
-            self.assertEqual(len(set(population.traffic_group[row])), 1)
-            self.assertEqual(len(set(population.fixed_power_group[row])), 1)
-
 
 if __name__ == "__main__":
     unittest.main()

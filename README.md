@@ -14,7 +14,7 @@ figures/               Current experiment figures used by the article
 paper/                 LaTeX article and scientific protocol
 results/               Reproducible numerical caches (not versioned)
 src/core/              Optimisation and cooperative-game algorithms
-src/data_processing/   Data loading, calibration and virtual-site generation
+src/data_processing/   Data loading, calibration and semi-empirical instance generation
 src/experiments/       Reproducible experiments reported in Section 6
 src/cli/               Exploratory command-line diagnostics
 tests/                 Unit and numerical-consistency tests
@@ -69,8 +69,11 @@ machine-specific paths or modification dates.
 The individual stages are:
 
 ```powershell
-# Section 6.2: affine power calibration and virtual sites
+# Section 6.2: affine power calibration and frozen site blueprints
 .venv\Scripts\python.exe -m src.experiments.power_calibration
+
+# Section 6.1 diagnostics: plausibility of the instance generator
+.venv\Scripts\python.exe -m src.experiments.instance_diagnostics
 
 # Section 6.3: operational efficiency
 .venv\Scripts\python.exe -m src.experiments.operational_efficiency
@@ -130,7 +133,8 @@ protocol are documented in `docs/model.md` and
 ```
 
 The tests cover operational allocation, time windows, power calibration,
-coalition stability, parameter sensitivity and cache portability.
+instance generation, coalition stability, parameter sensitivity and cache
+portability.
 
 ## Article
 
