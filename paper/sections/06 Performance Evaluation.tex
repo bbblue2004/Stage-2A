@@ -1,13 +1,13 @@
-TITRE TROP LONG, JUSTE SIMULATIONS ET RESULTATS
+% TODO titre trop long : viser « Simulations et résultats ».
 \section{Évaluation semi-empirique de l'efficacité et de la stabilité}
 \label{sec:simulations_numeriques}
 
 Cette section évalue la portée quantitative du mécanisme théorique sur des
 instances semi-empiriques. Les profils de trafic et de puissance proviennent
-d'équipements Orange d'Île-de-France. Ils sont assemblés en sites
-multi-opérateurs selon un protocole contrôlé, et les capacités sont construites
-par scénario. Ces instances ne sont pas des observations directes d'accords
-entre MNO.
+d'équipements Orange d'Île-de-France. Quatre opérateurs virtuels sont
+construits autour d'un profil de référence empirique, et les capacités sont
+des scénarios contrefactuels. Ces instances ne sont pas des observations
+d'accords entre MNO colocalisés.
 
 L'évaluation répond à trois questions :
 \begin{enumerate}
@@ -26,92 +26,204 @@ relient les régimes observés aux seuils de capacité et aux règles de partage
 \subsection{Protocole expérimental}
 \label{subsec:protocole_experimental}
 
+\paragraph{Données observées.}
 Les données associent, pour chaque identifiant radio Orange observé en
 Île-de-France, un trafic descendant horaire, exprimé en Go, et une puissance
 moyenne, exprimée en watts. Elles contiennent \(459\,000\) couples
 trafic--puissance pour \(3\,825\) identifiants entre le 20 et le 24 mars 2023,
 soit 120 créneaux horaires par identifiant. Dans la suite, chaque identifiant
-est traité comme une antenne. Le trafic et la puissance proviennent toujours
-de la même antenne et du même créneau.
+est traité comme une antenne. Le trafic et la puissance d'un même créneau
+proviennent toujours de la même antenne. On note \(\mathcal T\) l'ensemble de
+ces 120 créneaux.
 
-L'ajustement du modèle de puissance utilise uniquement les heures pendant
-lesquelles l'équipement est actif. Les lignes dont l'horodatage, le trafic ou
-la puissance ne peuvent pas être lus, ainsi que les valeurs négatives, sont
-écartées car elles n'ont pas d'interprétation physique. Les créneaux où la
-puissance est nulle ne décrivent pas un état actif exploitable et ne sont donc
-pas utilisés pour cet ajustement ; une puissance nulle associée à un trafic
-positif est en outre physiquement incohérente.
+L'ajustement du modèle
+\(P_i(d)=P_i^{\mathrm{fixe}}+s_i d\)
+utilise uniquement les heures pendant lesquelles l'équipement est actif. Les
+lignes dont l'horodatage, le trafic ou la puissance ne peuvent pas être lus,
+ainsi que les valeurs négatives, sont écartées. Les créneaux où la puissance
+est nulle ne décrivent pas un état actif exploitable ; une puissance nulle
+associée à un trafic positif est en outre physiquement incohérente. Une antenne
+est également écartée si son trafic actif ne varie pas, ou si l'ajustement
+produit un intercept ou une pente non positifs. Les effectifs de chaque motif
+sont archivés avec la calibration. Seules les antennes admissibles alimentent
+le générateur d'instances.
 
-Une antenne est également écartée si son trafic actif ne varie pas, car la
-pente du modèle ne peut alors pas être estimée, ou si l'ajustement produit un
-coefficient non positif. Une pente négative signifierait en effet que la
-puissance diminue lorsque le trafic augmente, tandis qu'une puissance fixe
-non positive n'a pas d'interprétation physique. Le nombre d'antennes concernées
-par chaque motif est archivé avec les résultats de calibration.
+Ces mesures fournissent de vrais profils temporels de trafic et de puissance.
+Elles n'observent pas quatre opérateurs colocalisés, ni la capacité physique
+\(q_i\). Les instances multi-opérateurs sont donc semi-empiriques. Elles ne
+permettent pas d'estimer la distribution réelle des gains d'un accord entre
+quatre MNO sur un même site. Elles permettent d'étudier, sur des profils
+ancrés dans des données de terrain, comment \(C_H^*\), le cœur de
+\((N,v_H)\) et la valeur de Shapley dépendent du trafic, des équipements et
+des seuils de capacité.
 
-Les données ne contiennent pas quatre opérateurs observés sur un même site.
-Nous construisons donc \(1\,000\) sites virtuels en associant quatre antennes
-différentes. Une graine pseudo-aléatoire fixée à \(20260814\) détermine
-entièrement ces associations, qui sont exportées avant les simulations puis
-réutilisées pour les cinq nuits et les quatre scénarios de capacité. Les
-\(1\,000\) associations sont distinctes : elles définissent un échantillon
-reproductible de \(20\,000\) instances, sans chercher à énumérer toutes les
-combinaisons possibles. Ce choix borne le temps de calcul tout en couvrant les
-différentes échelles observées ; la stabilité des principaux résultats est
-contrôlée en comparant leur valeur sur les 500 premiers sites et sur
-l'échantillon complet.
+\paragraph{Principe de construction.}
+Chaque site virtuel est bâti autour d'une antenne de référence \(a\), qui
+fixe l'échelle \(\mu_a\) et la forme temporelle commune. Quatre opérateurs
+sont ensuite obtenus en contrôlant séparément les volumes, les formes, les
+coefficients énergétiques et les capacités. On n'associe pas quatre antennes
+distinctes comme s'il s'agissait de quatre MNO desservant la même zone.
 
-Dans l'expérience principale, les quatre antennes ont des trafics maximaux et
-des puissances actives estimées sans trafic du même ordre de grandeur. Pour
-chaque critère, les antennes sont classées de la plus faible à la plus élevée,
-puis divisées en quatre groupes de même taille. Les quatre antennes d'un site
-sont tirées dans le même groupe pour les deux critères, et le nombre de sites
-tirés dans chaque groupe est proportionnel à son effectif. Cette restriction évite
-qu'un site virtuel soit dominé par un équipement d'une échelle très
-différente. Une antenne peut appartenir à plusieurs sites, mais jamais deux
-fois au même site.
+Pour chaque antenne admissible \(j\), le profil normalisé
+\begin{equation}
+    s_j(t)=\frac{d_j(t)}{\bar d_j},
+    \qquad
+    \bar d_j=\frac{1}{|\mathcal T|}\sum_{t\in\mathcal T}d_j(t),
+    \label{eq:profil_normalise}
+\end{equation}
+a une moyenne égale à un sur les 120 heures. Cette normalisation sépare
+l'échelle du volume de la forme temporelle, tout en conservant les
+corrélations d'une heure à l'autre (la corrélation de décalage 1 a pour
+médiane \(0{,}82\) sur la population admissible).
 
-Pour chacun des cinq jours, les simulations portent sur la fenêtre nocturne
+Un site est défini par un \emph{plan} : l'antenne \(a\), quatre antennes
+donneuses \(j_1,\dots,j_4\), trois paquets d'antennes énergétiques, et une
+permutation des facteurs de taille. Ces tirages sont effectués une seule fois.
+Les scénarios ne font ensuite varier que le niveau d'un axe, à plan fixé.
+
+\paragraph{Trafic des quatre opérateurs.}
+Les facteurs de taille \(\alpha=(\alpha_i)_{i\in N}\) ont une moyenne
+arithmétique égale à un. Ils sont lus sur la distribution empirique des
+trafics moyens des antennes admissibles, puis permutés une fois par site afin
+qu'aucun indice d'opérateur ne soit systématiquement le plus volumineux. On
+retient quatre niveaux :
+\begin{itemize}
+    \item proches : \(\alpha=(1,1,1,1)\) ;
+    \item modérés : quantiles \(40\,\%\), \(50\,\%\), \(60\,\%\) et
+    \(75\,\%\), soit
+    \(\alpha=(0{,}551,\,0{,}807,\,1{,}084,\,1{,}557)\) ;
+    \item distants : quantiles \(25\,\%\), \(40\,\%\), \(60\,\%\) et
+    \(90\,\%\), soit
+    \(\alpha=(0{,}236,\,0{,}532,\,1{,}047,\,2{,}185)\) ;
+    \item un écart : trois copies de la médiane et le quantile \(90\,\%\),
+    soit \(\alpha=(0{,}689,\,0{,}689,\,0{,}689,\,1{,}933)\).
+\end{itemize}
+Le niveau distant reproduit la dispersion des volumes de cellules, et non des
+parts de marché observées entre MNO colocalisés.
+
+L'hétérogénéité des formes est un mélange convexe de profils réels,
+\begin{equation}
+    \tilde s_i(t)=(1-\lambda)s_a(t)+\lambda s_{j_i}(t),
+    \label{eq:mixage_forme}
+\end{equation}
+puis
+\begin{equation}
+    d_i(t)=\mu_a\alpha_i\tilde s_i(t),
+    \qquad
+    \mu_a=\bar d_a.
+    \label{eq:demande_synthetique}
+\end{equation}
+Ainsi la moyenne de \(d_i\) sur \(\mathcal T\) vaut \(\mu_a\alpha_i\). Aucun bruit blanc n'est ajouté.
+Trois valeurs de \(\lambda\) sont calées sur les corrélations entre paires
+d'antennes : \(\lambda=0{,}15\) (proches ; corrélation médiane induite
+\(0{,}99\)), \(\lambda=0{,}35\) (modérées ; \(0{,}94\)) et \(\lambda=1\)
+(distantes ; \(0{,}57\), égale à la corrélation médiane de deux antennes
+tirées au hasard). Le cas \(\lambda=1\) n'est pas présenté comme une
+colocalisation réaliste : il borne l'hétérogénéité des formes par celle du
+réseau observé. La demande \(d_i^h\) du modèle est la restriction de
+\(d_i(t)\) aux heures \(h\in H\) de la nuit simulée.
+
+\paragraph{Paramètres énergétiques.}
+Les coefficients \(P_i^{\mathrm{fixe}}\) et \(s_i\) sont ceux de quatre
+antennes réelles, distinctes de \(a\) et des donneuses du site. On conserve
+les couples estimés, donc la loi jointe empirique de \((F_i,\gamma_i)\) à un
+facteur-prix près. Trois niveaux contrôlent la proximité énergétique :
+quatre antennes du même quartile de \(P^{\mathrm{fixe}}\) ; quatre antennes
+tirées dans toute la population ; une antenne de chaque quartile. Cette
+assignation est indépendante des \(\alpha_i\). Sur la population admissible,
+le trafic moyen et \(P^{\mathrm{fixe}}\) sont corrélés à \(0{,}52\) ; le
+générateur casse volontairement cette liaison afin de pouvoir faire varier
+volumes et équipements séparément.
+
+La puissance d'un équipement éteint est nulle. Comme tous les opérateurs
+paient le même prix de l'électricité, \(F_i\) et \(\gamma_i\) sont
+proportionnels à \(P_i^{\mathrm{fixe}}\) et \(s_i\). Les comparaisons sont
+exprimées en énergie ; une conversion monétaire ne ferait qu'appliquer un
+facteur commun.
+
+\paragraph{Capacités.}
+La capacité n'est pas mesurée. Elle paramètre un scénario, sous la contrainte
+de domaine \(d_i^h\leqslant q_i\) pour tout \(i\) et tout \(h\in H\).
+
+Chaque équipement est dimensionné de sorte que le pic de sa série construite
+occupe une fraction \(r\) de la capacité :
+\begin{equation}
+    \max_{t\in\mathcal T}d_i(t)=r\,q_i,
+    \qquad
+    r\in\{0{,}70,\,0{,}80,\,0{,}90,\,1\}.
+    \label{eq:capacite_scenario}
+\end{equation}
+Le paramètre \(r\) est le taux d'utilisation maximal \emph{supposé} sur la
+période observée : les capacités des antennes admissibles ne sont pas fournies
+par le jeu de données. Le cas \(r=1\) fixe la capacité exactement au pic
+horaire de l'opérateur synthétique, et \(r<1\) décrit un équipement moins
+sollicité. Comme \(d_i(t)\leqslant r\,q_i\leqslant q_i\) par construction,
+aucune heure n'est jamais individuellement infaisable.
+
+Le balayage des seuils vient alors de la journée elle-même. À l'heure de
+pointe, la demande de la grande coalition vaut environ \(r\sum_i q_i\), de
+sorte qu'il faut de l'ordre de \(\lceil nr\rceil\) équipements, contre un seul
+la nuit : le rapport médian, sur les antennes admissibles, du trafic nocturne
+moyen au pic hebdomadaire vaut \(0{,}14\). Les régimes à un, deux, trois puis
+quatre gardiens nécessaires sont donc parcourus sans campagne de stress
+supplémentaire, ce qui permet de tester le mécanisme d'activations binaires
+des Sections~\ref{subsec:optimisation_fenetre} et~\ref{sec:jeu_cooperatif}.
+
+\paragraph{Fenêtre, plans et appariement.}
+Pour chacun des cinq jours, les simulations portent sur
 \[
     H=\{0\,\mathrm{h},1\,\mathrm{h},\ldots,6\,\mathrm{h}\},
 \]
-c'est-à-dire sur les sept créneaux de l'intervalle
-\([0\,\mathrm{h},7\,\mathrm{h})\). Dans le modèle principal, l'ensemble des
-gardiens et la répartition du trafic sont recalculés à chaque heure. Chaque
-nuit est évaluée séparément. Cette fenêtre est identique pour tous les sites
-et tous les scénarios de la campagne principale. Elle constitue son réglage
-de référence, mais ses bornes sont variées séparément dans l'analyse de
-sensibilité. L'engagement d'un ensemble de gardiens fixe pendant les sept
-heures est évalué à part comme une contrainte opérationnelle persistante.
+soit \([0\,\mathrm{h},7\,\mathrm{h})\). Dans le modèle principal, les
+gardiens et l'allocation sont recalculés à chaque heure, puis les coûts
+forment \(C_H^*\). Chaque nuit est évaluée séparément. La persistance des
+gardiens sur \(H\) est une contrainte secondaire. Les bornes de \(H\) sont
+variées dans l'analyse de sensibilité, sans modifier la construction des
+sites.
 
-L'identifiant de chaque site, ceux de ses quatre antennes, le jour et les
-paramètres utilisés sont enregistrés avec les résultats afin de pouvoir
-reproduire chaque simulation.
+On tire \(400\) plans, à raison de \(100\) antennes de référence par quartile
+de trafic moyen, sans remise. La graine \(20260818\) fixe l'ordre de tous les
+tirages. Pour chaque plan, les sources de trafic et d'énergie sont disjointes.
+Une antenne peut réapparaître dans plusieurs plans, jamais deux fois dans le
+même. Les scénarios d'un même site sont appariés : comparer deux niveaux
+d'un axe ne change que cet axe. Le scénario central combine
+volumes modérés, formes modérées, équipements modérés et \(r=0{,}70\). Autour
+de ce centre, on fait varier un facteur à la fois, plus les deux extrêmes
+où tous les axes sont proches ou tous distants.
 
-La capacité physique n'étant pas observée, nous construisons quatre scénarios.
-Pour chaque taux maximal cible
-\(r\in\{0{,}70,0{,}80,0{,}90,1\}\), nous fixons
+La stabilité des agrégats est contrôlée en comparant les 200 premiers sites
+à l'échantillon complet. Lorsque des intervalles sont reportés plus loin,
+ils sont obtenus par rééchantillonnage des \(400\) plans.
 
-\begin{equation}
-    q_i=\frac{\max_h d_i^h}{r},
-    \qquad\text{soit}\qquad
-    \max_h d_i^h=rq_i,
-    \label{eq:capacite_scenario}
-\end{equation}
+\paragraph{Diagnostics de plausibilité.}
+Avant d'interpréter \(C_H^*\) ou le cœur, on vérifie l'espace d'instances
+simulé. La Figure~\ref{fig:diagnostics_protocole} compare, pour le scénario
+central, les profils journaliers normalisés, les corrélations temporelles,
+et la liaison entre volume et \(P^{\mathrm{fixe}}\). Les distributions des
+moyennes, des maxima, des coefficients de variation, de
+\((P^{\mathrm{fixe}},s)\) et de l'autocorrélation d'ordre 1 restent voisines
+de celles des antennes admissibles. La corrélation entre opérateurs d'un
+même site est plus élevée que celle de deux antennes tirées au hasard, par
+construction du mélange~\eqref{eq:mixage_forme}. La corrélation entre volume
+synthétique et \(P^{\mathrm{fixe}}\) est nulle, alors qu'elle vaut \(0{,}52\)
+dans les données. Les \(400\) plans mobilisent \(3\,073\) antennes distinctes
+; l'usage médian d'une antenne retenue est de deux rôles.
 
-où le maximum porte sur les 120 heures retenues. Ainsi, \(r=0{,}70\)
-accorde une marge de capacité de 30\,\% au pic observé, tandis que \(r=1\)
-fixe la capacité à ce pic. Le paramètre \(r\) décrit un scénario et non une
-capacité mesurée ; la demande observée reste inchangée. Dans chaque scénario,
-toute la demande doit être servie et aucune capacité ne peut être dépassée.
-Une instance numérique est donc entièrement définie par l'identifiant du site
-virtuel, le jour considéré et la valeur de \(r\).
+Le diagnostic de charge ne compte pas les gardiens de coût minimal
+\(G_h^*(N)\), mais le plus petit nombre d'équipements dont les capacités
+couvrent \(d^h(N)\). Il vaut un pour l'essentiel des heures de \(H\), y
+compris à \(r=1\), conformément au creux nocturne, et croît jusqu'à quatre aux
+heures de pointe. Aucune heure n'est hors domaine.
 
-La puissance consommée par une antenne éteinte est supposée nulle. Comme tous
-les opérateurs paient le même prix de l'électricité, le coût est directement
-proportionnel à l'énergie consommée. Les résultats sont donc exprimés en
-économies d'énergie ; leur conversion monétaire ne ferait qu'appliquer un
-facteur commun.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/instance_diagnostics/protocol_diagnostics.pdf}
+    \caption{Contrôles de plausibilité du générateur. (a)~Profil journalier
+    normalisé, médiane et intervalle interquartile. (b)~Corrélation des
+    séries horaires. (c)~Trafic moyen et puissance fixe. (d)~Nombre minimal
+    d'équipements couvrant la demande de coalition.}
+    \label{fig:diagnostics_protocole}
+\end{figure}
 
 \paragraph{Contrôle préalable de l'implémentation.}
 Le contrôle du code repose sur des cas artificiels simples comportant de deux

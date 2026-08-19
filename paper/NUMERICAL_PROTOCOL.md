@@ -1,6 +1,6 @@
-# Protocole scientifique — révision du 17 août 2026
+# Protocole scientifique — révision du 18 août 2026
 
-Date de gel : 4 août 2026.
+Date de gel du modèle : 4 août 2026. Protocole d'instances : 18 août 2026.
 
 Ce document fixe le positionnement éditorial, les objectifs et le protocole de
 la future campagne numérique. Les choix marqués comme
@@ -65,11 +65,12 @@ d'admissibilité sont :
 - intercept et pente strictement positifs, afin de conserver une relation
   puissance--trafic physiquement interprétable.
 
-Le nombre `3 626` n'est pas une taille d'échantillon gelée. La campagne
-principale utilisera toutes les antennes satisfaisant les règles ci-dessus et
-rapportera séparément chaque motif d'exclusion. Les profils constants et les
-ajustements non positifs resteront dans l'analyse des exclusions afin de
-quantifier le biais de sélection.
+Le nombre d'antennes admissibles n'est pas une taille d'échantillon gelée a
+priori. La calibration actuelle en retient `3 624` sur `3 825`. La campagne
+utilise toutes les antennes satisfaisant les règles ci-dessus et rapporte
+séparément chaque motif d'exclusion. Les profils constants et les ajustements
+non positifs restent dans l'analyse des exclusions afin de quantifier le biais
+de sélection.
 
 ## 5. Validation des calculs et du modèle de puissance
 
@@ -104,68 +105,92 @@ F_i     = price_per_kWh / 1000 * P_fixed_i,
 gamma_i = price_per_kWh / 1000 * slope_i.
 ```
 
-## 6. Construction semi-synthétique des opérateurs
+## 6. Construction semi-empirique des opérateurs
 
-La campagne principale utilise exactement **1 000 sites virtuels** de quatre
-antennes distinctes. La graine pseudo-aléatoire globale `20260814` fixe la
-liste complète des sites, qui est exportée avant la campagne et réutilisée à
-l'identique pour les cinq nuits et les quatre scénarios de capacité. Une
-antenne peut appartenir à plusieurs sites, mais jamais deux fois au même site.
-Les 1 000 quadruplets sont distincts. Les quatre scénarios et les cinq nuits
-forment donc 20 000 instances à partir de cette même population de sites, sans
-énumération exhaustive de toutes les associations possibles.
-Les quatre séries utilisent les mêmes 120 heures et conservent leurs propres
-trafics et coefficients de puissance.
+On ne traite pas quatre antennes Orange distinctes comme quatre MNO
+colocalisés. Chaque site virtuel est un **plan** ancré sur une antenne de
+référence \(a\) :
 
-Les antennes sont classées puis divisées en quatre groupes de même taille selon
-le trafic maximal et selon `P_fixed`. Les quatre membres d'un site sont tirés
-dans le même groupe pour les deux critères. Le nombre de sites attribué à
-chaque groupe croisé est proportionnel au nombre d'antennes qu'il contient ;
-les arrondis sont répartis par la méthode des plus forts restes afin d'obtenir
-exactement 1 000 sites. Tout groupe sollicité doit contenir au moins quatre
-antennes, faute de quoi la construction s'arrête avec un diagnostic explicite.
-La suffisance de l'échantillon est contrôlée après la campagne en comparant les
-principaux agrégats sur les 500 premiers sites et sur les 1 000 sites. Cette
-comparaison réutilise les résultats calculés et n'ajoute aucune simulation.
+- profil normalisé \(s_j(t)=d_j(t)/\bar d_j\) sur les 120 heures ;
+- mélange \(\tilde s_i=(1-\lambda)s_a+\lambda s_{j_i}\) ;
+- demande \(d_i(t)=\mu_a\alpha_i\tilde s_i(t)\) avec \(\mu_a=\bar d_a\)
+  et \(\sum_i\alpha_i=n\).
 
-Les données préparées sont persistées dans `results/power_calibration/` :
+La campagne utilise **400 plans** (100 références par quartile de trafic
+moyen, sans remise). Graine globale `20260818`. Une réalisation synthétique
+par référence. Les donneurs et les trois paquets énergétiques (proches,
+modérés, distants) sont tirés une fois, disjoints de \(a\) et entre eux.
+Les \(\alpha\) sont permutés une fois par site.
 
-- `calibrated_population.npz` contient les 120 observations, les coefficients,
-  les diagnostics et les groupes de chaque antenne admissible ;
-- `virtual_sites.csv` contient la liste gelée des 1 000 sites ;
-- `manifest.json` enregistre la signature du fichier source, les paramètres et
-  la version du cache.
+Niveaux de volume, calés sur les quantiles du trafic moyen admissible :
 
-Le fichier brut n'est relu que si ce cache manque, si sa version ou ses
-paramètres changent, ou si la taille ou la date de modification de la source a
-changé. L'option `--rebuild-cache` force explicitement sa reconstruction.
+| niveau | définition | \(\alpha\) (arrondi) |
+|---|---|---|
+| close | \((1,1,1,1)\) | \(1,1,1,1\) |
+| moderate | Q40, Q50, Q60, Q75 | \(0.551, 0.807, 1.084, 1.557\) |
+| far | Q25, Q40, Q60, Q90 | \(0.236, 0.532, 1.047, 2.185\) |
+| outlier | trois médianes et Q90 | \(0.689, 0.689, 0.689, 1.933\) |
 
-## 7. Capacité et satisfaction du trafic
+Niveaux de forme : \(\lambda\in\{0.15, 0.35, 1.00\}\), calés pour que la
+corrélation médiane entre opérateurs vaille environ \(0.99\), \(0.94\) et
+\(0.57\).
 
-La capacité physique n'est pas observable dans le fichier. Elle est donc un
-paramètre de scénario, construit à partir du trafic maximal observé. Pour
-chaque taux maximal cible `r in {0.70, 0.80, 0.90, 1.00}`, on fixe :
+Niveaux d'équipement : quatre antennes du même quartile de `P_fixed` ; quatre
+tirages dans toute la population ; une antenne par quartile. Les couples
+`(P_fixed, slope)` restent joints. Ils sont assignés indépendamment des
+\(\alpha_i\).
+
+Les comparaisons entre niveaux sont **appariées** sur les mêmes 400 plans.
+La suffisance d'échantillon est contrôlée en comparant les 200 premiers sites
+aux 400.
+
+Artefacts dans `results/power_calibration/` :
+
+- `calibrated_population.npz` : profils et coefficients admissibles ;
+- `site_blueprints.csv` : plans gelés ;
+- `protocol_parameters.json` : \(\alpha\), \(\lambda\), \(r\), régimes B et
+  statistiques empiriques ;
+- `manifest.json` : signature SHA-256 de la source et version du générateur.
+
+`--rebuild-cache` relit le CSV. Si le cache de calibration est valide mais
+que la version du générateur a changé, seuls les plans sont reconstruits.
+
+## 7. Capacité : campagne A et campagne B
+
+La capacité n'est pas observée. Toute construction de \(q_i\) est un
+scénario contrefactuel. Le code vérifie \(d_i^h\le q_i\) sur \(H\) ; une
+violation arrête l'instance.
+
+**Campagne A** (semi-empirique). Équipement dimensionné de sorte que le pic
+des 120 heures occupe une fraction `r` de la capacité :
 
 ```text
-q_i = max_observed_traffic_i / r,
-donc max_observed_traffic_i = r * q_i.
+max_{t in T} d_i(t) = r q_i,    r in {0.70, 0.80, 0.90, 1.00}.
 ```
 
-Le maximum est calculé sur les 120 heures des cinq premiers jours, et non
-seulement sur la fenêtre de décision. Le cas `r = 0.70` laisse une marge de 30 % au pic
-observé ; le cas `r = 1.00` fixe la capacité exactement à ce pic. Le paramètre
-`r` décrit un scénario de capacité et non une grandeur physique mesurée.
+Le paramètre `r` est le taux d'utilisation maximal *supposé* au pic
+quinquennal. `r = 0.70` signifie `max d_i = 0.70 q_i`, donc
+`q_i ≈ 1.43 max d_i`, et non une « marge de 30 % » au sens de
+`q_i = 1.30 max d_i`. Scénario central : volumes, formes et équipements
+modérés, `r = 0.70`.
 
-Dans la campagne principale, la demande observée reste inchangée : aucun
-multiplicateur de trafic n'est appliqué. Avant chaque simulation, le code
-vérifie directement `d_i[h] <= q_i` pour tout `i` et tout `h` de la fenêtre.
-Une violation arrête le scénario ; le trafic n'est jamais tronqué et la
-capacité n'est pas recalibrée pour rendre le cas artificiellement faisable.
+Cette campagne évalue un partage nocturne d'équipements dimensionnés pour la
+journée. Le rapport médian trafic nocturne moyen / pic des cinq jours vaut
+\(0.14\) : un seul gardien y suffit le plus souvent. Ce n'est pas un test
+des franchissements de seuils.
 
-Toute la demande doit être acheminée et aucune capacité ne peut être dépassée.
-Cette contrainte exprime une satisfaction intégrale du trafic, mais ne permet
-pas d'affirmer une QoS maximale en débit, latence ou couverture, qui ne sont
-pas observés dans les données.
+**Campagne B** (seuils). Capacités égales, taillées sur la demande de
+coalition dans \(H\) :
+
+```text
+q_i = max{ D_H^max / (k r_H),  max_{h in H} d_i^h },
+D_H^max = max_{h in H} d^h(N).
+```
+
+Régimes \((k, r_H)\) : `(1, 0.70)` un gardien ; `(2, 0.90)` frontière 1–2 ;
+`(3, 0.90)` frontière 2–3 ; `(4, 0.90)` contraint. Volumes et formes
+proches, équipements modérés. Cette campagne n'est pas représentative du
+réseau.
 
 ## 8. Fenêtre temporelle et reconfiguration horaire
 
@@ -178,8 +203,9 @@ position et sa durée, sans modifier ce réglage central.
 Ce choix est un réglage de la campagne, et non une constante imposée par
 l'implémentation. Le code reçoit les deux bornes de la fenêtre en paramètres
 et accepte toute fenêtre horaire contiguë, y compris une fenêtre traversant
-minuit. Modifier ces bornes ne doit changer ni la construction des sites et des
-capacités, ni les méthodes d'optimisation et d'analyse coalitionnelle.
+minuit. Modifier ces bornes ne doit changer ni la construction des plans, ni
+les méthodes d'optimisation et d'analyse coalitionnelle. Dans la campagne B,
+les capacités sont recalculées sur la fenêtre utilisée.
 
 Chacun des cinq jours fournit une fenêtre nocturne distincte. Dans le modèle
 principal, les gardiens et l'allocation du trafic sont réoptimisés
@@ -212,21 +238,23 @@ abandonnée pour la rendre artificiellement comparable.
 
 ## 10. Analyse de sensibilité structurée
 
-Le scénario central fixe `r = 0.80`, conserve le trafic et les coefficients
-calibrés, suppose une veille nulle, utilise `[00:00, 07:00)` et réunit quatre
-opérateurs. Les facteurs suivants sont modifiés un par un, sur les mêmes sites
-et les mêmes jours :
+Le scénario central fixe `r = 0.70`, volumes, formes et équipements modérés,
+une veille nulle, `[00:00, 07:00)` et quatre opérateurs. Les facteurs
+suivants sont modifiés un par un, sur les mêmes 400 plans et les mêmes jours :
 
 | Facteur | Valeurs |
 |---|---|
 | marge de capacité | `r in {0.70, 0.80, 0.90, 1.00}` |
+| hétérogénéité des volumes | close / moderate / far / outlier |
+| hétérogénéité des formes | `lambda in {0.15, 0.35, 1.00}` |
+| hétérogénéité des équipements | close / moderate / distant |
 | trafic | `0.8 d`, `d`, `1.2 d`, capacités centrales inchangées |
 | puissance fixe | `0.8 P_fixed`, `P_fixed`, `1.2 P_fixed` |
 | pente variable | `0.8 slope`, `slope`, `1.2 slope` |
 | puissance de veille | `0`, `0.05 P_fixed`, `0.10 P_fixed` |
 | position d'une fenêtre de 7 h | `[22:00,05:00)`, `[00:00,07:00)`, `[02:00,09:00)` |
 | durée depuis minuit | 5 h, 7 h, 9 h |
-| nombre d'opérateurs | `2, 3, 4, 5, 6`, avec 1 000 sites stratifiés par taille |
+| nombre d'opérateurs | `2, 3, 4, 5, 6`, même générateur, 400 plans par taille |
 
 Dans les lignes consacrées aux coûts, la variation de `P_fixed` représente
 celle de `F_i` et la variation de `slope` celle de `gamma_i`, à prix de
@@ -237,7 +265,7 @@ coûts coalitionnels utilisent la même convention.
 La position de la fenêtre est comparée uniquement sur les nuits entièrement
 observées pour les trois positions, de façon à conserver l'appariement. La
 variation du nombre d'opérateurs utilise nécessairement de nouveaux sites,
-construits avec la même population admissible, la même stratification et la
+construits avec le même générateur, la même population admissible et la
 même graine. Le paramètre `beta_i = gamma_i * q_i` n'est pas varié séparément :
 à `q_i` fixé, sa variation est celle de `gamma_i`, tandis que la variation de
 `q_i` est déjà portée par `r`.
@@ -279,7 +307,7 @@ puissance active moyenne.
 
 Les distributions sont résumées par médiane, quartiles et quantiles 5 %--95 %.
 Les intervalles d'incertitude à 95 % sont obtenus en rééchantillonnant les
-1 000 sites virtuels.
+400 plans.
 
 ## 12. Critères de gel avant campagne principale
 
@@ -287,8 +315,11 @@ Les intervalles d'incertitude à 95 % sont obtenus en rééchantillonnant les
 - règles d'admissibilité exécutées et motifs d'exclusion audités ;
 - ajustement affine sur les cinq premiers jours terminé ;
 - tests de cohérence théorique et algorithmique terminés ;
-- liste des 1 000 sites et graine globale exportées ;
+- 400 plans et graine `20260818` exportés (`site_blueprints.csv`,
+  `protocol_parameters.json`) ;
+- diagnostics de plausibilité exécutés (formes, volumes, `F_i`, `gamma_i`,
+  charge, nombre minimal d'équipements par régime) ;
 - chaque configuration entièrement déterminée par un fichier de paramètres ;
-- chaque scénario vérifie `max_observed_traffic_i = r * q_i` et le contrôle
-  direct `d_i[h] <= q_i` ;
-- résultats pilotes reproduits à l'identique avec la liste de sites gelée.
+- campagne A : `max_T d_i = r q_i` et contrôle `d_i[h] <= q_i` ;
+- campagne B : `q_i = max{D_H^max/(k r_H), max_H d_i}` et le même contrôle ;
+- résultats pilotes reproduits à l'identique avec la liste de plans gelée.

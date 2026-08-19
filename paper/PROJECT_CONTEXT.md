@@ -4,7 +4,7 @@ L’article étudie le partage opportuniste d’infrastructures RAN entre
 opérateurs mobiles, à l’aide de l’optimisation combinatoire et de la
 théorie des jeux coopératifs.
 
-# Décisions éditoriales et scientifiques au 17 août 2026
+# Décisions éditoriales et scientifiques au 18 août 2026
 
 - Cible principale : IEEE Transactions on Green Communications and
   Networking (TGCN).
@@ -23,8 +23,12 @@ théorie des jeux coopératifs.
   restent des paramètres du code.
 - Période empirique : les cinq premiers jours observés, soit 120 créneaux
   horaires par antenne, sont utilisés dans toutes les expériences.
-- Population simulée : 1 000 sites virtuels de quatre antennes, générés une
-  fois avec la graine 20260814 puis réutilisés dans tous les scénarios.
+- Population simulée : 400 plans gelés (graine 20260818). Chaque site est
+  construit autour d'une antenne de référence empirique ; les quatre
+  opérateurs virtuels en dérivent par facteurs de taille calés sur les
+  quantiles de trafic et par mélange de formes empiriques. Les coefficients
+  énergétiques viennent d'antennes disjointes. Les comparaisons sont appariées
+  sur ces mêmes plans.
 - Politique opérationnelle principale : ensemble de gardiens et allocation du
   trafic optimisés indépendamment à chaque heure, puis coûts sommés sur la
   fenêtre.
@@ -34,10 +38,12 @@ théorie des jeux coopératifs.
   L'optimum principal est horaire et applique l'allocation gloutonne à chaque
   heure. L'optimum avec gardiens fixes sur la nuit est une extension secondaire
   dont le surcoût mesure le prix de la persistance.
-- Capacité : paramètre de scénario construit de sorte que le pic observé
-  représente entre 70 % et 100 % de \(q_i\) ; aucune capacité physique
-  n’est prétendue observée. La demande n’est pas multipliée dans la campagne
-  principale ; ses variations sont réservées à l’analyse de sensibilité.
+- Capacité : jamais observée. Campagne A (semi-empirique) :
+  \(\max_{\mathcal T}d_i=r q_i\) avec \(r\in\{0{,}70,0{,}80,0{,}90,1\}\),
+  central \(r=0{,}70\) (soit \(q_i\approx 1{,}43\max d_i\), non
+  \(q_i=1{,}30\max d_i\)). Campagne B (stress des seuils) : capacités égales
+  taillées sur \(D_H^{\max}/(k r_H)\). La demande n'est pas multipliée dans
+  ces campagnes ; ses variations sont réservées à l'analyse de sensibilité.
 - Sensibilité : une section globale, placée après les résultats opérationnels
   et de stabilité, varie séparément capacité, trafic, coefficients de
   puissance, veille, fenêtre et nombre d'opérateurs. Le prix commun de
@@ -97,28 +103,13 @@ Le protocole détaillé est fixé dans `NUMERICAL_PROTOCOL.md`.
   capacités par ordre croissant des coûts variables unitaires.
 - La sélection globale des gardiens est un problème à coûts fixes.
 - Pour les petites coalitions, l’énumération exacte est acceptable.
-- Sur les 20 000 instances de la Section 6.3, l'optimum horaire évite une
-  médiane de 70,6 % de l'énergie autonome. Un seul gardien est actif dans
-  93,6 % des 140 000 décisions horaires.
-- Le coût médian de la persistance vaut 0,98 point d'économie, et son quantile
-  95 vaut 17,2 points ; l'optimum persistant coïncide avec l'horaire dans
-  39,9 % des instances.
-- Sur ces mêmes 20 000 instances, aucun cœur vide n'est observé ; le cœur est
-  non vide mais exclut Shapley dans 3,405 % des cas, et Shapley appartient au
-  cœur dans 96,595 % des cas.
-- L'analyse de sensibilité repose sur 1 000 sites (5 jours, et 4 nuits communes
-  pour la position de la fenêtre) et sur 1 000 sites stratifiés pour chaque
-  taille de coalition entre 2 et 6, soit 182 000 lignes de résultats.
-- Sur les plages testées, le nombre d'opérateurs domine les amplitudes
-  d'efficacité et de stabilité ; la position et la durée de la fenêtre
-  influencent fortement l'efficacité et le coût de la persistance.
-- Entre quatre et six opérateurs, l'économie médiane passe de 70,8 % à 77,7 %,
-  tandis que la fréquence d'une valeur de Shapley dans le cœur passe de
-  96,6 % à 79,4 %.
+- Les fréquences numériques d'économies, de gardiens, de cœur vide et de
+  Shapley dans le cœur, antérieurement calculées sur 1 000 sites obtenus par
+  appariement de quatre antennes distinctes, sont **obsolètes**. Elles
+  correspondent à un protocole remplacé le 18 août 2026. Les Sections 6.3--6.5
+  seront réécrites après relance des campagnes A et B. Ne pas les citer.
 - La condition de capacité individuelle suffisante garantit bien un cœur non
   vide dans toutes les instances où elle s'applique, sans garantir Shapley.
-  Aucun cœur vide n'apparaît dans la campagne principale ; ils réapparaissent
-  dans certaines sensibilités à la taille et à la fenêtre.
 - La sous-additivité est stricte lorsque l’un des gardiens de coût variable
   minimal des deux solutions séparées peut acheminer toute la demande réunie.
 - Le coût horaire agrégé \(C_H^*\) est sous-additif et le jeu \(v_H\)
