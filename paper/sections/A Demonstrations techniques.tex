@@ -287,3 +287,75 @@ z(Q)\geqslant v_H(Q).
 \end{align*}
 Les contraintes de stabilité sont donc équivalentes.
 \end{proof}
+
+\section{Diagnostics du protocole et contrôles d'implémentation}
+\label{app:diagnostics_protocole}
+
+Cette annexe complète le protocole de la
+Section~\ref{subsec:protocole_experimental}. Elle sert à établir quel espace
+d'instances est effectivement simulé, avant toute interprétation des résultats
+d'efficacité et de stabilité.
+
+\subsection{Plausibilité des instances construites}
+
+Les grandeurs suivantes sont comparées entre les instances construites et la
+population d'antennes admissibles.
+
+\begin{itemize}
+    \item \textbf{Profil journalier.} Médiane et intervalle interquartile du
+    profil normalisé, heure par heure, présentés en écart entre synthétique et
+    réel plutôt qu'en superposition, les deux courbes étant trop proches pour
+    être distinguées autrement.
+
+    \item \textbf{Régularité temporelle.} Corrélation entre \(d(t)\) et
+    \(d(t+1)\) le long d'une même série. Elle mesure la douceur du trafic
+    d'une heure à la suivante, et constitue le contrôle que la construction
+    n'a pas dégradé la dynamique observée.
+
+    \item \textbf{Ressemblance entre opérateurs.} Corrélation entre
+    \(d_i(t)\) et \(d_j(t)\) au même instant sur un même site. C'est la
+    grandeur que règle le niveau d'hétérogénéité des formes, et elle ne doit
+    pas être confondue avec la précédente ; les deux sont donc rapportées
+    séparément.
+
+    \item \textbf{Volumes et extrêmes.} Distributions des moyennes, des
+    maxima et des coefficients de variation horaires.
+
+    \item \textbf{Équipements.} Distributions de \(F_i\) et \(\gamma_i\), et
+    corrélation entre volume synthétique et puissance fixe, nulle par
+    construction sauf au niveau couplé.
+
+    \item \textbf{Régimes d'activation.} Fréquence des valeurs de \(k_h\)
+    définies en~\eqref{eq:nombre_minimal_gardiens}, par heure de la journée et
+    par scénario de capacité.
+
+    \item \textbf{Usage des antennes.} Nombre de plans distincts dans lesquels
+    une même antenne réelle intervient, afin de vérifier qu'aucune n'est
+    surreprésentée.
+\end{itemize}
+
+\subsection{Contrôles croisés de l'implémentation}
+
+Chaque quantité optimale est recalculée par deux méthodes indépendantes, sur
+des cas artificiels de deux à six opérateurs et quelques heures, dont
+certaines réponses sont connues analytiquement.
+
+\begin{itemize}
+    \item Répartition gloutonne de la Proposition~\ref{pro:opt} contre le
+    programme linéaire~\eqref{eq:lp_allocation_fixe}.
+    \item Énumération horaire des ensembles de gardiens contre le programme
+    mixte~\eqref{eq:milp_horaire}.
+    \item Politique persistante contre~\eqref{eq:milp_gardiens}.
+    \item Test de non-vacuité du cœur contre le programme de
+    Bondareva--Shapley~\eqref{eq:lp_bondareva_shapley}.
+    \item Appartenance du nucléole au moindre
+    cœur~\eqref{eq:lp_moindre_coeur}.
+    \item Équilibre budgétaire des transferts, somme nulle, conformément à la
+    Proposition~\ref{prop:equilibre_budgetaire}.
+    \item Reproduction numérique des contre-exemples des
+    Propositions~\ref{prop:contre_exemple_coeur_vide}
+    et~\ref{prop:shapley_hors_coeur_semi_homogene}.
+\end{itemize}
+
+Ces contrôles valident l'implémentation ; ils ne constituent pas des résultats
+empiriques.

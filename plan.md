@@ -2,7 +2,7 @@
 
 Spécification de la Section 6, à figer avant toute modification du code et du
 LaTeX. Les constats, l'historique et les options écartées sont dans
-`plan_2.md`.
+`comments.md`.
 
 Les formules sont écrites en texte brut, sans LaTeX, pour rester lisibles dans
 l'aperçu Markdown.
@@ -397,6 +397,12 @@ Allégée. Ne conserver que ce qui n'est pas déjà un axe du protocole : niveau
 global de trafic, multiplicateurs appliqués aux coûts fixes et variables,
 veille non nulle, position et durée de la fenêtre. Classement des amplitudes,
 valable uniquement sur les plages testées.
+
+Facteur différé, à n'ajouter que si les résultats le justifient : spécification
+du modèle de puissance, droite unique contre deux niveaux à pente commune. La
+décision du 20 août est de conserver la droite unique, voir la section 3 de
+`comments.md`. Le biais est connu et de sens prudent, les gains relatifs étant
+plutôt sous-estimés, ce qui suffit pour un premier jeu de résultats.
 
 ### 6.7 Limites
 

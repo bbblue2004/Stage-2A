@@ -356,8 +356,12 @@ def main() -> None:
     figure.tight_layout()
     output = make_output_path("plan_walkthrough.png")
     figure.savefig(output, dpi=140)
+    vector = Path("figures") / "protocol" / "plan_walkthrough.pdf"
+    vector.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(vector)
     plt.close(figure)
     print(f"\n>> Figure : {output.resolve()}")
+    print(f">> Figure : {vector.resolve()}")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 \section{Modèle du système}
+\label{sec:modele_systeme}
 
 Dans cette partie, nous décrivons le modèle mathématique utilisé. Nous
 introduisons d'abord les paramètres et les coûts opérationnels pour une heure.
@@ -223,6 +224,29 @@ L'hypothèse \(d_i\leqslant q_i\) pour tout \(i\in N\) implique
 \(\mathcal E\) est non vide.
 
 \end{definition}
+
+\begin{definition}[Nombre minimal d'équipements]
+\label{def:nombre_minimal_gardiens}
+Pour toute coalition \(S\in\mathcal S\), on pose
+\begin{equation}
+    k(S):=\min_{G\in\mathcal G(S)}|G|.
+    \label{eq:nombre_minimal_gardiens}
+\end{equation}
+C'est le plus petit nombre d'équipements dont la capacité cumulée suffit à
+acheminer \(d(S)\).
+\end{definition}
+
+Cette quantité ne dépend que des demandes et des capacités, jamais des
+paramètres de coût. Elle s'obtient en additionnant les capacités par valeurs
+décroissantes jusqu'à couvrir \(d(S)\). Par construction, tout ensemble de
+gardiens faisable vérifie \(|G|\geqslant k(S)\) ; en particulier l'ensemble de
+coût minimal en compte au moins autant, et généralement davantage lorsqu'il
+est avantageux d'allumer un équipement supplémentaire peu coûteux. Sur la
+fenêtre, on note \(k_h(S)\) la valeur de \(k(S)\) à l'heure \(h\), et l'on
+abrège \(k_h:=k_h(N)\). Le cas \(k_h=1\) signifie qu'un seul équipement peut
+absorber toute la demande du site, situation dont la
+Section~\ref{sec:jeu_cooperatif} montre qu'elle est particulièrement favorable
+à la stabilité.
 
 
 \begin{definition}[Vecteur de répartition du trafic admissible]
