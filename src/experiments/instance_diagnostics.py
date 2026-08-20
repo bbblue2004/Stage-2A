@@ -16,6 +16,7 @@ import numpy as np
 from src.core.time_window import inclusive_hour_window
 from src.data_processing.data_loader import ROOT
 from src.data_processing.instance_generator import (
+    CENTRAL_RATE,
     DEFAULT_NUM_SITES,
     ScenarioSpec,
     antenna_usage_counts,
@@ -36,7 +37,7 @@ DEFAULT_RESULTS_DIR = ROOT / "results" / "instance_diagnostics"
 DEFAULT_FIGURES_DIR = ROOT / "figures" / "instance_diagnostics"
 DIAGNOSTIC_VERSION = 1
 CENTRAL_SPEC = ScenarioSpec(
-    "A", "moderate", "moderate", "moderate", capacity_rate=0.70
+    "A", "moderate", "moderate", "moderate", capacity_rate=CENTRAL_RATE
 )
 
 

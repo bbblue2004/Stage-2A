@@ -31,7 +31,12 @@ quatre familles de grandeurs : les demandes horaires \(d_i^h\), les capacités
 effectives \(q_i\), les coûts fixes \(F_i\) et les coûts variables unitaires
 \(\gamma_i\), le tout satisfaisant \(d_i^h\leqslant q_i\). Le protocole
 ci-dessous précise, pour chacune, si elle est observée, estimée à partir des
-mesures, ou construite.
+mesures, ou construite. Cette sous-section décrit le protocole ; les
+résultats sont aux
+Sections~\ref{subsec:efficacite_operationnelle}--\ref{subsec:partage_cas_representatifs},
+la sensibilité des paramètres à la
+Section~\ref{subsec:sensibilite_mecanismes}, et les contrôles d'implémentation
+en Annexe~\ref{app:diagnostics_protocole}.
 
 \paragraph{Ce qui est observé, calibré, synthétique.}
 Les données associent, pour chaque identifiant radio Orange d'Île-de-France,
@@ -73,87 +78,81 @@ en~\eqref{eq:cout_horaire_principal}, le cœur du jeu \((N,v_H)\) de la
 Définition~\ref{def:jeu_economies} et la valeur de Shapley dépendent du
 trafic, des équipements et des seuils de capacité.
 
-\paragraph{Construction d'un site.}
-Un site virtuel est défini par un \emph{plan} : le tirage, effectué une seule
-fois, des antennes réelles qui lui fournissent ses ingrédients. Une antenne
-recrutée dans un plan y joue exactement un rôle parmi trois.
+\paragraph{Un plan, puis une instance.}
+Un \emph{plan} est un tirage d'antennes, effectué une seule fois. Une
+\emph{instance} est le quadruplet d'opérateurs que l'on simule, obtenu en
+appliquant à ce plan un choix d'hétérogénéité. Les deux ne coïncident pas :
+le même plan donne plusieurs instances.
+
+Pour construire \(n\) opérateurs, une instance utilise \(2n\) antennes
+réelles distinctes, réparties en trois \emph{rôles}. Ces rôles disent ce que
+l'antenne fournit, pas à quel point les opérateurs se ressemblent.
 
 \begin{table}[htbp]
 \centering
 \small
-\begin{tabular}{p{0.16\textwidth}p{0.36\textwidth}p{0.38\textwidth}}
+\begin{tabular}{p{0.16\textwidth}p{0.48\textwidth}p{0.26\textwidth}}
 \hline
-Rôle & Ce que l'antenne fournit & Nombre par site \\
+Rôle & Ce qu'elle fournit & Nombre par instance \\
 \hline
-Référence & l'échelle \(\mu_a\), en Go, et la forme de l'opérateur 1 & 1 \\
-Donneuse & une forme temporelle, sans son échelle & \(n-1\) \\
-Énergétique & le couple \((P^{\mathrm{fixe}},s)\), donc \((F,\gamma)\) & \(n\) \\
+Référence & l'échelle du site, \(\mu_a\), et la forme de l'opérateur 1 & 1 \\
+Donneuse & la forme d'un autre opérateur, sans son volume & \(n-1\) \\
+Énergétique & le couple \((P^{\mathrm{fixe}},s)\), donc \((F,\gamma)\)
+d'un opérateur & \(n\) \\
 \hline
 \end{tabular}
-\caption{Les trois rôles d'une antenne réelle dans un plan. Les rôles sont
-disjoints à l'intérieur d'un même site.}
+\caption{Les trois rôles. Une antenne n'en joue qu'un dans un même plan.
+Pour \(n=4\), une instance consomme huit antennes.}
 \label{tab:roles_antennes}
 \end{table}
 
-Cette séparation est délibérée. Sur la population admissible, le trafic moyen
-et la puissance fixe sont corrélés à \(0{,}52\) : les cellules les plus
-chargées consomment davantage à vide. Si une même antenne fournissait à la
-fois le volume et l'équipement d'un opérateur, cette liaison se propagerait
-aux instances et il deviendrait impossible de faire varier l'hétérogénéité des
-volumes sans faire varier simultanément celle des équipements. Les découpler
-rend les deux axes indépendants ; un niveau de contrôle rétablissant la
-liaison empirique est décrit plus bas.
+On sépare trafic et énergie pour une raison simple. Dans les données, le
+trafic moyen et la puissance fixe sont corrélés à \(0{,}52\). Si la même
+antenne fournissait les deux, agrandir un opérateur changerait
+automatiquement son équipement. On ne saurait plus lequel des deux explique
+le résultat.
 
-Pour toute antenne admissible \(j\), on définit le \emph{profil normalisé}
+Pour toute antenne admissible \(j\), le \emph{profil normalisé}
 \begin{equation}
     s_j(t)=\frac{d_j(t)}{\bar d_j},
     \qquad
     \bar d_j=\frac{1}{|\mathcal T|}\sum_{t\in\mathcal T}d_j(t),
     \label{eq:profil_normalise}
 \end{equation}
-de moyenne égale à un sur les 168 heures. Cette normalisation sépare l'échelle
-du volume de la forme temporelle sans altérer les corrélations d'une heure à
-la suivante.
-
-La demande d'un opérateur combine alors une échelle, un facteur de taille et
-une forme :
+est de moyenne un sur les 168 heures : on garde la silhouette, on jette
+l'échelle. La demande de l'opérateur \(i\) est alors le produit de trois
+termes,
 \begin{equation}
     d_i(t)=\mu_a\,\alpha_i\,s_{\sigma(i)}(t),
     \qquad
     \mu_a=\bar d_a,
     \label{eq:demande_synthetique}
 \end{equation}
-où \(a\) est l'antenne de référence et \(\sigma(i)\) l'antenne qui prête sa
-forme à l'opérateur \(i\), avec \(\sigma(1)=a\). La demande \(d_i^h\) du modèle
-est la restriction de \(d_i(t)\) à l'heure \(h\). Aucune courbe n'est
-fabriquée : chaque \(s_{\sigma(i)}\) est le profil mesuré d'une antenne
-existante, ce qui préserve à la fois la régularité temporelle du trafic et
-l'amplitude de son cycle jour--nuit.
+où \(\mu_a\) est le trafic moyen de la référence, \(\alpha_i\) sa part de
+volume, et \(s_{\sigma(i)}\) la forme de l'antenne qui lui est assignée, avec
+\(\sigma(1)=a\). Aucune courbe n'est fabriquée. La demande \(d_i^h\) du modèle
+est la restriction de \(d_i(t)\) à l'heure \(h\).
 
-Les facteurs de taille \(\alpha=(\alpha_i)_{i\in N}\) sont lus sur les
-quantiles de la distribution empirique des trafics moyens, puis divisés par
-leur moyenne arithmétique. Ils vérifient donc \(\sum_i\alpha_i=n\), de sorte
-que le trafic total du site vaut \(n\mu_a\) quel que soit le niveau
-d'hétérogénéité retenu : changer de niveau \emph{redistribue} le volume entre
-opérateurs sans en modifier le total. Une permutation tirée une fois par site
-évite qu'un même indice d'opérateur soit systématiquement le plus volumineux.
+Les \(\alpha_i\) sont lus sur des quantiles du trafic moyen empirique, puis
+divisés par leur moyenne, de sorte que \(\sum_i\alpha_i=n\). Changer
+d'hétérogénéité redistribue le volume sans changer le total du site,
+\(n\mu_a\). Une permutation, tirée une fois dans le plan, mélange ces
+valeurs entre opérateurs : sans elle, au niveau d'équipement le plus
+hétérogène, le plus petit opérateur recevrait toujours l'équipement le plus
+sobre.
 
-L'hétérogénéité des formes est obtenue par \emph{sélection} et non par
-mélange. Pour la référence \(a\), on classe les antennes admissibles selon
-leur corrélation avec \(s_a\), puis on tire les donneuses au voisinage d'un
-quantile de ce classement. Le niveau le plus homogène correspond à
-\(\sigma(i)=a\) pour tout \(i\), c'est-à-dire une forme commune. Ce choix est
-calibré sur la dispersion réelle : la corrélation entre profils normalisés de
-deux antennes tirées au hasard a pour médiane \(0{,}54\), pour neuvième décile
-\(0{,}81\) et pour quantile à \(99\,\%\) \(0{,}91\). Des paires quasi
-identiques n'existent pratiquement pas dans le réseau, ce qui justifie de
-réaliser le niveau homogène par une forme partagée plutôt que par une
-sélection.
+Les formes ne sont pas mélangées. Le niveau le plus homogène copie \(s_a\)
+chez tous les opérateurs. Les deux autres tirent les donneuses au voisinage
+d'un quantile de corrélation avec \(s_a\). Ce calibrage suit la dispersion
+réelle : la corrélation entre deux profils tirés au hasard a pour médiane
+\(0{,}54\), pour neuvième décile \(0{,}81\) et pour quantile à \(99\,\%\)
+\(0{,}91\). Des paires quasi identiques n'existent pratiquement pas, d'où le
+recours à une forme partagée pour le niveau homogène.
 
 \paragraph{Un plan déroulé.}
 La Figure~\ref{fig:plan_deroule} et le Tableau~\ref{tab:plan_deroule}
-présentent un site complet, obtenu avec une antenne de référence tirée au
-hasard et le scénario central. Ils suffisent à reproduire le calcul.
+présentent l'instance centrale d'un plan tiré au hasard. Ils suffisent à
+reproduire le calcul.
 
 \begin{figure}[htbp]
     \centering
@@ -182,7 +181,7 @@ Antenne d'énergie & \texttt{00029509W1} & \texttt{00000006U8} & \texttt{0000219
 \(s_i\) (W/Go) & \(44{,}61\) & \(15{,}72\) & \(30{,}94\) & \(3{,}71\) \\
 Demande moyenne (Go/h) & \(19{,}34\) & \(13{,}47\) & \(26{,}38\) & \(37{,}92\) \\
 Pic \(\max_t d_i(t)\) (Go/h) & \(48{,}26\) & \(26{,}32\) & \(48{,}62\) & \(82{,}39\) \\
-\(q_i\) à \(r=0{,}70\) (Go/h) & \(68{,}94\) & \(37{,}60\) & \(69{,}46\) & \(117{,}71\) \\
+\(q_i\) à \(r=0{,}90\) (Go/h) & \(53{,}62\) & \(29{,}24\) & \(54{,}02\) & \(91{,}54\) \\
 \hline
 \end{tabular}
 \caption{Paramètres du site construit à partir de la référence
@@ -200,119 +199,40 @@ coalition a donc intérêt à concentrer le trafic sur son équipement, ce qui l
 confère un pouvoir de négociation que la Section~\ref{sec:jeu_cooperatif}
 permet de quantifier.
 
-\paragraph{Axes d'hétérogénéité et plan d'expériences.}
-Cinq axes sont contrôlés séparément.
-
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabular}{p{0.16\textwidth}p{0.10\textwidth}p{0.60\textwidth}}
-\hline
-Axe & Niveaux & Réalisation \\
-\hline
-Volume & 4 & \(\alpha\) constant ; quantiles \(40\)--\(75\,\%\) ;
-quantiles \(25\)--\(90\,\%\) ; trois médianes et un quantile \(90\,\%\) \\
-Forme & 3 & forme commune ; donneuses au quantile \(99\,\%\) de corrélation ;
-donneuses à la médiane \\
-Équipement & 3 & même quartile de \(P^{\mathrm{fixe}}\) ; tirage global ; une
-antenne par quartile \\
-Capacité & 4 & \(r\in\{0{,}70,\,0{,}80,\,0{,}90,\,1\}\) \\
-Opérateurs & 2 & \(n=4\) et \(n=3\) \\
-\hline
-\end{tabular}
-\caption{Axes du protocole et niveaux retenus.}
-\label{tab:axes_heterogeneite}
-\end{table}
-
-Le plan factoriel complet compterait \(4\times3\times3\times4\times2=288\)
-scénarios par site. Nous adoptons un plan \emph{en étoile} : un scénario
-central — volumes modérés, formes modérées, équipements modérés,
-\(r=0{,}70\), \(n=4\) — puis un déplacement le long d'un seul axe à la fois,
-les quatre autres restant au centre. Cela donne \(1+3+2+2+3+1=12\) scénarios,
-auxquels s'ajoutent les deux configurations extrêmes où tous les axes sont au
-niveau le plus homogène, puis au plus hétérogène, soit \(14\) scénarios par
-site. Toute comparaison entre deux scénarios d'un même site ne modifie donc
-qu'un seul facteur, les antennes sous-jacentes restant identiques. La
-contrepartie doit être énoncée : ce plan ne mesure aucune interaction entre
-axes, et les deux extrêmes en sont le seul garde-fou.
-
-Un niveau supplémentaire, dit \emph{couplé}, assigne les antennes énergétiques
-de manière à reproduire la corrélation empirique entre volume et puissance
-fixe. Il sert de contrôle de robustesse au découplage décrit plus haut.
+\paragraph{Hétérogénéité.}
+Cinq boutons règlent à quel point les opérateurs d'un même plan diffèrent :
+les volumes \(\alpha_i\), les formes, les équipements, le taux \(r\) et le
+nombre \(n\). Un \emph{scénario} est un choix sur chacun ; appliqué au plan,
+il produit une instance. Le scénario central --- volumes, formes et
+équipements modérés, \(r=0{,}90\), \(n=4\) --- est celui du
+Tableau~\ref{tab:plan_deroule}. Plutôt que les \(216\) combinaisons
+possibles, on parcourt une étoile : le centre, puis un axe à la fois, plus
+les deux coins où tout est au plus proche ou au plus éloigné, soit
+\(13\) instances par plan. Les comparaisons sont appariées ; les
+interactions ne sont pas mesurées, hors ces deux coins. Un niveau
+\emph{couplé} réassigne les énergétiques selon la corrélation empirique
+entre volume et puissance fixe, pour vérifier que les séparer n'était pas
+décisif.
 
 \paragraph{Capacités.}
-La capacité n'est pas mesurée. Elle paramètre un scénario, sous la contrainte
-de domaine \(d_i^h\leqslant q_i\) posée en
-Section~\ref{subsec:fenetre_decision}. Chaque équipement est dimensionné de
-sorte que le pic de la série construite occupe une fraction \(r\) de la
-capacité :
+La capacité n'est pas mesurée. On la fixe par un scénario, sous la
+contrainte \(d_i^h\leqslant q_i\) de la
+Section~\ref{subsec:fenetre_decision} : le pic de la demande construite
+occupe une fraction \(r\) de la capacité,
 \begin{equation}
     \max_{t\in\mathcal T}d_i(t)=r\,q_i,
     \qquad
-    r\in\{0{,}70,\,0{,}80,\,0{,}90,\,1\}.
+    r\in\{0{,}80,\,0{,}90,\,1\}.
     \label{eq:capacite_scenario}
 \end{equation}
-Le paramètre \(r\) est le taux d'utilisation maximal \emph{supposé} sur la
-période observée. Le cas \(r=1\) fixe la capacité exactement au pic horaire de
-l'opérateur, et \(r<1\) décrit un équipement moins sollicité. Comme
-\(d_i(t)\leqslant r\,q_i\leqslant q_i\) par construction, aucune heure n'est
-jamais individuellement infaisable, et l'hypothèse de la
-Section~\ref{sec:modele_systeme} est satisfaite par construction plutôt que
-par filtrage.
-
-Le paramètre \(r\) n'agit que sur les capacités, jamais sur le trafic :
-\begin{equation}
-    \frac{d_i(t)}{q_i}
-    =
-    r\,\frac{d_i(t)}{\max_{u\in\mathcal T}d_i(u)}.
-    \label{eq:taux_charge_scenario}
-\end{equation}
-Les quatre scénarios de capacité partagent donc exactement les mêmes séries de
-demande, et seule la sélection des gardiens est recalculée.
-
-Reste à vérifier que ce dispositif franchit bien les seuils d'activation qui
-font l'objet de la Section~\ref{sec:jeu_cooperatif}. Le nombre minimal
-d'équipements \(k_h\) de la
-Définition~\ref{def:nombre_minimal_gardiens} en donne la mesure. Lorsque les
-opérateurs sont identiques, volumes et formes confondus, leurs pics sont
-simultanés et leurs capacités égales, de sorte que
-\(\max_h k_h=\lceil nr\rceil\). Toute hétérogénéité fait au contraire
-\emph{baisser} ce maximum, pour deux raisons cumulatives : les pics cessent
-d'être simultanés, donc la demande de coalition à l'heure la plus chargée
-devient strictement inférieure à la somme des pics individuels ; et comme la
-couverture s'obtient en additionnant les capacités par valeurs décroissantes,
-un opérateur très volumineux en assure à lui seul une large part. Le
-Tableau~\ref{tab:balayage_seuils} mesure l'effet sur le site déroulé plus
-haut.
-
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabular}{llcccc}
-\hline
-Volume & Forme & \(r=0{,}70\) & \(r=0{,}80\) & \(r=0{,}90\) & \(r=1{,}00\) \\
-\hline
-proches & proches & 3 & 4 & 4 & 4 \\
-proches & modérés & 3 & 3 & 3 & 4 \\
-proches & distants & 2 & 3 & 3 & 3 \\
-modérés & proches & 3 & 3 & 4 & 4 \\
-modérés & modérés & 2 & 2 & 3 & 3 \\
-modérés & distants & 2 & 2 & 3 & 3 \\
-distants & proches & 2 & 2 & 3 & 4 \\
-distants & modérés & 2 & 2 & 2 & 3 \\
-distants & distants & 1 & 2 & 2 & 3 \\
-\hline
-\end{tabular}
-\caption{Nombre minimal d'équipements à l'heure la plus chargée,
-\(\max_h k_h\) sur les 168 heures, pour le site de la
-Figure~\ref{fig:plan_deroule} et \(n=4\).}
-\label{tab:balayage_seuils}
-\end{table}
-
-Les quatre régimes d'activation sont donc parcourus par la grille elle-même,
-sans campagne de stress séparée. Le scénario extrême le plus homogène est le
-seul à atteindre quatre gardiens nécessaires : il joue le rôle de test du
-mécanisme, tandis que le scénario central décrit une situation plus plausible.
+Ainsi \(r=1\) pose \(q_i\) exactement au pic, et \(r<1\) laisse de la
+marge. Changer \(r\) ne reconstruit pas les courbes de trafic : les trois
+valeurs partagent les mêmes demandes, et seule la sélection des gardiens
+--- quels équipements restent allumés --- peut changer. Par construction,
+\(d_i(t)\leqslant r\,q_i\leqslant q_i\), donc aucune heure n'est
+individuellement infaisable. La grille atteint, selon l'hétérogénéité, de
+un à quatre gardiens nécessaires ; il n'y a pas de campagne de stress
+séparée.
 
 \paragraph{Fenêtre, réplication et reproductibilité.}
 La fenêtre centrale est
@@ -366,336 +286,253 @@ des équipements réellement mesurés.
 \subsection{Modèle de puissance}
 \label{subsec:adequation_modele_affine}
 
-L'hypothèse de coût affine posée en Section~\ref{sec:modele_systeme} suppose
-que la puissance d'un équipement actif se décompose en une composante fixe et
-une composante proportionnelle au trafic servi. Cette sous-section évalue cette
-hypothèse sur les données, et précise le passage des grandeurs mesurées aux
-paramètres \(F_i\) et \(\gamma_i\) du modèle.
+Le modèle suppose \(P_i(d)=P_i^{\mathrm{fixe}}+s_i d\) pour un équipement
+actif. On l'ajuste par moindres carrés, antenne par antenne, sur les
+heures à puissance strictement positive des sept jours. Une antenne est
+écartée si le trafic ne varie pas, s'il y a trop peu d'heures actives, ou
+si \(P^{\mathrm{fixe}}\) ou \(s\) n'est pas strictement positif. Il reste
+\(3\,623\) antennes sur \(3\,825\).
 
-\paragraph{Ajustement et admissibilité.}
-Pour chaque antenne, nous ajustons par moindres carrés, sur les heures actives
-des sept jours, le modèle descriptif
-\begin{equation}
-    P_i(d)=P_i^{\mathrm{fixe}}+s_i d,
-    \label{eq:modele_puissance_affine}
-\end{equation}
-où \(P_i^{\mathrm{fixe}}>0\) est la puissance active estimée à trafic nul et
-\(s_i>0\) la puissance supplémentaire par Go. Une heure est dite active
-lorsque la puissance relevée est strictement positive : une puissance nulle ne
-décrit pas un état actif exploitable, et une puissance nulle accompagnée d'un
-trafic positif serait physiquement incohérente. Une antenne est écartée si son
-trafic actif ne varie pas, si les observations actives sont trop peu
-nombreuses, ou si l'ajustement produit une pente ou une ordonnée à l'origine
-non positives, ce dernier cas étant exclu par le modèle. Sur les \(3\,825\)
-identifiants, \(3\,623\) sont retenus ; les exclusions se répartissent en
-\(159\) observations actives insuffisantes, \(33\) pentes non positives et
-\(10\) trafics constants.
+L'erreur d'ajustement, rapportée à la puissance moyenne, vaut \(8{,}5\,\%\)
+en médiane et reste sous \(15\,\%\) pour \(90\,\%\) des antennes. La part
+fixe \(P^{\mathrm{fixe}}/(P^{\mathrm{fixe}}+s\,\bar d)\) vaut \(72\,\%\)
+en médiane et dépasse la moitié pour \(93\,\%\) des antennes : éteindre un
+équipement économise plus que le report de trafic n'en coûte.
 
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabular}{lccc}
-\hline
-Indicateur & \(q_{25}\) & Médiane & \(q_{75}\) \\
-\hline
-RMSE normalisée & \(5{,}2\,\%\) & \(8{,}5\,\%\) & \(11{,}6\,\%\) \\
-Coefficient \(R_i^2\) & \(0{,}58\) & \(0{,}74\) & \(0{,}86\) \\
-Part fixe au trafic moyen & \(59{,}7\,\%\) & \(71{,}7\,\%\) & \(89{,}1\,\%\) \\
-\hline
-\multicolumn{4}{l}{Antennes retenues : \(3\,623/3\,825\)} \\
-\multicolumn{4}{l}{RMSE normalisée \(<15\,\%\) : \(90{,}0\,\%\) des antennes} \\
-\multicolumn{4}{l}{Part fixe \(>50\,\%\) : \(92{,}9\,\%\) des antennes} \\
-\hline
-\end{tabular}
-\caption{Calibration du modèle de puissance sur les sept jours.}
-\label{tab:calibration_modele_puissance}
-\end{table}
-
-L'adéquation est appréciée par la RMSE rapportée à la puissance active
-moyenne, et non par le coefficient de détermination. Ce dernier est retenu
-comme diagnostic secondaire seulement : il compare l'erreur à la variance de
-la puissance observée, et s'effondre donc mécaniquement pour les équipements
-dont la puissance varie peu, alors même que l'erreur absolue y est faible.
-Sa médiane de \(0{,}74\) coexiste ainsi avec une erreur médiane de \(8{,}5\,\%\).
-
-\paragraph{Structure du nuage.}
-La Figure~\ref{fig:ajustement_puissance} montre trois antennes situées aux
-quantiles \(25\,\%\), \(50\,\%\) et \(90\,\%\) de la RMSE normalisée, plutôt
-qu'un seul cas favorable.
+La Figure~\ref{fig:ajustement_puissance} montre trois antennes distinctes,
+aux quantiles \(25\,\%\), \(50\,\%\) et \(90\,\%\) de cette erreur :
+(a)~bon, (b)~médian, (c)~médiocre. Rouge : \(0\,\mathrm{h}\)--\(6\,\mathrm{h}\) ;
+bleu : reste de la journée.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/power_calibration/representative_power_fit.pdf}
-    \caption{Puissance mesurée contre trafic descendant, pour trois antennes
-    couvrant la gamme de qualité d'ajustement. La droite est
-    l'ajustement~\eqref{eq:modele_puissance_affine} et le pointillé son
-    ordonnée à l'origine \(P^{\mathrm{fixe}}\). La couleur distingue les heures
-    de minuit à six heures du reste de la journée, la forme du marqueur les
-    jours ouvrés du week-end.}
+    \includegraphics[width=0.95\textwidth]{../figures/power_calibration/representative_power_fit.pdf}
+    \caption{Trois antennes distinctes, une par panneau. Droite : ajustement
+    affine. Pointillé : \(P^{\mathrm{fixe}}\).}
     \label{fig:ajustement_puissance}
 \end{figure}
 
-Trois observations en découlent. D'abord, les marqueurs de week-end se
-superposent au nuage de semaine sans décalage systématique : la relation entre
-puissance et trafic est bien une propriété de l'équipement, et seul le niveau
-de trafic distingue les deux régimes. C'est ce qui autorise une calibration
-unique sur les sept jours. Ensuite, l'ordonnée à l'origine n'est pas une
-extrapolation lointaine : sur les \(598\,584\) heures actives des antennes
-admissibles, le rapport entre le trafic actif minimal et le trafic maximal
-d'une antenne vaut \(0{,}017\) en médiane, et \(4{,}3\,\%\) seulement des
-antennes ne descendent jamais sous un dixième de leur pic. Les heures actives
-à trafic exactement nul, qui représentent \(0{,}82\,\%\) du total, forment un
-palier horizontal au niveau de \(P^{\mathrm{fixe}}\), conforme au modèle.
-Enfin, l'écart au modèle n'est pas du bruit : le panneau (c) montre un nuage
-scindé en deux niveaux de puissance, et le paragraphe suivant établit que
-cette scission est systématiquement nocturne.
+Semaine et week-end suivent la même droite ; on calibre donc sur les sept
+jours. \(P^{\mathrm{fixe}}\) n'est pas une extrapolation : le trafic descend
+à \(1{,}7\,\%\) du pic en médiane, et \(0{,}8\,\%\) des heures actives ont
+déjà un trafic nul.
 
-\paragraph{Un second état de fonctionnement nocturne.}
-L'antenne du panneau (c) opère à \(232\ \mathrm{W}\) en moyenne pendant
-\(40\) heures et à \(435\ \mathrm{W}\) pendant les \(126\) autres. Ces
-\(40\) heures ne sont pas dispersées : ce sont exactement les créneaux de
-minuit à six heures, chaque jour de la semaine. En excluant ce régime,
-l'ajustement passe d'un \(R^2\) de \(0{,}60\) à \(0{,}88\) et d'une RMSE
-normalisée de \(15{,}0\,\%\) à \(2{,}8\,\%\), avec
-\(P^{\mathrm{fixe}}=387\ \mathrm{W}\) au lieu de \(309\) et
-\(s=25{,}7\ \mathrm{W/Go}\) au lieu de \(53{,}3\). Le modèle affine décrit donc
-très bien chaque régime pris séparément ; c'est leur superposition qui dégrade
-l'ajustement.
-
-Ce niveau bas n'est pas le bas de la droite. En ne retenant que les heures
-diurnes dont le trafic reste dans la plage observée la nuit, la puissance
-diurne vaut encore \(1{,}43\) fois la puissance nocturne en médiane, et l'écart
-dépasse un dixième pour \(78{,}9\,\%\) des antennes : à trafic comparable, la
-consommation dépend de l'heure. Le basculement suit d'ailleurs l'horloge et non
-la charge, puisque sur l'antenne du panneau (c) le trafic moyen est
-pratiquement le même à minuit et à six heures, \(0{,}45\) contre
-\(0{,}52\ \mathrm{Go/h}\), pour \(245\) et \(392\ \mathrm{W}\) respectivement.
-
-Le phénomène est majoritaire. En estimant, pour chaque antenne, une pente
-commune et un niveau par heure de la journée, puis en séparant ces vingt-quatre
-niveaux à leur plus grand écart, \(80{,}7\,\%\) des antennes présentent deux
-niveaux distincts, d'amplitude médiane égale à trois dixièmes de leur puissance
-moyenne. L'état bas dure six heures par jour en médiane, forme une plage d'un
-seul tenant pour \(98{,}3\,\%\) d'entre elles, et recouvre les heures de une à
-cinq pour \(94{,}8\,\%\). Il ne s'agit pas d'une mise en veille : l'équipement
-écoule encore \(30{,}7\,\%\) du trafic diurne et la puissance y dépend toujours
-du trafic, avec une pente médiane de \(21{,}0\ \mathrm{W/Go}\) contre
-\(15{,}7\ \mathrm{W/Go}\) le jour. Les données ne documentent aucune
-information de configuration, et nous ne cherchons pas à identifier le
-mécanisme sous-jacent.
-
-\paragraph{Conséquence assumée sur la calibration.}
-Nous conservons un modèle affine unique par antenne, ajusté sur les
-\(168\) heures. Ce choix a un coût, que nous quantifions plutôt que de le
-taire. Une spécification à deux niveaux et pente commune ramènerait l'erreur
-médiane de \(8{,}5\,\%\) à \(4{,}3\,\%\), et déplacerait les coefficients : la
-droite unique traverse l'espace entre les deux niveaux, si bien qu'elle se
-redresse et impute au trafic une partie du décrochage. Rapportés à cette
-spécification, les coefficients retenus sous-estiment \(F_i\) d'environ un
-quart et surestiment \(\gamma_i\) d'environ moitié, la part fixe médiane
-passant de \(85{,}3\,\%\) à \(71{,}3\,\%\).
-
-La direction de ce biais est connue. L'intérêt d'éteindre un équipement croît
-avec le rapport \(F_i/\gamma_i\), dont la médiane vaut
-\(36{,}6\ \mathrm{Go/h}\) sous la spécification retenue contre
-\(53{,}8\ \mathrm{Go/h}\) et \(74{,}7\ \mathrm{Go/h}\) selon le niveau retenu
-dans la spécification à deux états. Les capacités, donc le nombre de gardiens
-nécessaires, ne dépendent ni de \(F_i\) ni de \(\gamma_i\). Les gains relatifs
-rapportés dans la suite sont donc vraisemblablement \emph{sous-estimés}. En
-revanche rien ne permet de conjecturer le sens de l'effet sur les indicateurs
-de stabilité.
+\paragraph{Deux niveaux nocturnes.}
+Le panneau (c), à droite, n'est pas du bruit. À trafic égal, la puissance
+nocturne est plus basse : sur l'ensemble des antennes, à trafic apparié,
+la puissance de jour vaut encore \(1{,}43\) fois celle de nuit en médiane.
+Le cran suit l'horloge, pas la charge. Ce n'est pas une veille : le
+trafic nocturne reste d'environ \(30\,\%\) du trafic diurne, et
+l'équipement écoule. Environ \(80\,\%\) des antennes présentent cet
+état réduit. Le modèle des Sections 3 à 5 n'a que deux états, actif et
+éteint ; nous conservons une seule droite par antenne, ajustée sur les
+\(168\) heures.
 
 \paragraph{Robustesse temporelle.}
-Restreindre l'ajustement aux cinq premiers jours modifie peu les coefficients :
-sur les \(3\,613\) antennes admissibles dans les deux fenêtres, l'écart
-relatif médian vaut \(1{,}4\,\%\) sur \(P^{\mathrm{fixe}}\) et \(3{,}5\,\%\)
-sur \(s\), avec des neuvièmes déciles de \(6{,}3\,\%\) et \(11{,}7\,\%\). Les
-deux jours de week-end apportent donc de nouvelles heures de faible trafic
-sans déplacer la droite.
+La relation puissance--trafic est une propriété du matériel. Calibrer
+sur les cinq jours ouvrés plutôt que sur les sept jours change
+\(P^{\mathrm{fixe}}\) de \(1{,}4\,\%\) et \(s\) de \(3{,}5\,\%\) en
+médiane (\(3\,613\) antennes communes). Neuf dixièmes des écarts restent
+sous \(6\,\%\) pour \(P^{\mathrm{fixe}}\) et sous \(12\,\%\) pour \(s\).
+Semaine et week-end suivent la même droite.
 
-\paragraph{Des coefficients mesurés aux paramètres du modèle.}
-La prédominance de la composante fixe, supérieure à la moitié de la puissance
-pour \(92{,}9\,\%\) des antennes, est le ressort quantitatif du mécanisme
-étudié : éteindre un équipement évite davantage de puissance que le report de
-son trafic n'en ajoute sur un autre. C'est la traduction empirique de la
-sous-additivité établie au Théorème~\ref{thm:sousadd}.
-
-Les simulations conservent les coefficients propres à chaque antenne. Sous
-l'hypothèse d'une veille nulle posée en Section~\ref{sec:modele_systeme},
-\(P_i^{\mathrm{fixe}}\) est la puissance évitable en état actif et \(s_i\) son
-accroissement par Go. En notant \(\pi\) le prix de l'électricité, commun à
-tous les opérateurs, les paramètres du modèle sont
-\begin{equation}
-    F_i=\pi\,P_i^{\mathrm{fixe}},
-    \qquad
-    \gamma_i=\pi\,s_i.
-    \label{eq:conversion_couts}
-\end{equation}
-Comme \(\pi\) est un facteur commun strictement positif, il ne modifie ni les
-gardiens optimaux, ni le cœur, ni la valeur de Shapley : minimiser le coût
-équivaut à minimiser l'énergie. Les résultats sont donc rapportés en énergie,
-et \(\pi\) n'intervient que pour convertir en euros.
+\paragraph{Passage aux coûts.}
+On pose \(F_i=\pi P_i^{\mathrm{fixe}}\) et \(\gamma_i=\pi s_i\), avec
+\(\pi\) le prix de l'électricité, identique pour tous. Un facteur commun
+ne change ni les gardiens ni les économies relatives : on rapporte les
+résultats en énergie.
 
 \subsection{Efficacité opérationnelle}
 \label{subsec:efficacite_operationnelle}
 
-Pour chaque site virtuel, chacune des cinq nuits et chaque scénario de
-capacité, nous calculons l'optimum exact \(C_H^*(N)\) de la grande coalition.
-Cet optimum est la somme des sept optima horaires : à chaque heure, les quinze
-ensembles non vides sont énumérés, puis le trafic est réparti par l'algorithme
-glouton de la Section~\ref{subsec:selection_gardiens}. Il s'agit donc bien de
-l'optimum horairement reconfigurable défini par
-\eqref{eq:cout_horaire_principal}.
+Cette sous-section calcule le coût~\eqref{eq:cout_horaire_principal} et
+l'économie~\eqref{eq:jeu_principal} sur le plan central de la
+Section~\ref{subsec:protocole_experimental} : référence
+\texttt{00021693W1}, \(n=4\), \(r=0{,}90\). Les \(168\) heures sont
+résolues une par une, par énumération des quinze ensembles de gardiens et
+répartition gloutonne de la Proposition~\ref{pro:opt}. Les profils
+journaliers moyennent ensuite les sept jours. Une instance n'estime pas
+la distribution des gains ; elle montre le mécanisme.
 
-Les comparaisons du Tableau~\ref{tab:politiques_operationnelles} modifient une
-seule composante de cette politique principale. La sélection par capacité est
-une règle volontairement simple, fondée uniquement sur les \(q_i\) : elle
-mesure l'intérêt d'intégrer les coûts fixes et variables dans le choix des
-gardiens. La politique proportionnelle conserve au contraire les gardiens
-optimaux de chaque heure et isole l'apport de l'allocation gloutonne. Enfin,
-l'optimum persistant impose un ensemble commun à toute la fenêtre et mesure
-le coût de cette contrainte par rapport au modèle principal.
+\paragraph{Demandes et capacités.}
+La Figure~\ref{fig:plan_capacite} confronte les demandes aux capacités.
+Chaque \(d_i\) reste sous son \(q_i\). Le panneau (b) ne dit pas quels
+équipements \(G^*\) allume. Les lignes sont la somme des \(k\) plus
+grandes \(q_i\) : couverture maximale avec \(k\) équipements, donc
+\(k_h\). \(G^*\) minimise le coût et peut être un autre \(k\)-ensemble.
+Ici \(|G_h^*|=k_h\) à chaque heure.
 
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabular}{p{0.22\textwidth}p{0.31\textwidth}p{0.34\textwidth}}
-\hline
-Méthode & Gardiens & Allocation horaire \\
-\hline
-Sélection par capacité & Recalculés à chaque heure, par \(q_i\) décroissants & Gloutonne par \(\gamma_i\) croissants \\
-Proportionnelle & \(G_h^*(N)\), recalculé à chaque heure & Proportionnelle aux \(q_i\) \\
-Optimum horaire & \(G_h^*(N)\), exact à chaque heure & Gloutonne par \(\gamma_i\) croissants \\
-Optimum persistant & \(G_{H,\mathrm{pers}}^*(N)\), fixe sur \(H\) & Gloutonne par \(\gamma_i\) croissants \\
-\hline
-\end{tabular}
-\caption{Décomposition des méthodes coopératives comparées.}
-\label{tab:politiques_operationnelles}
-\end{table}
-
-L'absence de partage n'est pas une politique concurrente, mais uniquement la
-référence de normalisation : chaque équipement reste actif et sert son propre
-trafic. Pour toutes les méthodes, l'énergie évitée est calculée relativement
-à cette consommation. Les deux politiques approchées sont réalisables sur les
-\(20\,000\) instances ; l'optimum persistant est une politique réalisable et
-vérifie toujours \(C_H^*(N)\leqslant C_{H,\mathrm{pers}}^*(N)\).
+Un équipement, le plus gros, tient \(92\,\mathrm{Go/h}\) ; deux,
+\(146\) ; trois, \(199\). La demande totale atteint \(164\,\mathrm{Go/h}\) :
+deux ne suffisent pas partout, trois si. À \(20\,\mathrm{h}\), elle reste
+sous \(138\), donc sous \(146\). La ligne à \(206\,\mathrm{Go/h}\) est la
+somme des quatre pics. S'ils étaient simultanés, trois ne suffiraient
+pas. Ils ne le sont pas.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/operational_efficiency/operational_efficiency.pdf}
-    \caption{Efficacité opérationnelle sur les \(20\,000\) instances. Les
-    boîtes couvrent les quartiles et les moustaches les quantiles
-    5--95\,\%. À gauche, énergie évitée par chaque méthode coopérative. À droite, pertes
-    appariées induites respectivement par la sélection fondée sur les seules
-    capacités, l'allocation proportionnelle et la persistance des gardiens.}
+    \includegraphics[width=\textwidth]{../figures/operational_efficiency/single_plan_capacity.pdf}
+    \caption{Plan central, \(r=0{,}90\). (a)~Demandes individuelles et
+    capacités. (b)~Demande totale contre la somme des \(k\) plus grandes
+    \(q_i\). L'aplat est le min--max sur sept jours.}
+    \label{fig:plan_capacite}
+\end{figure}
+
+\paragraph{Économie horaire.}
+La Figure~\ref{fig:efficacite_operationnelle} traduit ces seuils. Tant que
+\(k_h=1\), l'économie relative tient autour de \(75\,\%\). Dès que
+\(k_h=2\), l'après-midi, elle descend vers \(50\,\%\). À \(20\,\mathrm{h}\),
+\(k_h=2\) les sept jours. Il atteint \(3\) à d'autres heures, lorsque la
+demande totale dépasse \(146\,\mathrm{Go/h}\). Semaine et week-end se
+superposent la nuit.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/operational_efficiency/single_plan_hourly.pdf}
+    \caption{(a)~Économie relative~\eqref{eq:jeu_principal} à chaque
+    heure. (b)~Valeur de \(k_h\), Définition~\ref{def:nombre_minimal_gardiens},
+    parmi les sept jours. Bande :
+    \(H=[0\,\mathrm{h},7\,\mathrm{h})\).}
     \label{fig:efficacite_operationnelle}
 \end{figure}
 
-L'optimum horaire évite une médiane de \(70{,}6\,\%\) de l'énergie autonome ;
-90\,\% des observations se situent entre \(55{,}3\,\%\) et \(88{,}6\,\%\).
-Sur les \(140\,000\) décisions horaires, un gardien suffit dans \(93{,}6\,\%\)
-des cas, deux sont nécessaires dans \(6{,}3\,\%\), et trois dans \(0{,}1\,\%\).
-Le partage opportuniste permet donc presque toujours d'éteindre au moins deux
-équipements à une heure donnée.
+\paragraph{Fenêtre \(H\).}
+\(H=\{0,\ldots,6\}\) est fixée avant la simulation. Un gardien suffit
+presque toujours ; minuit et une heure en exigent deux, deux nuits sur
+sept. Sur les sept nuits, l'optimum évite \(76{,}3\,\%\) de l'énergie
+autonome, soit \(27{,}8\,\mathrm{kWh}\) par nuit. Semaine :
+\(77{,}0\,\%\) ; week-end : \(76{,}2\,\%\). Avec les trois premiers
+opérateurs du même plan, l'économie relative tombe à \(59{,}4\,\%\).
 
-La politique par capacité perd une médiane de \(4{,}5\) points par rapport à
-l'optimum horaire, et \(24{,}7\) points au quantile 95\,\%. Elle sélectionne le
-même nombre de gardiens dans \(99{,}2\,\%\) des décisions horaires, mais le même
-ensemble dans seulement \(29{,}5\,\%\). La capacité détermine ainsi largement
-le nombre d'équipements nécessaires, mais les puissances fixes et les coûts
-variables sont indispensables pour choisir lesquels maintenir actifs. Par
-construction, cette politique ne bat jamais l'optimum exact sur une même
-instance.
+\paragraph{Politiques de référence.}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lcc}
+\hline
+Politique & Économie relative & Perte \\
+\hline
+Optimum horaire~\eqref{eq:cout_horaire_principal} & \(76{,}3\,\%\) & --- \\
+Sélection par \(q_i\) décroissants & \(76{,}1\,\%\) & \(0{,}2\) pt \\
+Gardiens optimaux, allocation proportionnelle & \(75{,}5\,\%\) & \(0{,}8\) pt \\
+Optimum persistant~\eqref{eq:cout_persistant} & \(73{,}5\,\%\) & \(2{,}9\) pt \\
+\hline
+\end{tabular}
+\caption{Économie relative sur \(H\), moyenne des sept nuits. Perte :
+écart à l'optimum horaire, en points.}
+\label{tab:politiques_operationnelles}
+\end{table}
 
-Avec les gardiens optimaux de chaque heure, la répartition proportionnelle
-coïncide avec l'optimum dans \(62{,}1\,\%\) des instances. Sa perte médiane est
-nulle, sa perte moyenne vaut \(0{,}23\) point et son quantile 95 atteint
-\(1{,}28\) point. L'allocation gloutonne apporte donc un gain plus limité que
-la sélection des gardiens, mais mesurable lorsque plusieurs équipements sont
-actifs.
+Choisir les gardiens par capacité, ou répartir au prorata des \(q_i\),
+coûte moins d'un point. Imposer un ensemble constant sur \(H\) coûte
+\(2{,}9\) points. L'optimum horaire change d'ensemble \(0{,}71\) fois par
+nuit, et reste constant cinq nuits sur sept.
 
-Enfin, maintenir les mêmes gardiens sur toute la nuit coûte une médiane de
-\(0{,}98\) point d'économie, et \(17{,}2\) points au quantile 95\,\%. L'optimum
-persistant coïncide avec l'optimum horaire dans \(39{,}9\,\%\) des instances.
-Dans le modèle principal, le nombre médian de changements d'ensemble entre
-deux heures consécutives vaut un, et son quantile 95 vaut trois. La contrainte
-persistante est donc parfois gratuite, mais pénalise fortement certaines
-configurations. La médiane de l'économie optimale diffère de \(0{,}61\) point
-entre les 500 premiers sites et l'échantillon complet.
-
-\subsection{Stabilité de la grande coalition}
-\label{subsec:stabilite_grande_coalition}
-
-Pour chaque site, chaque nuit et chaque scénario de capacité, la fonction
-caractéristique \(v_H(S)\) est calculée exactement pour les quinze coalitions
-non vides du cas principal \(n=4\). Le programme de
-Bondareva--Shapley teste la non-vacuité du cœur, puis l'excès maximal
-\(E_{\mathrm{Sh},H}(N)\) teste Shapley. Chaque instance appartient donc à une
-seule catégorie : cœur vide, cœur non vide mais Shapley hors du cœur, ou
-Shapley dans le cœur. Les intervalles à 95\,\% sont obtenus par \(2\,000\)
-rééchantillonnages des sites, en conservant ensemble les cinq nuits et les
-quatre scénarios d'un même site.
+\paragraph{Les trois \(r\).}
+Les figures sont au centre de l'étoile, \(r=0{,}90\). Ce n'est pas un
+taux mesuré. Les mêmes demandes, \(q_i=\max_t d_i(t)/r\) :
 
 \begin{table}[htbp]
 \centering
 \small
-\begin{tabular}{crrr}
+\begin{tabular}{cccc}
 \hline
-\(r\) & Cœur vide & \shortstack{Cœur non vide,\\Shapley hors} & \shortstack{Shapley\\dans le cœur} \\
+\(r\) & Économie sur \(H\) & \(\max_t k_h\) & \(k_h\) à \(20\,\mathrm{h}\) \\
 \hline
-\(0{,}70\) & \(0{,}0\,\%\) & \(3{,}36\,\%\) & \(96{,}64\,\%\) \\
-\(0{,}80\) & \(0{,}0\,\%\) & \(3{,}38\,\%\) & \(96{,}62\,\%\) \\
-\(0{,}90\) & \(0{,}0\,\%\) & \(3{,}44\,\%\) & \(96{,}56\,\%\) \\
-\(1{,}00\) & \(0{,}0\,\%\) & \(3{,}44\,\%\) & \(96{,}56\,\%\) \\
+\(0{,}80\) & \(77{,}2\,\%\) & 3 & 2 \\
+\(0{,}90\) & \(76{,}3\,\%\) & 3 & 2 \\
+\(1\) & \(74{,}6\,\%\) & 3 & 3 \\
 \hline
 \end{tabular}
-\caption{Diagnostic de stabilité par scénario de capacité. Chaque ligne
-regroupe \(5\,000\) instances.}
+\caption{Même plan, mêmes demandes. \(k_h\) à \(20\,\mathrm{h}\) : maximum
+sur les sept jours.}
+\label{tab:plan_quatre_r}
+\end{table}
+
+À \(r=1\), il faut trois gardiens certains soirs. Sur \(H\), l'économie
+bouge peu.
+
+\paragraph{Année, temps.}
+Une nuit \(H\) évite \(27{,}8\,\mathrm{kWh}\) ; un jour complet,
+\(92\,\mathrm{kWh}\). Une nuit \(H\) par jour, pondérée \(5/7\) et
+\(2/7\), donne \(10\,100\,\mathrm{kWh}\) par site et par an, sans
+saisonnalité observée. Les \(168\) optima prennent \(0{,}48\,\mathrm{s}\)
+pour \(n=4\).
+
+\subsection{Stabilité et répartition des économies}
+\label{subsec:stabilite_grande_coalition}
+
+Même plan, même fenêtre \(H\) que la Section~\ref{subsec:efficacite_operationnelle}.
+On mesure \(v_H\), le test~\eqref{eq:test_shapley_coeur}, le cœur, le
+nucléole et les transferts \(\tau_i\) de la Section~\ref{sec:jeu_cooperatif}.
+Sept nuits, \(n=4\), \(r=0{,}90\).
+
+\paragraph{Cascade.}
+La table des quinze \(v_H(S)\) se calcule en \(6\,\mathrm{ms}\) par
+nuit. L'étage 1, \(E_{\mathrm{Sh},H}(N)\leqslant0\), suffit : Shapley
+est dans le cœur les sept nuits, donc le cœur est non vide. Les étages
+suivants --- capacité individuelle, certificat leave-one-out, moindre
+cœur --- ne sont pas sollicités. La convexité n'a lieu aucune nuit, et
+la condition \(d^h(N)\leqslant\min_i q_i\) n'est jamais vraie sur toute
+\(H\). La stabilité de Shapley n'est donc ici ni le corollaire
+d'homogénéité, ni le théorème de capacité individuelle.
+
+\paragraph{Trois catégories.}
+Les vingt-et-une nuits du même plan --- sept jours, trois \(r\) ---
+tombent toutes dans la même catégorie : cœur non vide, Shapley
+dedans. Avec les trois premiers opérateurs seulement, même constat.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{cccc}
+\hline
+\(r\) & Cœur vide & Shapley hors & Shapley dans le cœur \\
+\hline
+\(0{,}80\) & \(0/7\) & \(0/7\) & \(7/7\) \\
+\(0{,}90\) & \(0/7\) & \(0/7\) & \(7/7\) \\
+\(1\) & \(0/7\) & \(0/7\) & \(7/7\) \\
+\hline
+\end{tabular}
+\caption{Même plan, \(n=4\). Une ligne par taux, sept nuits.}
 \label{tab:stabilite_grande_coalition}
 \end{table}
 
-En donnant le même poids aux quatre scénarios, aucun cœur vide n'est observé
-dans les \(20\,000\) instances principales. Le cœur est non vide mais exclut
-Shapley dans \(3{,}405\,\%\) des cas ; Shapley constitue donc une allocation
-stable dans \(96{,}595\,\%\) des instances (IC à 95\,\% :
-\([95{,}575;97{,}595]\,\%\)). Cette fréquence varie de moins de \(0{,}1\) point
-entre les quatre scénarios de capacité. L'écart maximal entre les fréquences
-obtenues avec 500 et \(1\,000\) sites vaut \(0{,}385\) point.
+\paragraph{Shapley, nucléole, transferts.}
+Shapley et le nucléole sont tous deux stables. Leurs parts de \(v_H\)
+diffèrent de \(4{,}6\,\%\) en moyenne. L'opérateur 4, le plus volumineux
+et le plus sobre à la marge, est le gardien de nuit : il porte le coût
+physique. Les trois autres éteignent. Les transferts le compensent :
+\(\tau_4=+7{,}8\,\mathrm{kWh}\), payés par les opérateurs 1, 2 et 3.
+Le gros n'est pas le subventionneur. La somme des \(\tau_i\) est nulle,
+à la précision numérique près.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\hline
+ & Op.\ 1 & Op.\ 2 & Op.\ 3 & Op.\ 4 \\
+\hline
+\(\alpha_i\) & \(0{,}80\) & \(0{,}56\) & \(1{,}09\) & \(1{,}56\) \\
+\(s_i\) (W/Go) & \(44{,}6\) & \(15{,}7\) & \(30{,}9\) & \(3{,}7\) \\
+Part Shapley & \(27\,\%\) & \(25\,\%\) & \(21\,\%\) & \(27\,\%\) \\
+Part nucléole & \(29\,\%\) & \(25\,\%\) & \(18\,\%\) & \(29\,\%\) \\
+\(\tau_i\) Shapley (kWh) & \(-3{,}6\) & \(-2{,}9\) & \(-1{,}4\) & \(+7{,}8\) \\
+\hline
+\end{tabular}
+\caption{Moyenne des sept nuits, \(r=0{,}90\). Un \(\tau_i\) négatif
+signifie que l'opérateur paie.}
+\label{tab:plan_partage}
+\end{table}
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/coalition_stability/coalition_stability.pdf}
-    \caption{Stabilité et efficacité sur les \(20\,000\) instances. À gauche,
-    répartition des trois catégories selon le scénario de capacité. À droite,
-    distribution de l'énergie évitée dans chaque catégorie ; les boîtes
-    couvrent les quartiles et les moustaches les quantiles 5--95\,\%.}
+    \includegraphics[width=0.92\textwidth]{../figures/coalition_stability/single_plan_sharing.pdf}
+    \caption{Même plan. (a)~Parts de \(v_H\). (b)~Transferts Shapley,
+    points : les sept nuits.}
     \label{fig:stabilite_grande_coalition}
 \end{figure}
-
-L'économie médiane atteint \(87{,}3\,\%\) lorsque le cœur non vide exclut
-Shapley, contre \(70{,}3\,\%\) lorsque Shapley lui appartient. Dans cette
-campagne horaire, l'efficacité élevée est donc associée à davantage
-d'objections contre Shapley : parmi les 10\,\% d'instances qui évitent le plus
-d'énergie, \(26{,}9\,\%\) excluent cette allocation du cœur. Une économie
-élevée ne suffit donc pas à valider la règle de partage.
-
-La condition de capacité individuelle suffisante du
-Théorème~\ref{thm:capacite_coeur_non_vide} est satisfaite dans \(25{,}0\,\%\)
-des instances et leur cœur est toujours non vide, conformément à la garantie
-théorique. Shapley en reste néanmoins exclue dans \(5{,}05\,\%\) de ces cas.
-La convexité, qui garantirait simultanément les deux propriétés, n'apparaît
-que dans \(0{,}215\,\%\) des instances et constitue donc une condition trop
-restrictive pour le diagnostic empirique général.
-
-L'ancien constat empirique de cœurs vides ne survit donc pas au passage au jeu
-horaire sur l'échantillon principal : le certificat leave-one-out et le
-moindre cœur n'ont ici aucun cas vide à diagnostiquer. Cela ne contredit pas
-les contre-exemples analytiques ni les expériences de sensibilité, qui en
-produisent encore. Lorsque le cœur non vide exclut Shapley, son objection
-maximale médiane représente \(2{,}01\,\%\) de \(v_H(N)\), et toutes les
-coalitions maximisant cette objection comptent trois opérateurs. Les
-diagnostics suivants examinent l'effet de la charge, de la fenêtre et du
-nombre d'opérateurs.
 
 \FloatBarrier
 

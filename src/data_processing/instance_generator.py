@@ -39,8 +39,8 @@ SHAPE_LAMBDA: dict[str, float] = {
     "moderate": 0.35,
     "distant": 1.00,
 }
-CAMPAIGN_A_RATES = (0.70, 0.80, 0.90, 1.00)
-CENTRAL_RATE = 0.70
+CAMPAIGN_A_RATES = (0.80, 0.90, 1.00)
+CENTRAL_RATE = 0.90
 CENTRAL_VOLUME = "moderate"
 CENTRAL_SHAPE = "moderate"
 CENTRAL_EQUIPMENT = "moderate"

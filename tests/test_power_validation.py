@@ -125,7 +125,7 @@ class AffinePowerCalibrationTests(unittest.TestCase):
                 writer.writerow(("2023-03-20 00", "A", 2.0, 102.0))
                 writer.writerow(("", "", "", ""))
 
-            population, audit = load_population(path)
+            population, audit = load_population(path, num_days=5)
 
         self.assertEqual(audit.selected_dates, tuple(day.isoformat() for day in _days()))
         self.assertEqual(audit.selected_rows, 121)

@@ -118,59 +118,48 @@ def main() -> None:
     print(f"   min/max du trafic actif, médiane     : {np.median(ratios):.4f}")
     print(f"   antennes avec min/max > 0,10         : {np.mean(ratios > 0.10):.1%}")
 
-    figure, axes = plt.subplots(1, 3, figsize=(13.5, 4.2))
+    figure, axes = plt.subplots(1, 3, figsize=(10.8, 3.35))
     letters = "abc"
     for column, (quantile, caption) in enumerate(
-        ((0.25, "bon ajustement"), (0.50, "ajustement médian"),
-         (0.90, "ajustement médiocre"))
+        ((0.25, "bon"), (0.50, "médian"), (0.90, "médiocre"))
     ):
         pick = int(np.argmin(np.abs(rmse - np.quantile(rmse, quantile))))
         d = pop7.traffic_gb[pick]
         p = pop7.power_w[pick]
-        weekday = np.zeros_like(d, dtype=bool)
-        weekday[:5] = True
         night = np.tile(np.arange(24) <= 5, (d.shape[0], 1))
         mask = p > 0.0
         axis = axes[column]
-        for is_night, colour, tag in ((False, "#2A6BB0", "6 h-24 h"),
-                                      (True, "#C0504D", "0 h-6 h")):
-            for is_weekday, marker, day_tag in ((True, "o", "semaine"),
-                                                (False, "^", "week-end")):
-                sel = mask & (night == is_night) & (weekday == is_weekday)
-                axis.scatter(d[sel], p[sel], s=15, alpha=0.65, color=colour,
-                             marker=marker, edgecolors="none",
-                             label=f"{tag}, {day_tag}")
-        grid = np.linspace(0.0, float(d[mask].max()), 100)
+        for is_night, colour, label in ((False, "#2A6BB0", "6 h--24 h"),
+                                        (True, "#C0504D", "0 h--6 h")):
+            sel = mask & (night == is_night)
+            axis.scatter(d[sel], p[sel], s=11, alpha=0.65, color=colour,
+                         edgecolors="none", label=label)
+        grid = np.linspace(0.0, float(d[mask].max()), 80)
         axis.plot(grid, pop7.p_fixed_w[pick] + pop7.slope_w_per_gb[pick] * grid,
-                  color="black", linewidth=1.3)
-        axis.axhline(pop7.p_fixed_w[pick], color="black", linewidth=0.8,
+                  color="black", linewidth=1.1)
+        axis.axhline(pop7.p_fixed_w[pick], color="black", linewidth=0.7,
                      linestyle=":")
-        axis.set_xlabel("trafic descendant (Go/h)")
-        axis.set_ylabel("puissance moyenne (W)")
+        axis.set_xlabel("trafic (Go/h)", fontsize=9)
+        if column == 0:
+            axis.set_ylabel("puissance (W)", fontsize=9)
+        antenna_id = str(pop7.antenna_ids[pick])
         axis.set_title(
-            f"({letters[column]}) {caption}\n"
-            f"$P^{{\\mathrm{{fixe}}}}$={pop7.p_fixed_w[pick]:.0f} W, "
-            f"$s$={pop7.slope_w_per_gb[pick]:.1f} W/Go, "
-            f"RMSE={pop7.normalized_rmse[pick]:.1%}, "
-            f"$R^2$={pop7.r_squared[pick]:.2f}",
+            f"({letters[column]}) {caption}  {antenna_id}",
             fontsize=9,
         )
+        axis.tick_params(labelsize=8)
         axis.set_ylim(bottom=0.0)
         axis.set_xlim(left=0.0)
         axis.grid(alpha=0.25, linewidth=0.5)
         if column == 0:
-            axis.legend(fontsize=7.5, loc="lower right")
-        residual = p[mask] - (pop7.p_fixed_w[pick]
-                              + pop7.slope_w_per_gb[pick] * d[mask])
+            axis.legend(fontsize=7, loc="lower right")
         print(f"\n   antenne au quantile {quantile:.0%} de RMSE : "
               f"{pop7.antenna_ids[pick]}")
         print(f"      P_fixe = {pop7.p_fixed_w[pick]:.1f} W, "
               f"pente = {pop7.slope_w_per_gb[pick]:.2f} W/Go, "
               f"R^2 = {pop7.r_squared[pick]:.3f}, "
               f"RMSE norm. = {pop7.normalized_rmse[pick]:.3f}")
-        print(f"      résidu moyen {residual.mean():+.2f} W, "
-              f"écart-type {residual.std():.1f} W")
-    figure.tight_layout()
+    figure.tight_layout(w_pad=0.4)
     FIGURES.mkdir(parents=True, exist_ok=True)
     output = FIGURES / "representative_power_fit.pdf"
     figure.savefig(output)

@@ -72,14 +72,13 @@ figure 6.1.2. Aucune constante figée à 1.
 Une seule campagne.
 
 ```
-max_t d_i(t) = r * q_i,      avec r dans {0,70 ; 0,80 ; 0,90 ; 1,00}
+max_t d_i(t) = r * q_i,      avec r dans {0,80 ; 0,90 ; 1,00}
 ```
 
 - `r` est le **taux d'utilisation maximal supposé** sur la période observée.
 Les capacités des antennes admissibles ne sont pas fournies par le jeu de
 données.
-- Ne pas écrire que `r = 0,70` laisse « 30 % de marge ». Ne pas mentionner le
-facteur 1,43.
+- Ne pas écrire que `r = 0,80` laisse « 20 % de marge ».
 - Propriété à énoncer : `d_i(t) <= r * q_i <= q_i`, donc **aucune heure n'est
 jamais infaisable**.
 - Le balayage des seuils vient de la **journée**, mais pas selon la règle
@@ -231,12 +230,12 @@ niveau `coupled` rétablit la liaison en contrôle de robustesse.
 (`lambda`, 3), équipement (paquets, 3), capacité (`r`, 4), nombre d'opérateurs
 (`n`, 2). Tableau des axes et de leurs niveaux.
 
-Le factoriel complet ferait 4 × 3 × 3 × 4 × 2 = 288 scénarios par plan.
+Le factoriel complet ferait 4 × 3 × 3 × 3 × 2 = 216 scénarios par plan.
 Grille **en étoile** à la place : on fixe un scénario central — volumes
-modérés, formes modérées, équipements modérés, `r = 0,70`, quatre opérateurs —
+modérés, formes modérées, équipements modérés, `r = 0,90`, quatre opérateurs —
 puis on parcourt chaque axe en laissant les quatre autres au centre, soit
-1 + 3 + 2 + 2 + 3 + 1 = 12 scénarios, plus les deux extrêmes « tout proche » et
-« tout distant » pour borner. **14 scénarios par plan**, tous appariés.
+1 + 3 + 2 + 2 + 2 + 1 = 11 scénarios, plus les deux extrêmes « tout proche » et
+« tout distant » pour borner. **13 scénarios par plan**, tous appariés.
 
 Limite à écrire explicitement : ce plan ne mesure **aucune interaction** entre
 axes. Les deux extrêmes en sont le seul garde-fou.

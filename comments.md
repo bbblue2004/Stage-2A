@@ -233,12 +233,14 @@ n'est pas déterminée et il ne faut rien en conjecturer.
 La priorité est d'obtenir un simulateur complet et fonctionnel ; le raffinement
 de la calibration viendra ensuite si les résultats le justifient.
 
-Conséquences assumées :
+Conséquences assumées (documentées ici, **pas dans l'article pour l'instant**) :
 
 - l'erreur d'ajustement médiane reste à 8,5 % au lieu de 4,3 % ;
 - `F` est sous-estimé d'environ 23 % et `gamma` surestimé d'environ 54 % ;
-- les gains relatifs rapportés sont vraisemblablement conservateurs ;
-- la Section 6.2 doit le dire explicitement, sans le dissimuler.
+- les gains relatifs rapportés sont vraisemblablement conservateurs.
+
+La Section 6.2 mentionne le cran nocturne, conserve le modèle 1D, et tait
+les chiffres de biais jusqu'à une éventuelle spécification à deux niveaux.
 
 Si le raffinement devient nécessaire, la voie est balisée : ajouter une
 indicatrice d'état réduit **détectée antenne par antenne** plutôt qu'imposée à
@@ -327,7 +329,12 @@ l'ancienne version. À reprendre :
 
 - remplacer le mélange convexe par la sélection de donneuses au rang de
   corrélation, et supprimer `SHAPE_LAMBDA` ;
-- passer la calibration à 7 jours par défaut et invalider les caches ;
+- ~~passer la calibration à 7 jours par défaut et invalider les caches~~ fait
+  le 20 août. `DEFAULT_NUM_DAYS` vaut 7 et
+  `results/power_calibration/calibrated_population.npz` a été reconstruit :
+  3 623 antennes, `P_fixe` médian 906,7 W, pente médiane 25,95 W/Go. Le cache
+  à 5 jours de `data/processed/` reste utile au seul contrôle de stabilité
+  5 jours contre 7 jours de la Section 6.2 ;
 - supprimer la campagne B du générateur, de `protocol_io.py`, de
   `instance_diagnostics.py` et des tests ;
 - ajouter le niveau énergétique `coupled` ;

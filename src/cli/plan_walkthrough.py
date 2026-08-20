@@ -22,6 +22,7 @@ from src.data_processing.antenna_metrics import (
     power_coefficients_to_cost,
 )
 from src.data_processing.data_loader import FULL_CSV_PATH, make_output_path
+from src.data_processing.instance_generator import CAMPAIGN_A_RATES, CENTRAL_RATE
 from src.data_processing.power_validation import (
     calibrated_population,
     load_calibrated_population,
@@ -73,7 +74,7 @@ def main() -> None:
     parser.add_argument("--num-days", type=int, default=7)
     parser.add_argument("--num-operators", type=int, default=4)
     parser.add_argument("--seed", type=int, default=20260819)
-    parser.add_argument("--rate", type=float, default=0.70)
+    parser.add_argument("--rate", type=float, default=CENTRAL_RATE)
     parser.add_argument("--shape-level", default="moderate", choices=list(SHAPE_BANDS))
     args = parser.parse_args()
 
@@ -260,7 +261,7 @@ def main() -> None:
               f" {by_mean / best:>12.3f}")
     print("\n   taux de charge maximal atteint, selon r et selon l'agrégation :")
     print(f"\n   {'r':>6} {'sur le max des 7 j':>20} {'sur la moyenne des 7 j':>24}")
-    for r in (0.70, 0.80, 0.90, 1.00):
+    for r in CAMPAIGN_A_RATES:
         caps = peaks / r
         by_max = float((hourly_max / caps[:, None]).max())
         by_mean = float((hourly_mean / caps[:, None]).max())
@@ -279,7 +280,7 @@ def main() -> None:
     }
     shape_levels = {"proches": None, "modérés": 0.99, "distants": 0.50}
     header = f"   {'volume':>10} {'forme':>10}" + "".join(
-        f" {'r=' + format(r, '.2f'):>10}" for r in (0.70, 0.80, 0.90, 1.00)
+        f" {'r=' + format(r, '.2f'):>10}" for r in CAMPAIGN_A_RATES
     )
     print("\n" + header)
     for vname, vq in volume_levels.items():
@@ -295,7 +296,7 @@ def main() -> None:
             series = (mu * base[:, None] * shapes[index]).reshape(n_op, -1)
             pk = series.max(axis=1)
             cells = []
-            for r in (0.70, 0.80, 0.90, 1.00):
+            for r in CAMPAIGN_A_RATES:
                 caps = np.sort(pk / r)[::-1]
                 cum = np.cumsum(caps)
                 totals = series.sum(axis=0)
@@ -339,7 +340,7 @@ def main() -> None:
                                 label=f"op. {i + 1}, moyenne des 7 jours")
         axes[1][1].fill_between(clock, rate_low, rate_high, alpha=0.12,
                                 color=line.get_color(), linewidth=0)
-    for r, style in ((1.00, "-"), (0.90, "--"), (0.80, "-."), (0.70, ":")):
+    for r, style in ((1.00, "-"), (0.90, "--"), (0.80, ":")):
         axes[1][1].axhline(1.0 / r, color="black", linewidth=0.9, linestyle=style)
         axes[1][1].annotate(f"capacité, r={r:.2f}", (23.6, 1.0 / r + 0.012),
                             fontsize=7, va="bottom", ha="right", color="black")
@@ -347,7 +348,7 @@ def main() -> None:
                          fontsize=11)
     axes[1][1].set_ylabel("$d_i(t)\\,/\\,\\max_t d_i(t)$")
     axes[1][1].set_xlabel("heure")
-    axes[1][1].set_ylim(0.0, 1.58)
+    axes[1][1].set_ylim(0.0, 1.40)
     axes[1][1].legend(fontsize=7, loc="lower right")
 
     for row in axes:

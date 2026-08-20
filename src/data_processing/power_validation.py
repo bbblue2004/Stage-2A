@@ -18,7 +18,7 @@ from typing import Iterable
 import numpy as np
 
 
-DEFAULT_NUM_DAYS = 5
+DEFAULT_NUM_DAYS = 7
 NUM_HOURS = 24
 NUMERICAL_TOLERANCE = 1e-12
 CACHE_SCHEMA_VERSION = 1
