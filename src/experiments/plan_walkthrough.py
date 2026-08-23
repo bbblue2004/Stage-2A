@@ -96,7 +96,8 @@ def _plot_walkthrough(
                 linewidth=1.35,
                 label=f"opérateur {operator + 1}",
             )
-        axes[0, column].set_title(f"(a{column + 1}) {title}", fontsize=10.0)
+        panel = "abc"[column]
+        axes[0, column].set_title(f"({panel}) {title}", fontsize=10.0)
         axes[0, column].set_xlabel("heure de la journée")
         axes[0, column].set_xticks((0, 6, 12, 18, 23))
     axes[0, 0].set_ylabel("trafic normalisé (moyenne 1)")
@@ -108,7 +109,7 @@ def _plot_walkthrough(
         color=COLOURS[0],
         linewidth=1.0,
     )
-    axes[1, 0].set_title("(b) trafic mesuré de la référence", fontsize=10.0)
+    axes[1, 0].set_title("(d) trafic mesuré de la référence", fontsize=10.0)
     axes[1, 0].set_ylabel("trafic (Go/h)")
     axes[1, 0].set_xlabel("créneau depuis le début")
 
@@ -120,7 +121,7 @@ def _plot_walkthrough(
             linewidth=1.0,
             label=f"opérateur {operator + 1}",
         )
-    axes[1, 1].set_title("(c) demandes construites", fontsize=10.0)
+    axes[1, 1].set_title("(e) demandes construites", fontsize=10.0)
     axes[1, 1].set_ylabel("trafic (Go/h)")
     axes[1, 1].set_xlabel("créneau depuis le début")
 
@@ -150,7 +151,7 @@ def _plot_walkthrough(
             ha="right",
             va="bottom",
         )
-    axes[1, 2].set_title("(d) demande rapportée au pic", fontsize=10.0)
+    axes[1, 2].set_title("(f) demande rapportée au pic", fontsize=10.0)
     axes[1, 2].set_ylabel("part du pic de l’opérateur")
     axes[1, 2].set_xlabel("heure de la journée")
     axes[1, 2].set_ylim(0.0, 1.40)
@@ -158,12 +159,10 @@ def _plot_walkthrough(
     for axis in axes.reshape(-1):
         axis.grid(alpha=0.24, linewidth=0.5)
     figure.tight_layout()
-    for suffix in ("pdf", "png"):
-        figure.savefig(
-            figure_dir / f"plan_walkthrough.{suffix}",
-            dpi=180 if suffix == "png" else None,
-            bbox_inches="tight",
-        )
+    figure.savefig(
+        figure_dir / "plan_walkthrough.pdf",
+        bbox_inches="tight",
+    )
     plt.close(figure)
 
 
@@ -196,6 +195,7 @@ def main() -> None:
     parser.add_argument("--figure-dir", type=Path, default=DEFAULT_FIGURE_DIR)
     parser.add_argument("--site-index", type=int, default=0)
     parser.add_argument("--rate", type=float, default=0.90)
+    parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
     population, blueprints, protocol = load_protocol_inputs(args.calibration_dir)
@@ -218,8 +218,9 @@ def main() -> None:
         args.rate,
         args.figure_dir,
     )
-    _print_values(site, population, blueprints, args.site_index, args.rate)
-    print(f"figures: {args.figure_dir.resolve()}")
+    if not args.quiet:
+        _print_values(site, population, blueprints, args.site_index, args.rate)
+    print(f">> Protocol figure: {args.figure_dir.resolve()}", flush=True)
 
 
 if __name__ == "__main__":

@@ -32,7 +32,6 @@ from src.data_processing.instance_generator import (
     save_site_blueprints,
 )
 from src.data_processing.power_validation_figures import (
-    generate_calibration_figure,
     generate_representative_fit_figure,
 )
 from src.experiments.common import (
@@ -153,6 +152,7 @@ def main() -> None:
             manifest["input_path"] = portable_path(args.input)
             manifest["input_signature"] = file_signature(args.input)
             manifest["outputs"] = portable_outputs(manifest["outputs"])
+            manifest["outputs"].pop("figure", None)
             manifest["representative_antenna_id"] = representative_id
             manifest["outputs"]["representative_figure"] = [
                 portable_path(path) for path in representative_paths
@@ -178,6 +178,7 @@ def main() -> None:
             portable_path(path) for path in representative_paths
         ]
         manifest["outputs"].pop("virtual_sites", None)
+        manifest["outputs"].pop("figure", None)
         manifest_path.write_text(
             json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
         )
@@ -205,7 +206,6 @@ def main() -> None:
     )
 
     print(">> Generating the Section 6.2 figure", flush=True)
-    figure_paths = generate_calibration_figure(campaign, args.figures_dir)
     representative_paths, representative_id = generate_representative_fit_figure(
         population, args.figures_dir
     )
@@ -238,7 +238,6 @@ def main() -> None:
             "calibrated_population": portable_path(cache_path),
             "site_blueprints": portable_path(sites_path),
             "protocol_parameters": portable_path(protocol_path),
-            "figure": [portable_path(path) for path in figure_paths],
             "representative_figure": [
                 portable_path(path) for path in representative_paths
             ],

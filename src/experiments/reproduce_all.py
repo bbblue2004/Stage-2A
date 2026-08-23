@@ -16,6 +16,11 @@ STAGES = (
         "--rebuild-cache",
     ),
     (
+        "protocol walkthrough figure",
+        "src.experiments.plan_walkthrough",
+        None,
+    ),
+    (
         "instance diagnostics",
         "src.experiments.instance_diagnostics",
         "--rebuild",
@@ -54,7 +59,7 @@ def main() -> None:
 
     for label, module, rebuild_flag in STAGES:
         command = [sys.executable, "-m", module, "--quiet"]
-        if args.rebuild:
+        if args.rebuild and rebuild_flag is not None:
             command.append(rebuild_flag)
         print(f">> Starting {label}", flush=True)
         subprocess.run(command, cwd=ROOT, check=True)

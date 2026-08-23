@@ -368,14 +368,10 @@ def _figures(payload: dict[str, object], output_dir: Path) -> list[Path]:
     axes[1, 1].set_title("(d) Gardiens minimaux, campagne B")
     axes[1, 1].legend(title="Nombre", frameon=False, fontsize=8, loc="lower right")
     figure.tight_layout()
-    paths = [
-        output_dir / "protocol_diagnostics.pdf",
-        output_dir / "protocol_diagnostics.png",
-    ]
-    figure.savefig(paths[0], bbox_inches="tight")
-    figure.savefig(paths[1], dpi=220, bbox_inches="tight")
+    path = output_dir / "protocol_diagnostics.pdf"
+    figure.savefig(path, bbox_inches="tight")
     plt.close(figure)
-    return paths
+    return [path]
 
 
 def main() -> None:
@@ -444,10 +440,10 @@ def main() -> None:
             encoding="utf-8",
         )
 
-    figures = _figures(payload, args.figures_dir)
     if not current:
         comparison_path = args.results_dir / "distribution_comparison.csv"
         scenario_path = args.results_dir / "scenario_diagnostics.csv"
+    figures = _figures(payload, args.figures_dir)
     manifest = {
         "inputs": expected,
         "outputs": {

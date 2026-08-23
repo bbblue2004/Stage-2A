@@ -294,7 +294,11 @@ Les contraintes de stabilité sont donc équivalentes.
 Cette annexe complète le protocole de la
 Section~\ref{subsec:protocole_experimental}. Elle sert à établir quel espace
 d'instances est effectivement simulé, avant toute interprétation des résultats
-d'efficacité et de stabilité.
+d'efficacité et de stabilité, puis à vérifier les calculs par des méthodes
+indépendantes sans alourdir la Section~\ref{sec:simulations_numeriques}.
+Elle permet ainsi d'écarter deux causes d'erreur possibles : des instances
+mal construites et une implémentation incorrecte des optimiseurs ou des tests
+de stabilité.
 
 \subsection{Plausibilité des instances construites}
 
@@ -357,5 +361,5 @@ certaines réponses sont connues analytiquement.
     et~\ref{prop:shapley_hors_coeur_semi_homogene}.
 \end{itemize}
 
-Ces contrôles valident l'implémentation ; ils ne constituent pas des résultats
-empiriques.
+Ces contrôles donnent les vérifications de reproductibilité sur lesquelles
+reposent les résultats de la Section~\ref{sec:simulations_numeriques}.

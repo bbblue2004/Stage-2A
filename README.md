@@ -1,133 +1,127 @@
-# RAN sharing
+# Partage opportuniste d'infrastructures RAN
 
-Research code for the opportunistic sharing of radio access network
-infrastructure. The repository combines exact operational optimisation,
-cooperative-game analysis, a semi-empirical numerical campaign, and the
-associated research article.
+Ce dépôt contient le code, les données locales, les résultats numériques et le
+document LaTeX d'un travail de recherche sur le partage opportuniste
+d'infrastructures radio entre opérateurs mobiles. Le modèle combine une
+optimisation exacte de l'activation des équipements et une analyse en théorie
+des jeux coopératifs.
 
-## Repository layout
+## Organisation
 
 ```text
-data/                  Local raw and processed measurements (not versioned)
-docs/                  Model documentation and archived working notes
-figures/               Current experiment figures used by the article
-paper/                 LaTeX article and scientific protocol
-results/               Reproducible numerical caches (not versioned)
-src/core/              Optimisation and cooperative-game algorithms
-src/data_processing/   Data loading, calibration and semi-empirical instance generation
-src/experiments/       Reproducible experiments reported in Section 6
-src/cli/               Exploratory command-line diagnostics
-tests/                 Unit and numerical-consistency tests
-archive/legacy/        Outputs from superseded protocols
+data/raw/                 Données de trafic et de puissance d'origine
+figures/                  PDF produits par le pipeline et utilisés pour l'étude
+paper/                    Article LaTeX et sections du document
+results/                  Résultats et caches numériques reproductibles
+src/core/                 Optimisation et allocations coopératives
+src/data_processing/      Chargement, calibration et génération des sites
+src/experiments/          Expériences correspondant à la partie 6
+tests/                    Tests unitaires et contrôles numériques
+requirements.txt          Versions des dépendances Python
 ```
 
-The material under `archive/legacy/` is retained only for traceability. It is
-not used by the current article or by the numerical pipeline.
+Les seuls éléments locaux volumineux conservés sont utiles :
 
-## Environment
+- `data/raw/radio_sites.csv`, qui contient les mesures sources ;
+- `results/`, qui évite de recalculer les campagnes coûteuses ;
+- `.venv/`, l'environnement Python local ;
+- `paper/main.pdf`, la dernière compilation du rapport.
 
-The supported local setup uses the repository's virtual environment:
+Ils sont ignorés par Git. Les résultats peuvent être reconstruits à partir du
+CSV brut, mais le calcul complet de stabilité prend plusieurs minutes.
+
+## Protocole numérique
+
+Les données couvrent 3 825 identifiants radio du 20 au 26 mars 2023, soit
+24 x 7 = 168 observations horaires par identifiant. Pour chaque antenne
+admissible, une relation affine entre trafic et puissance active fournit la
+puissance fixe et le coût variable.
+
+La campagne utilise 400 plans gelés. Un plan fixe les antennes sources ; un
+scénario leur applique ensuite des volumes, des profils, des équipements, des
+capacités et un nombre d'opérateurs. Pour quatre opérateurs, un site virtuel
+utilise une antenne de référence, quatre antennes donneuses de profils et
+quatre antennes énergétiques distinctes.
+
+Les principales hypothèses numériques sont :
+
+- sept jours toujours traités ensemble ;
+- fenêtre nocturne centrale de 0 h à 7 h ;
+- trois taux de charge maximale : 0,80, 0,90 et 1,00 ;
+- trois et quatre opérateurs pour l'étude des mécanismes ;
+- optimisation horaire exacte de tous les ensembles de gardiens ;
+- valeur de Shapley lorsqu'elle appartient au cœur, nucléole lorsqu'un autre
+  partage stable est nécessaire.
+
+Les capacités sont simulées : elles ne sont pas présentes dans les données.
+Les sites multi-opérateurs sont eux aussi virtuels. Les résultats constituent
+donc une étude semi-empirique et non une estimation directe d'un réseau réel.
+
+## Installation
+
+Sous PowerShell :
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-All commands below deliberately use this interpreter. The exact dependency
-versions are recorded in `requirements.txt`.
-
-## Data
-
-Place the semicolon-separated source file at:
+Le fichier source attendu est :
 
 ```text
 data/raw/radio_sites.csv
 ```
 
-The source data are not versioned. A fresh clone can therefore run the
-article's experiments only after this file has been supplied. Generated
-results are cached under `results/`; deleting that directory does not remove
-source data and only forces a later recomputation.
+## Reproduction des résultats
 
-## Reproduce the numerical campaign
-
-Run the four experiments in dependency order:
+La commande suivante exécute le pipeline dans l'ordre de ses dépendances :
 
 ```powershell
 .venv\Scripts\python.exe -m src.experiments.reproduce_all
 ```
 
-The command is idempotent:
+Elle lance successivement :
 
-- a missing cache is computed;
-- a valid cache is reused;
-- `--rebuild` forces every stage to be recomputed.
+1. `power_calibration` : calibration énergétique et liste gelée des plans ;
+2. `plan_walkthrough` : Figure 1 expliquant la construction d'un site ;
+3. `instance_diagnostics` : contrôles de plausibilité du protocole ;
+4. `operational_efficiency` : économies et politiques de la section 6.3 ;
+5. `coalition_stability` : stabilité et partage de la section 6.4 ;
+6. `threshold_mechanisms` : mécanismes étudiés dans la section 6.5 ;
+7. `parameter_sensitivity` : analyse de sensibilité de la section 6.6.
 
-Cache manifests identify inputs by SHA-256 content hashes rather than by
-machine-specific paths or modification dates.
-
-The individual stages are:
-
-```powershell
-# Section 6.2: affine power calibration and frozen site blueprints
-.venv\Scripts\python.exe -m src.experiments.power_calibration
-
-# Section 6.1 diagnostics: plausibility of the instance generator
-.venv\Scripts\python.exe -m src.experiments.instance_diagnostics
-
-# Section 6.3: operational efficiency
-.venv\Scripts\python.exe -m src.experiments.operational_efficiency
-
-# Section 6.4: coalition stability
-.venv\Scripts\python.exe -m src.experiments.coalition_stability
-
-# Section 6.5: hourly capacity thresholds and cost homogeneity
-.venv\Scripts\python.exe -m src.experiments.threshold_mechanisms
-
-# Section 6.6: parameter sensitivity
-.venv\Scripts\python.exe -m src.experiments.parameter_sensitivity
-```
-
-The calibration stage accepts `--rebuild-cache`; the other stages accept
-`--rebuild`. Every experiment also exposes `--help` and explicit input/output
-directory options.
-
-## Exploratory commands
-
-These utilities are independent of the article's main numerical campaign:
+Par défaut, chaque étape réutilise son cache si les données, les paramètres et
+la version de l'algorithme correspondent au manifeste enregistré. Pour tout
+recalculer :
 
 ```powershell
-# Configurable single-site simulation
-.venv\Scripts\python.exe -m src.cli.single_site_simulation --help
-
-# Empty-core diagnostic over field antennas
-.venv\Scripts\python.exe -m src.cli.empty_core_diagnostic --help
-
-# Power-versus-traffic graph for one antenna
-.venv\Scripts\python.exe -m src.cli.regression_plot --help
+.venv\Scripts\python.exe -m src.experiments.reproduce_all --rebuild
 ```
 
-Diagnostic figures are written under `figures/diagnostics/` and are not used
-by the article.
+Chaque module accepte aussi `--help` et peut être exécuté séparément, par
+exemple :
 
-## Model and implementation
+```powershell
+.venv\Scripts\python.exe -m src.experiments.operational_efficiency --help
+```
 
-For a non-empty coalition `S`, the program enumerates feasible guardian sets
-at every hour, allocates traffic greedily by increasing variable cost, and
-computes `C_H*(S) = sum_h C_h*(S)`. The transferable-utility savings game is
+## Figures conservées
+
+Le rapport utilise six figures numériques :
 
 ```text
-v_H(S) = sum_{i in S} C_H*({i}) - C_H*(S),   v_H(empty) = 0.
+figures/protocol/plan_walkthrough.pdf
+figures/power_calibration/representative_power_fit.pdf
+figures/operational_efficiency/hourly_profiles.pdf
+figures/operational_efficiency/operational_efficiency.pdf
+figures/coalition_stability/coalition_stability.pdf
+figures/coalition_stability/threshold_mechanisms.pdf
 ```
 
-The exact policy with one guardian set fixed over the whole window is also
-computed as a secondary operational benchmark, not as the game used for the
-main stability analysis.
-
-The implementation evaluates convexity, the core, balancedness, the Shapley
-value, the least core and the nucleolus. The full notation and numerical
-protocol are documented in `docs/model.md` and
-`paper/NUMERICAL_PROTOCOL.md`.
+`figures/instance_diagnostics/protocol_diagnostics.pdf` est conservée comme
+contrôle complémentaire de la construction des sites virtuels. Les scripts ne
+produisent plus d'aperçus PNG ni de figures issues des anciennes campagnes à
+un seul plan.
 
 ## Tests
 
@@ -135,18 +129,19 @@ protocol are documented in `docs/model.md` and
 .venv\Scripts\python.exe -m unittest discover -s tests -q
 ```
 
-The tests cover operational allocation, time windows, power calibration,
-instance generation, coalition stability, parameter sensitivity and cache
-portability.
+Les tests couvrent la calibration, la génération des instances, l'allocation
+du trafic, les fenêtres temporelles, la stabilité, le nucléole, les seuils de
+capacité, la sensibilité et la validité des caches.
 
-## Article
+## Compilation du rapport
 
-From `paper/`:
+Depuis `paper/` :
 
 ```powershell
 pdflatex -interaction=nonstopmode -halt-on-error main.tex
 pdflatex -interaction=nonstopmode -halt-on-error main.tex
 ```
 
-The LaTeX source is governed by `paper/AGENTS.md`. Numerical code changes must
-not silently alter the model, notation or assumptions stated in the article.
+Les fichiers auxiliaires de compilation sont ignorés. Le document source est
+réparti dans `paper/sections/` ; la partie 6 contient le protocole et les
+résultats produits par les expériences ci-dessus.

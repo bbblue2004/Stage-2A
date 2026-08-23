@@ -651,14 +651,10 @@ def _figure(
     axis.grid(axis="y", alpha=0.22)
 
     figure.tight_layout(w_pad=0.8)
-    paths = [
-        output_dir / "threshold_mechanisms.pdf",
-        output_dir / "threshold_mechanisms.png",
-    ]
-    figure.savefig(paths[0], bbox_inches="tight")
-    figure.savefig(paths[1], dpi=220, bbox_inches="tight")
+    path = output_dir / "threshold_mechanisms.pdf"
+    figure.savefig(path, bbox_inches="tight")
     plt.close(figure)
-    return paths
+    return [path]
 
 
 def main() -> None:

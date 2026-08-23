@@ -19,12 +19,12 @@ from src.data_processing.power_validation import (
 )
 
 
-def _days(count: int = 5) -> tuple[date, ...]:
+def _days(count: int = 7) -> tuple[date, ...]:
     return tuple(date(2023, 3, 20) + timedelta(days=index) for index in range(count))
 
 
 def _calibrated_population(count: int = 16) -> CalibratedPopulation:
-    traffic = np.arange(count * 5 * 24, dtype=float).reshape(count, 5, 24)
+    traffic = np.arange(count * 7 * 24, dtype=float).reshape(count, 7, 24)
     return CalibratedPopulation(
         antenna_ids=np.asarray([f"A{index:02d}" for index in range(count)]),
         days=np.asarray([day.isoformat() for day in _days()]),
@@ -53,9 +53,9 @@ class AffinePowerCalibrationTests(unittest.TestCase):
         self.assertAlmostEqual(fit.rmse_w, 0.0, places=12)
         self.assertAlmostEqual(fit.normalized_rmse, 0.0, places=12)
 
-    def test_direct_calibration_uses_all_five_days(self) -> None:
+    def test_direct_calibration_uses_all_seven_days(self) -> None:
         traffic = np.vstack(
-            [np.arange(24, dtype=float) + day_index for day_index in range(5)]
+            [np.arange(24, dtype=float) + day_index for day_index in range(7)]
         )
         power = 200.0 + 4.0 * traffic
         series = AntennaSeries("exact", _days(), traffic, power)
@@ -63,14 +63,14 @@ class AffinePowerCalibrationTests(unittest.TestCase):
         result = calibrate_antenna(series)
 
         self.assertEqual(result.status, "included")
-        self.assertEqual(result.num_observations, 120)
-        self.assertEqual(result.num_active_observations, 120)
+        self.assertEqual(result.num_observations, 168)
+        self.assertEqual(result.num_active_observations, 168)
         self.assertAlmostEqual(result.p_fixed_w, 200.0, places=9)
         self.assertAlmostEqual(result.slope_w_per_gb, 4.0, places=9)
         self.assertAlmostEqual(result.r_squared, 1.0, places=12)
 
     def test_zero_power_rows_are_excluded_from_active_fit(self) -> None:
-        traffic = np.tile(np.arange(24, dtype=float), (5, 1))
+        traffic = np.tile(np.arange(24, dtype=float), (7, 1))
         power = 200.0 + 4.0 * traffic
         traffic[0, 0], power[0, 0] = 0.0, 0.0
         traffic[1, 1], power[1, 1] = 3.0, 0.0
@@ -79,27 +79,27 @@ class AffinePowerCalibrationTests(unittest.TestCase):
         result = calibrate_antenna(series)
 
         self.assertEqual(result.status, "included")
-        self.assertEqual(result.num_active_observations, 118)
+        self.assertEqual(result.num_active_observations, 166)
         self.assertAlmostEqual(result.p_fixed_w, 200.0, places=9)
         self.assertAlmostEqual(result.slope_w_per_gb, 4.0, places=9)
 
     def test_constant_traffic_is_excluded(self) -> None:
-        traffic = np.ones((5, 24))
-        power = np.arange(120, dtype=float).reshape(5, 24) + 100.0
+        traffic = np.ones((7, 24))
+        power = np.arange(168, dtype=float).reshape(7, 24) + 100.0
         result = calibrate_antenna(
             AntennaSeries("constant", _days(), traffic, power)
         )
         self.assertEqual(result.status, "constant_traffic")
 
     def test_nonpositive_slope_is_excluded(self) -> None:
-        traffic = np.tile(np.arange(24, dtype=float), (5, 1))
+        traffic = np.tile(np.arange(24, dtype=float), (7, 1))
         power = 500.0 - 2.0 * traffic
         result = calibrate_antenna(
             AntennaSeries("negative-slope", _days(), traffic, power)
         )
         self.assertEqual(result.status, "nonpositive_slope")
 
-    def test_loader_selects_first_five_days_and_averages_duplicates(self) -> None:
+    def test_loader_selects_first_seven_days_and_averages_duplicates(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "data.csv"
             headers = (
@@ -111,7 +111,7 @@ class AffinePowerCalibrationTests(unittest.TestCase):
             with path.open("w", newline="", encoding="utf-8") as file:
                 writer = csv.writer(file, delimiter=";")
                 writer.writerow(headers)
-                for day_offset in range(6):
+                for day_offset in range(8):
                     day = datetime(2023, 3, 20) + timedelta(days=day_offset)
                     for hour in range(24):
                         writer.writerow(
@@ -125,14 +125,14 @@ class AffinePowerCalibrationTests(unittest.TestCase):
                 writer.writerow(("2023-03-20 00", "A", 2.0, 102.0))
                 writer.writerow(("", "", "", ""))
 
-            population, audit = load_population(path, num_days=5)
+            population, audit = load_population(path, num_days=7)
 
         self.assertEqual(audit.selected_dates, tuple(day.isoformat() for day in _days()))
-        self.assertEqual(audit.selected_rows, 121)
+        self.assertEqual(audit.selected_rows, 169)
         self.assertEqual(audit.duplicate_selected_rows, 1)
         self.assertEqual(audit.unparsed_source_rows, 1)
         self.assertEqual(len(population), 1)
-        self.assertEqual(population[0].num_observations, 120)
+        self.assertEqual(population[0].num_observations, 168)
         self.assertAlmostEqual(population[0].traffic[0, 0], 1.0)
         self.assertAlmostEqual(population[0].power[0, 0], 101.0)
 

@@ -26,6 +26,7 @@ from src.data_processing.data_loader import ROOT
 from src.data_processing.instance_generator import (
     CAMPAIGN_A_RATES,
     CENTRAL_RATE,
+    DEFAULT_NUM_SITES,
     ScenarioSpec,
     capacities_for_site,
     iter_materialized_sites,
@@ -858,14 +859,10 @@ def _hourly_figure(
         axis.grid(alpha=0.24, linewidth=0.5)
         axis.set_xlabel("heure")
     figure.tight_layout()
-    paths = [
-        output_dir / "hourly_profiles.pdf",
-        output_dir / "hourly_profiles.png",
-    ]
-    figure.savefig(paths[0], bbox_inches="tight")
-    figure.savefig(paths[1], dpi=220, bbox_inches="tight")
+    path = output_dir / "hourly_profiles.pdf"
+    figure.savefig(path, bbox_inches="tight")
     plt.close(figure)
-    return paths
+    return [path]
 
 
 def _policy_figure(
@@ -890,7 +887,7 @@ def _policy_figure(
             "Proportionnelle\n(mêmes gardiens)",
             "Gardiens fixes\nsur la nuit",
         ),
-        whis=(0, 100),
+        whis=(5, 95),
         showfliers=False,
         patch_artist=True,
     )
@@ -913,7 +910,7 @@ def _policy_figure(
             "Proportionnelle\n(mêmes gardiens)",
             "Gardiens fixes\nsur la nuit",
         ),
-        whis=(0, 100),
+        whis=(5, 95),
         showfliers=False,
         patch_artist=True,
     )
@@ -929,14 +926,10 @@ def _policy_figure(
     axes[1].tick_params(axis="x", labelsize=7.5)
     axes[1].grid(axis="y", alpha=0.25)
     figure.tight_layout()
-    paths = [
-        output_dir / "operational_efficiency.pdf",
-        output_dir / "operational_efficiency.png",
-    ]
-    figure.savefig(paths[0], bbox_inches="tight")
-    figure.savefig(paths[1], dpi=220, bbox_inches="tight")
+    path = output_dir / "operational_efficiency.pdf"
+    figure.savefig(path, bbox_inches="tight")
     plt.close(figure)
-    return paths
+    return [path]
 
 
 def main() -> None:

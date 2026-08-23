@@ -45,8 +45,9 @@ exprimée en watts. Elles couvrent \(3\,825\) identifiants du lundi 20 au
 dimanche 26 mars 2023, soit \(24\times7=168\) créneaux horaires par identifiant et
 \(642\,600\) couples trafic--puissance. Dans la suite, chaque identifiant est
 traité comme une antenne, et \(\mathcal T\) désigne l'ensemble de ces 168
-créneaux. Le trafic et la puissance d'un même créneau proviennent toujours de
-la même antenne.
+créneaux. Pour un identifiant et une heure donnés, le trafic et la puissance
+sont deux mesures du même équipement ; ils ne sont jamais appariés à partir
+de deux antennes différentes.
 
 Une vérification préalable ne met pas en évidence de différence exploitable
 entre les deux derniers jours et les cinq premiers : leurs profils moyens par
@@ -94,6 +95,10 @@ plusieurs instances, sans nouveau tirage d'antennes.
 
 Pour construire \(n\) opérateurs, une instance utilise \(2n+1\) antennes
 réelles distinctes, réparties en trois \emph{rôles}.
+L'antenne de référence ne représente pas l'un des \(n\) opérateurs : elle fixe
+seulement l'échelle et la composante temporelle commune. Chacun des \(n\)
+opérateurs reçoit donc sa propre antenne donneuse, puis sa propre antenne
+énergétique.
 
 \begin{table}[htbp]
 \centering
@@ -123,10 +128,11 @@ Pour toute antenne admissible \(j\), le \emph{profil normalisé}
 vaut en moyenne $1$ sur les 168 heures : il conserve les variations
 temporelles de l'antenne, indépendamment de son trafic moyen.
 
-Les facteurs de volume sont construits à partir de la distribution des
-trafics moyens \(\bar d_j\). Au niveau intermédiaire utilisé dans l'exemple,
-on prend les quantiles 40, 50, 60 et 75 de cette distribution, puis on divise
-les quatre valeurs par leur moyenne. On obtient ainsi, avant permutation,
+Les facteurs de volume sont construits à partir de la distribution empirique
+des trafics moyens \(\bar d_j\) des antennes admissibles. Dans la configuration
+de référence illustrée ci-dessous, on prend les quantiles 40, 50, 60 et 75 de
+cette distribution, puis on divise les quatre valeurs par leur moyenne. On
+obtient ainsi, avant permutation,
 les facteurs \(0{,}555\), \(0{,}797\), \(1{,}087\) et \(1{,}562\), dont la
 moyenne vaut 1. Une permutation fixée par le plan les attribue aux quatre
 opérateurs sans favoriser toujours le même indice.
@@ -143,7 +149,7 @@ niveaux de profils temporels sont construits par
 Avec \(\lambda_\ell=0{,}15\), les quatre profils sont proches mais non
 identiques ; avec \(0{,}35\), ils diffèrent davantage ; avec \(1\), chacun
 reprend exactement le profil mesuré de sa donneuse. Les panneaux
-(a1)--(a3) de la Figure~\ref{fig:plan_deroule} montrent ces trois cas sur le
+(a)--(c) de la Figure~\ref{fig:plan_deroule} montrent ces trois cas sur le
 même plan.
 
 La demande de l'opérateur \(i\) est alors
@@ -153,8 +159,10 @@ La demande de l'opérateur \(i\) est alors
     \mu_a=\bar d_a,
     \label{eq:demande_synthetique}
 \end{equation}
-où \(\mu_a\) est le trafic moyen de la référence, \(\alpha_i\) sa part de
-volume, et \(\phi_{i,\ell}\) son profil normalisé. Comme
+où \(\mu_a\) est le trafic moyen de la référence et \(\alpha_i\) le facteur
+de volume relatif de l'opérateur \(i\) : \(\alpha_i=1\) correspond au volume
+moyen des quatre opérateurs, et \(\alpha_i=1{,}5\) à un volume supérieur de
+50\,\%. Enfin, \(\phi_{i,\ell}\) est son profil normalisé. Comme
 \(\sum_i\alpha_i=n\), la somme des demandes moyennes vaut toujours
 \(n\mu_a\).
 
@@ -179,19 +187,20 @@ afin d'éviter des écarts extrêmes.
 
 \paragraph{Un plan déroulé.}
 La Figure~\ref{fig:plan_deroule} et le Tableau~\ref{tab:plan_deroule}
-présentent la configuration de référence appliquée au premier plan de la
-liste gelée. Ils suffisent à reproduire le calcul.
+présentent un exemple : la configuration de référence appliquée au premier
+plan de la liste gelée. Le tableau conserve les identifiants anonymisés des
+antennes utilisées afin que cet exemple puisse être reproduit.
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.98\textwidth]{../figures/protocol/plan_walkthrough.pdf}
-    \caption{Construction d'un site. (a1)--(a3)~Profils proches,
+    \caption{Construction d'un site virtuel. (a)--(c)~Profils proches,
     intermédiaires et différents, moyennés par heure de la journée ; les
     antennes sources et les volumes ne changent pas entre les trois panneaux.
-    (b)~Série réelle de l'antenne de référence sur 168 heures.
-    (c)~Les quatre demandes de la configuration intermédiaire construites
+    (d)~Série réelle de l'antenne de référence sur 168 heures.
+    (e)~Les quatre demandes de la configuration intermédiaire construites
     par~\eqref{eq:demande_synthetique}.
-    (d)~Demande rapportée au pic de chaque opérateur, plage des sept jours en
+    (f)~Demande rapportée au pic de chaque opérateur, plage des sept jours en
     zone colorée, et capacités correspondant aux trois valeurs de \(r\).}
     \label{fig:plan_deroule}
 \end{figure}
@@ -215,10 +224,12 @@ Pic \(\max_t d_i(t)\) (Go/h) & \(24{,}90\) & \(13{,}97\) & \(10{,}73\) & \(27{,}
 \(q_i\) à \(r=0{,}90\) (Go/h) & \(27{,}66\) & \(15{,}52\) & \(11{,}92\) & \(30{,}78\) \\
 \hline
 \end{tabular}
-\caption{Paramètres du site construit à partir de la référence
+\caption{Exemple de paramètres d'un site virtuel construit à partir de la
+référence
 \texttt{00083151W1}, d'échelle \(\mu_a=9{,}16\ \mathrm{Go/h}\). La somme des
 demandes moyennes vaut \(36{,}65\ \mathrm{Go/h}\), soit exactement
-\(4\mu_a\).}
+\(4\mu_a\). Les chaînes alphanumériques sont les identifiants anonymisés des
+antennes sources, et non des valeurs numériques.}
 \label{tab:plan_deroule}
 \end{table}
 \FloatBarrier
@@ -273,8 +284,10 @@ résumées par heure de la journée. Les sept jours sont toujours traités
 ensemble, conformément à la vérification donnée au début de cette
 sous-section.
 
-La liste gelée contient 400 plans : les antennes de référence sont tirées sans
-remise, à raison de 100 par quartile de trafic moyen. Une graine unique fixe
+La liste gelée contient 400 plans, soit 400 sites virtuels par scénario ; il
+ne s'agit pas de 400 sites multi-opérateurs observés. Les antennes de
+référence sont tirées sans remise, à raison de 100 par quartile de trafic
+moyen. Une graine unique fixe
 l'ordre de tous les tirages. À
 l'intérieur d'un plan, les sources de trafic et d'énergie sont disjointes ;
 une antenne peut réapparaître dans plusieurs plans, jamais deux fois dans le
@@ -298,8 +311,8 @@ Bondareva--Shapley~\eqref{eq:lp_bondareva_shapley}, et l'appartenance du
 nucléole au moindre cœur~\eqref{eq:lp_moindre_coeur}. Les contre-exemples
 analytiques des Propositions~\ref{prop:contre_exemple_coeur_vide}
 et~\ref{prop:shapley_hors_coeur_semi_homogene} sont en outre reproduits
-numériquement. Ces contrôles valident l'implémentation ; ils ne constituent
-pas des résultats empiriques.
+numériquement. Leur rôle est de vérifier que les résultats ne proviennent ni
+d'une erreur de construction des instances ni d'une erreur d'implémentation.
 
 \paragraph{Portée.}
 Ces instances ne permettent pas d'estimer la distribution réelle des gains
@@ -377,7 +390,8 @@ Nous réutilisons directement le jeu défini en~\eqref{eq:jeu_principal} :
 \(v_h(N)\), converti en kWh, est l'énergie économisée par rapport au
 fonctionnement autonome, et
 \(v_h(N)/\sum_i C_h^*(\{i\})\) est la part économisée. Il n'y a donc pas de
-nouvelle référence propre à cette section. Chaque résultat est d'abord
+nouveau point de comparaison : le dénominateur reste le coût autonome défini
+en Section~\ref{sec:jeu_cooperatif}. Chaque résultat est d'abord
 moyenné sur les sept jours d'un plan, puis résumé sur les 400 plans. Dans
 les tableaux, les crochets contiennent directement la moitié centrale des
 plans, du premier au troisième quartile ; aucun rééchantillonnage ni intervalle
@@ -385,7 +399,7 @@ de confiance n'est utilisé.
 
 \paragraph{Profil horaire et choix de \(H\).}
 La Figure~\ref{fig:efficacite_operationnelle} suit simultanément la part et
-la quantité économisées et le nombre de gardiens effectivement retenus par
+la quantité économisée et le nombre de gardiens effectivement retenus par
 l'optimum, \(|G_h^*(N)|\). Les volumes et les profils sont au niveau modéré de
 la grille ; les quatre équipements sont tirés dans le même quartile de
 \(P^{\mathrm{fixe}}\), avec \(n=4\) et \(r=0{,}90\). Les sept jours sont
@@ -400,12 +414,16 @@ La part économisée médiane vaut \(67{,}6\,\%\) à minuit,
 moins, de \(2{,}22\) à \(3{,}00\,\mathrm{kWh}\) par heure : en journée, le
 trafic accroît à la fois le coût du fonctionnement autonome et le nombre de
 gardiens retenus par l'optimum.
+Le nombre moyen proche de deux vers 18 h signifie seulement que, dans ces
+sites virtuels, les capacités simulées de deux équipements suffisent le plus
+souvent à servir la demande totale. Il ne s'agit pas d'une mesure du nombre
+d'équipements nécessaires sur un site réel.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{../figures/operational_efficiency/hourly_profiles.pdf}
     \caption{Profil horaire sur 400 plans, \(r=0{,}90\), les sept jours
-    regroupés. (a)--(b)~Part et quantité économisées par rapport au
+    regroupés. (a)--(b)~Part et quantité économisée par rapport au
     fonctionnement autonome. (c)~Nombre de gardiens de l'ensemble choisi par
     l'optimum. Les courbes donnent la médiane des plans et les zones colorées
     leur moitié centrale ; la zone grise est la fenêtre nocturne étudiée.}
@@ -452,9 +470,8 @@ l'optimum. Cet écart est grand parce que le modèle autorise l'extinction
 complète : l'optimum ne garde qu'un équipement dans \(93{,}4\,\%\) des heures
 nocturnes et évite alors l'essentiel des trois autres coûts fixes. Le terme
 fixe représente en médiane \(88{,}6\,\%\) de l'énergie du fonctionnement
-autonome sur \(H\). L'écart ne vient
-plus d'un équipement anormalement petit : la plus petite puissance fixe
-représente \(21{,}4\,\%\) de la somme des quatre, contre \(25\,\%\) si elles
+autonome sur \(H\). Les quatre puissances fixes sont comparables : la plus
+petite représente \(21{,}4\,\%\) de leur somme, contre \(25\,\%\) si elles
 étaient identiques. La valeur de \(73{,}7\,\%\) est donc cohérente avec trois
 extinctions sur quatre sous les hypothèses du modèle ; elle ne constitue pas
 une économie mesurée sur un site réel.
@@ -468,6 +485,14 @@ repères homogènes \((n-1)/n\), soit \(66{,}7\,\%\) et \(75\,\%\), car les
 puissances fixes sont comparables.
 
 \paragraph{Politiques de référence.}
+Trois comparaisons complètent l'optimum horaire. La première allume, à chaque
+heure, les équipements par capacité décroissante jusqu'à couvrir la demande,
+puis répartit le trafic au moindre coût variable entre eux. La deuxième garde
+les équipements de l'optimum, mais répartit le trafic au prorata de leurs
+capacités. La troisième impose le même ensemble de gardiens pendant les sept
+heures de la nuit, comme dans l'extension persistante de la
+Section~\ref{subsec:extension_persistante}.
+
 Pour chaque politique, la Figure~\ref{fig:plan_capacite} contient 400
 valeurs : une par plan, après moyenne de ses sept nuits. Le
 Tableau~\ref{tab:politiques_operationnelles} résume les comparaisons
@@ -477,13 +502,14 @@ en médiane. Imposer le même ensemble de gardiens pendant toute la nuit la
 réduit de \(3{,}2\) points.
 
 Les 400 plans utilisent le même réglage, mais pas les mêmes antennes de
-référence, donneuses et énergétiques. Leurs économies en kWh diffèrent donc
-nettement : la moitié centrale va de \(11{,}9\) à \(29{,}6\,\mathrm{kWh}\)
-par nuit. Les boîtes exprimées en pourcentage sont plus resserrées parce que
-les puissances fixes des quatre équipements sont comparables et que l'optimum
-n'en conserve généralement qu'un. Le rapport entre l'énergie évitée et la
-consommation autonome reste alors proche de trois quarts, même si les niveaux
-absolus diffèrent entre plans.
+référence, donneuses et énergétiques. Pour l'optimum, la moitié centrale des
+économies absolues va ainsi de \(11{,}9\) à \(29{,}6\,\mathrm{kWh}\) par nuit.
+La part économisée varie moins entre plans, car elle rapporte cette énergie à
+la consommation autonome du même plan. Pour la règle par capacité, quatre
+plans sur 400 ont même une économie moyenne négative : ignorer les coûts fixes
+et variables peut sélectionner des équipements dont la consommation dépasse
+la référence autonome. Ces quatre extrêmes sont conservés dans les calculs,
+mais pas dans l'échelle des moustaches de la figure.
 
 La politique proportionnelle conserve, à chaque heure, exactement les gardiens trouvés par l'optimum, puis
 répartit seulement le trafic entre eux au prorata de leur capacité. Or
@@ -499,7 +525,8 @@ et non d'une optimalité générale de la règle proportionnelle.
     \caption{Résultats des quatre politiques sur 400 plans. Chaque boîte
     résume 400 moyennes, une par plan sur ses sept nuits : le trait orange
     est la médiane, la boîte contient la moitié centrale des plans et les
-    moustaches couvrent leur étendue complète. (a)~Part économisée par rapport
+    moustaches vont des 5\textsuperscript{e} aux 95\textsuperscript{e} centiles.
+    (a)~Part économisée par rapport
     au fonctionnement autonome. (b)~Perte appariée par rapport à l'optimum
     horaire.}
     \label{fig:plan_capacite}
@@ -514,7 +541,7 @@ Politique & Part économisée (\%) & Perte (points) \\
 \hline
 Optimum horaire & \(73{,}7\ [66{,}5;78{,}3]\) & --- \\
 Capacité décroissante & \(66{,}2\ [57{,}6;73{,}6]\) & \(3{,}4\ [0{,}6;11{,}3]\) \\
-Répartition proportionnelle & \(73{,}6\ [65{,}7;78{,}1]\) & \(0{,}00\ [0;0{,}13]\) \\
+Répartition proportionnelle & \(73{,}6\ [65{,}7;78{,}1]\) & \(0{,}002\ [0;0{,}127]\) \\
 Gardiens fixes sur la nuit & \(70{,}1\ [59{,}2;76{,}8]\) & \(3{,}2\ [0{,}01;9{,}8]\) \\
 \hline
 \end{tabular}
@@ -524,6 +551,11 @@ prendre la médiane ; ce n'est pas la différence entre les deux médianes de la
 colonne précédente.}
 \label{tab:politiques_operationnelles}
 \end{table}
+
+La perte proportionnelle médiane de \(0{,}002\) point est positive mais
+presque nulle. Elle ne se déduit pas de \(73{,}7-73{,}6\), car les deux
+médianes de la première colonne sont calculées séparément, tandis que la
+perte est calculée plan par plan avant d'en prendre la médiane.
 
 L'optimum change d'ensemble \(1{,}14\) fois par nuit en médiane et reste
 constant dans \(40{,}6\,\%\) des nuits simulées. La moitié centrale des pertes
@@ -550,30 +582,40 @@ le protocole et le code de calcul n'ont pas changé.
 
 Nous conservons les 400 plans et les sept heures de \(H\), mais examinons
 ici le jeu horaire \(v_h\). Une observation est donc définie par un plan, un
-jour, une heure et un taux de capacité. Les 400 plans, les sept jours, les
-sept heures et les trois taux fournissent
+jour, une heure et une valeur de \(r\). Les 400 plans, les sept jours, les
+sept heures et les trois valeurs \(r\in\{0{,}80,0{,}90,1\}\) fournissent
 \(400\times7\times7\times3=58\,800\) jeux appariés. Cette granularité étudie
 une rupture heure par heure. Un cœur vide pour un jeu \(v_h\) n'implique pas
 un cœur vide pour le jeu \(v_H\) de la nuit entière : l'agrégation permet aux
 gains de différentes heures de compenser leurs contraintes coalitionnelles.
 Les deux diagnostics répondent donc à des questions différentes.
+Une solution pratique consiste à régler les transferts sur une période plus
+longue. Lorsque les 49 heures nocturnes des sept jours sont réunies dans un
+seul jeu par plan, aucun des \(400\times3=1\,200\) cœurs n'est vide. À
+\(r=0{,}90\), Shapley appartient au cœur pour 378 plans et un autre partage
+stable existe pour les 22 autres. L'instabilité horaire ne persiste donc pas
+nécessairement lorsque les comptes sont faits en fin de semaine.
 
 \paragraph{Cascade.}
-Le test de Shapley suffit pour \(51\,046\) jeux, soit \(86{,}8\,\%\). Les
+Le test d'appartenance de Shapley au cœur conclut directement pour \(51\,046\)
+jeux, soit \(86{,}8\,\%\). Les
 \(7\,754\) autres passent au test de non-vacuité du cœur : \(4\,419\) ont un
 cœur non vide et \(3\,335\) un cœur vide. Le nucléole n'est calculé que dans
 les \(4\,419\) premiers cas, afin d'obtenir le partage stable retenu ; il ne
 l'est jamais si Shapley convient déjà. Lorsque le cœur est vide, l'analyse de
 la rupture est séparée et le nucléole n'est pas utilisé comme prédiction de
-coalition. Les tests de Shapley et du cœur prennent respectivement \(7{,}3\)
-et \(17{,}8\,\mathrm{s}\), contre \(545\,\mathrm{s}\) pour les nucléoles. Ce
+coalition. Sur l'ensemble des 400 plans, le test de Shapley prend \(7{,}3\)
+secondes pour les \(58\,800\) jeux et le test du cœur \(17{,}8\) secondes pour
+les \(7\,754\) jeux qui l'atteignent, contre \(545\) secondes pour les
+\(4\,419\) nucléoles. Ce
 dernier étage domine le calcul. Les diagnostics et les partages sont
 enregistrés et réutilisés tant que les entrées et le code ne changent pas.
 
 \paragraph{Trois catégories.}
 Le Tableau~\ref{tab:stabilite_grande_coalition} donne la répartition des trois
 cas. La fréquence de cœur vide passe de \(4{,}6\,\%\) à \(6{,}7\,\%\) lorsque
-la capacité se resserre. Entre les deux moitiés de 200 plans, l'écart maximal
+\(r\) passe de \(0{,}80\) à \(1\), c'est-à-dire lorsque les capacités
+\(q_i=\max_t d_i(t)/r\) diminuent. Entre les deux moitiés de 200 plans, l'écart maximal
 entre les fréquences des trois catégories n'est plus que de \(1{,}4\) point.
 
 \begin{table}[htbp]
@@ -601,21 +643,26 @@ nucléole.}
 \paragraph{Amplitude de l'instabilité.}
 Seuls \(390\) des \(58\,800\) jeux sont convexes, alors que \(86{,}8\,\%\)
 admettent Shapley dans le cœur : la convexité est bien une condition
-suffisante, non nécessaire. Lorsque le cœur est vide, le rapport entre le
-moindre relâchement des contraintes du cœur et l'économie totale vaut
-\(5{,}2\,\%\) en médiane ; la moitié centrale va de \(2{,}6\) à
-\(8{,}5\,\%\). Lorsque le cœur est non vide mais exclut Shapley, l'objection
+suffisante, non nécessaire. Lorsque le cœur est vide, il faudrait autoriser
+chaque coalition à recevoir jusqu'à \(5{,}2\,\%\) de moins que sa contrainte
+de stabilité, en médiane, pour rendre un partage possible ; la moitié centrale
+de ce manque minimal va de \(2{,}6\) à \(8{,}5\,\%\) de l'économie totale.
+Lorsque le cœur est non vide mais exclut Shapley, l'objection
 maximale à ce partage vaut \(2{,}77\,\%\) de l'économie en médiane. La
 coalition qui objecte compte trois opérateurs dans \(76{,}9\,\%\) des cas et
-deux dans les autres. Le certificat fondé sur les quatre coalitions obtenues
-en retirant successivement un opérateur détecte \(65{,}7\,\%\) des cœurs vides,
-sans faux positif.
+deux dans les autres. Un test simplifié additionne les exigences des quatre
+sous-groupes de trois opérateurs, chacun obtenu en retirant un opérateur. Si
+leur somme dépasse ce que la grande coalition peut distribuer, le cœur est
+nécessairement vide. Ce test détecte \(65{,}7\,\%\) des cœurs vides, sans faux
+positif.
 
 \paragraph{Gains distribués et benchmark de rupture.}
-À \(r=0{,}90\), nous sommons pour chaque nuit les sept partages horaires. Sur
+À \(r=0{,}90\), nous additionnons, pour chaque opérateur, les gains qui lui
+sont attribués aux sept heures de la nuit. Sur
 les \(1\,600\) couples plan--opérateur, le gain moyen est
-\(5{,}06\,\mathrm{kWh}\) par nuit, soit \(0{,}76\) euro au prix de
-\(0{,}15\) euro/kWh. La médiane est \(5{,}20\,\mathrm{kWh}\) et la moitié
+\(5{,}06\,\mathrm{kWh}\) par nuit, soit \(0{,}76\) euro par opérateur au prix
+de \(0{,}15\) euro/kWh, ou \(3{,}04\) euros pour les quatre opérateurs du site.
+La médiane est \(5{,}20\,\mathrm{kWh}\) et la moitié
 centrale va de \(2{,}90\) à \(7{,}25\,\mathrm{kWh}\). Les numéros
 d'opérateur n'étant pas comparables d'un plan à l'autre, nous ne donnons pas
 quatre moyennes par identité ; au sein d'un plan, les gains moyens des rangs
@@ -623,20 +670,29 @@ le plus faible et le plus élevé valent respectivement \(4{,}49\) et
 \(5{,}89\,\mathrm{kWh}\) par nuit.
 
 Lorsque le cœur est vide, le jeu ne prédit pas à lui seul la coalition qui se
-formera. Comme benchmark, nous retenons la partition propre qui maximise les
-économies totales parmi celles dont chaque bloc admet un partage stable. Ce
+formera. Comme benchmark, nous énumérons toutes les partitions propres des
+quatre opérateurs, vérifions la stabilité du partage au sein de chaque groupe,
+puis retenons la partition stable qui conserve le plus d'économies. Ce
 scénario de meilleure partition stable quantifie une perte potentielle ; ce
 n'est pas un modèle de formation des coalitions. La perte est mesurée par
 rapport au partage de Shapley, hypothétique, de la grande coalition. À
 \(r=0{,}90\), les \(1\,109\) cœurs vides sur \(19\,600\) jeux perdent en moyenne
 \(0{,}159\,\mathrm{kWh}\) pendant l'heure concernée, avec une médiane de
-\(0{,}075\,\mathrm{kWh}\). Rapportée aux \(2\,800\) nuits, ruptures ou non, la
+\(0{,}075\,\mathrm{kWh}\). Cette perte représente en moyenne \(5{,}6\,\%\) de
+l'économie de la grande coalition pendant les heures concernées, avec une
+médiane de \(4{,}0\,\%\). Rapportée aux \(2\,800\) nuits, ruptures ou non, la
 perte collective moyenne est \(0{,}063\,\mathrm{kWh}\) par site et par nuit.
 La perte moyenne par opérateur est \(0{,}016\,\mathrm{kWh}\) par nuit ; sa
 médiane est nulle et les 5\textsuperscript{e}--95\textsuperscript{e} centiles
 vont de \(-0{,}119\) à \(0{,}212\,\mathrm{kWh}\). Une valeur négative signifie
 que certains opérateurs bénéficient de la rupture, même si la perte totale est
 toujours positive.
+
+Le panneau (b) de la Figure~\ref{fig:stabilite_grande_coalition} ne compare
+pas trois politiques énergétiques : dans les trois boîtes, l'économie est
+celle de la grande coalition optimale. Les jeux sont seulement classés après
+calcul selon leur diagnostic de stabilité ; une économie plus grande ne
+garantit donc pas un partage stable.
 
 \begin{figure}[htbp]
     \centering
@@ -646,7 +702,8 @@ toujours positive.
     la grande coalition pendant une heure, c'est-à-dire \(v_h(N)\), classée
     selon le diagnostic. Chaque boîte montre la médiane, la moitié centrale
     et les 5\textsuperscript{e}--95\textsuperscript{e} centiles. Le rouge
-    indique un cœur vide, donc une grande coalition instable.}
+    indique un cœur vide, donc une grande coalition instable ; les boîtes ne
+    représentent pas des politiques différentes.}
     \label{fig:stabilite_grande_coalition}
 \end{figure}
 
@@ -657,9 +714,11 @@ toujours positive.
 
 La somme sur toute la nuit calculée dans la sous-section précédente peut
 masquer les changements du nombre d'équipements nécessaires. Nous revenons
-donc au jeu horaire \(v_h\). Pour chacun des 400 plans, nous combinons les deux
-configurations utilisées en Section~\ref{subsec:efficacite_operationnelle},
-les trois valeurs de \(r\), les sept jours et les 24 heures. Un jeu horaire
+donc au jeu horaire \(v_h\). Pour chacun des 400 plans, nous combinons la
+configuration de référence --- volumes et profils intermédiaires, équipements
+de puissances fixes proches --- et une configuration où volumes, profils et
+équipements sont tous proches. Chacune est évaluée avec les trois valeurs de
+\(r\), les sept jours et les 24 heures. Un jeu horaire
 est ici entièrement déterminé par un plan et l'une de ces combinaisons. Il y
 en a donc
 \(400\times2\times3\times7\times24=403\,200\) pour \(n=4\). Le même calcul est
@@ -683,8 +742,9 @@ La condition suffisante
 Théorème~\ref{thm:capacite_coeur_non_vide} s'applique à
 \(138\,200\) jeux à quatre opérateurs (\(34{,}3\,\%\)) et à \(173\,354\) jeux à
 trois opérateurs (\(43{,}0\,\%\)). Aucun de ces \(311\,554\) jeux n'a un cœur
-vide : le calcul vérifie ainsi la mise en œuvre du théorème, sans transformer
-une garantie mathématique en constat statistique. Dans la configuration de
+vide. Ces pourcentages portent sur les \(403\,200\) observations horaires de
+chaque taille de coalition, et non sur 400 plans ou sur des nuits entières.
+Dans la configuration de
 référence, l'heure la plus favorable est 4 h : la condition est satisfaite
 pour \(93{,}4\,\%\) des \(8\,400\) combinaisons plan--jour--\(r\) lorsque \(n=4\),
 et pour \(98{,}2\,\%\) lorsque \(n=3\). Les heures 2--6 h sont les plus
@@ -715,19 +775,21 @@ pourcentage est conditionnel à la ligne correspondante ; la colonne
 \end{table}
 
 \paragraph{Nombre minimal de gardiens.}
-Le maximum observé dans le Tableau~\ref{tab:seuils_capacite} est \(59{,}0\,\%\) :
-il concerne \(31\,572\) des \(53\,505\) jeux à quatre opérateurs pour lesquels
-\(k_h=3\). Ce pourcentage reste conditionnel à cette ligne. Tous régimes
-confondus, \(91\,352\) des \(403\,200\) jeux à quatre opérateurs ont un cœur
-vide, soit \(22{,}7\,\%\). La valeur \(k_h=1\) n'implique pas la condition du
-théorème : elle signifie que l'équipement de plus grande capacité suffit,
-alors que le théorème exige que même celui de plus petite capacité suffise.
+Le tableau sert à localiser les cœurs vides selon le régime de charge. Par
+exemple, \(38{,}9\,\%\) ne concerne que les \(122\,802\) jeux à quatre
+opérateurs avec \(k_h=2\), et non l'ensemble des jeux. La fréquence atteint
+\(59{,}0\,\%\) pour \(k_h=3\), soit \(31\,572\) cas sur \(53\,505\). Tous
+régimes confondus, \(91\,352\) des \(403\,200\) jeux à quatre opérateurs ont
+un cœur vide, soit \(22{,}7\,\%\). Ces fréquences sont élevées parce que cette
+campagne inclut les 24 heures, trois capacités et deux configurations, et pas
+seulement la fenêtre nocturne de référence de la
+Section~\ref{subsec:stabilite_grande_coalition}.
 
-Le mécanisme reste celui du contre-exemple théorique : plusieurs coalitions
-qui se recouvrent peuvent chacune réclamer une part importante de
-\(v_h(N)\), sans que la grande coalition dispose d'assez d'économies pour
-satisfaire simultanément ces revendications. L'inégalité équilibrée fondée
-sur les quatre coalitions obtenues en retirant successivement un opérateur
+Le mécanisme reste celui du contre-exemple théorique : chacun des quatre
+sous-groupes de trois opérateurs peut exiger une économie importante, alors
+qu'un opérateur appartient à trois de ces sous-groupes. La grande coalition
+peut alors manquer d'économies pour satisfaire simultanément les quatre
+contraintes. Le test simplifié fondé sur ces quatre sous-groupes
 détecte \(76{,}7\,\%\) des cœurs vides pour \(n=4\). Lorsque Shapley est
 contestée, la coalition qui présente l'objection maximale est une paire dans
 \(37{,}0\,\%\) des cas et un triplet dans \(63{,}0\,\%\). Le cœur vide traduit
@@ -747,13 +809,16 @@ n'établit pas d'effet causal du nombre minimal de gardiens.
 \paragraph{Homogénéité des coûts.}
 Nous remplaçons, dans chaque jeu à quatre opérateurs, tous les \(F_i\) par leur
 moyenne et tous les \(\gamma_i\) par leur moyenne, puis réintroduisons 25, 50,
-75 et 100\,\% de la dispersion observée. Sous la condition de très faible
+75 et 100\,\% des écarts aux moyennes. Le niveau 0\,\% donne donc quatre
+opérateurs aux coûts identiques, et 100\,\% restitue les coûts initiaux. Sous
+la condition de très faible
 trafic, Shapley appartient au cœur dans 100\,\% des jeux à coûts identiques,
 comme le garantit le
 Corollaire~\ref{cor:shapley_coeur_tres_faible_trafic_homogene}. Cette fréquence
-reste empiriquement supérieure à 99\,\% à 25 et 50\,\% de dispersion, puis tombe à
-98,2 et 96,4\,\%. Il n'y a donc aucune contradiction avec le contre-exemple :
-dès que les coûts diffèrent, le corollaire ne fournit plus de garantie. Sur
+reste supérieure à 99\,\% à 25 et 50\,\% de dispersion, puis tombe à 98,2 et
+96,4\,\%. Dès que les coûts diffèrent, le corollaire ne fournit plus de
+garantie ; le contre-exemple théorique montre précisément qu'une exception
+est alors possible. Sur
 toutes les heures, sa fréquence passe de 73,5\,\% à coûts identiques à
 60,6\,\% dès le premier quart de dispersion, puis atteint 55,4\,\% avec la
 dispersion complète.
@@ -765,11 +830,11 @@ dispersion complète.
     combinaisons plan--jour--\(r\) qui satisfont la condition de très faible
     trafic dans la configuration de référence, selon l'heure et le nombre
     d'opérateurs ; la zone grise indique la fenêtre nocturne.
-    (b)~Part des cœurs vides, conditionnellement au nombre minimal de gardiens ;
-    les effectifs correspondants sont donnés dans le
+    (b)~Pour chaque nombre minimal d'équipements nécessaires, part des jeux
+    de cette catégorie dont le cœur est vide ; les effectifs sont donnés dans le
     Tableau~\ref{tab:seuils_capacite}.
-    (c)~Part des jeux où Shapley appartient au cœur lorsque la dispersion des
-    coûts est réintroduite à quatre opérateurs. La courbe verte porte seulement
+    (c)~Part des jeux où Shapley appartient au cœur quand les coûts passent
+    d'identiques (0\,\%) aux coûts initiaux (100\,\%). La courbe verte porte seulement
     sur les \(138\,200\) jeux de très faible trafic ; seule sa valeur au point
     homogène est garantie par le corollaire.}
     \label{fig:seuils_mecanisme}
@@ -788,24 +853,29 @@ les \(400\times6=2\,400\) nuits pour lesquelles
 multiplié par 1,2 et les capacités inchangées, 18 plan--jours sur \(2\,800\)
 sont hors domaine parce qu'au moins une coalition ne peut plus servir sa
 demande. Ils sont signalés comme tels et exclus des statistiques de ce
-réglage. Pour lever l'ambiguïté sur la
-veille, un équipement inactif consomme \(xF_i\), contre zéro dans le modèle de
-référence ; lorsqu'il est actif, son terme fixe reste \(F_i\).
+réglage. Le facteur « veille inactive » modifie la consommation d'un
+équipement éteint : elle vaut \(xF_i\), avec \(x\in\{0;0{,}05;0{,}10\}\),
+contre zéro dans le modèle de référence. Lorsqu'il est actif, son terme fixe
+reste \(F_i\).
 
 Pour chaque plan et chaque réglage, nous moyennons d'abord les jours. Pour un
 facteur donné, son \emph{amplitude} sur ce plan est ensuite l'écart entre la
 plus grande et la plus petite des trois moyennes. Le
-Tableau~\ref{tab:plan_sensibilite} donne la médiane de ces 400 amplitudes. Une
-amplitude mesure donc l'importance du facteur sur la plage testée, mais ne dit
-pas à elle seule quel réglage est préférable ; les directions sont données
-après le tableau.
+Tableau~\ref{tab:plan_sensibilite} donne la médiane de ces 400 amplitudes. Il
+ne donne donc pas le résultat de l'un des trois réglages. Par exemple, \(8{,}10\)
+dans la première ligne signifie que, pour chaque plan, on calcule l'écart entre
+ses économies sur 22--05, 00--07 et 02--09, puis qu'on prend la médiane des 400
+écarts. Une amplitude mesure l'importance du facteur sur la plage testée, mais
+ne dit pas à elle seule quel réglage est préférable ; les directions sont
+données après le tableau.
 
 \begin{table}[htbp]
 \centering
 \begin{tabular}{p{3.1cm}p{3.3cm}rrrr}
 \hline
-Facteur & Valeurs testées & Économie & Gardiens & Persistance &
-Stabilité \\
+Facteur & Valeurs testées & \shortstack{Écart\\d'économie} &
+\shortstack{Écart de\\gardiens} & \shortstack{Écart de\\persistance} &
+\shortstack{Écart de\\stabilité} \\
 \hline
 Position de \(H\) & 22--05, 00--07, 02--09 & 8,10 & 0,24 & 7,22 & 0,00 \\
 Veille inactive & 0, 5, 10\,\% de \(F_i\) & 6,85 & 0,00 & 0,24 & 0,00 \\
@@ -818,7 +888,9 @@ Coût variable \(\gamma_i\) & multiplicateur 0,8, 1, 1,2 & 1,05 & 0,00 & 0,20 & 
 \caption{Médiane, sur les 400 plans, de l'amplitude entre les trois réglages.
 L'économie et la persistance sont en points de pourcentage, les gardiens en
 nombre moyen, et la stabilité en points de fréquence des nuits où Shapley
-appartient au cœur. Une amplitude n'indique pas le sens de la variation.}
+appartient au cœur. Une valeur 0,00 en stabilité signifie qu'au moins la
+moitié des plans gardent la même fréquence sur les trois réglages ; elle ne
+signifie pas que le facteur n'a aucun effet sur aucun plan.}
 \label{tab:plan_sensibilite}
 \end{table}
 

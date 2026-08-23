@@ -62,6 +62,7 @@ DEFAULT_FIGURES_DIR = ROOT / "figures" / "coalition_stability"
 CAPACITY_RATES = CAMPAIGN_A_RATES
 BOOTSTRAP_SEED = 20_260_818
 ALGORITHM_VERSION = 10
+WEEKLY_SUMMARY_VERSION = 1
 NUM_PLAYERS = 4
 NUM_MASKS = 1 << NUM_PLAYERS
 GRAND_MASK = NUM_MASKS - 1
@@ -691,6 +692,65 @@ def _run(
     return rows, validation
 
 
+def _weekly_stability_summary(
+    calibration_dir: Path,
+    num_sites: int,
+    hours: tuple[int, ...],
+) -> list[dict[str, object]]:
+    """Diagnose one game per plan after aggregating all seven nights."""
+    population, blueprints, protocol = load_protocol_inputs(calibration_dir)
+    scenarios = scenarios_for_grid("central")
+    counts = {
+        rate: {category: 0 for category in CATEGORIES}
+        for rate in CAPACITY_RATES
+    }
+    for site in iter_materialized_sites(
+        blueprints, population, scenarios, protocol, num_sites=num_sites
+    ):
+        demands = np.concatenate(
+            [site.traffic_gb[:, day_index][:, hours]
+             for day_index in range(len(population.days))],
+            axis=1,
+        )
+        capacities = capacities_for_site(site, demands)
+        costs = coalition_window_solutions(
+            capacities, site.p_fixed_w, site.slope_w_per_gb, demands
+        ).hourly_costs_wh
+        savings = _savings_from_costs(costs)
+        diagnostics = _diagnose(costs, savings, capacities, demands)
+        rate = float(site.scenario.capacity_rate)
+        counts[rate][str(diagnostics["category"])] += 1
+
+    return [
+        {
+            "capacity_rate": rate,
+            "plans": num_sites,
+            "hours_per_game": len(population.days) * len(hours),
+            "shapley_in_core_count": counts[rate]["shapley_in_core"],
+            "nonempty_shapley_out_count": counts[rate]["nonempty_shapley_out"],
+            "empty_core_count": counts[rate]["empty_core"],
+        }
+        for rate in CAPACITY_RATES
+    ]
+
+
+def _read_weekly_summary(path: Path) -> list[dict[str, object]]:
+    with path.open(newline="", encoding="utf-8") as file:
+        return [
+            {
+                "capacity_rate": float(row["capacity_rate"]),
+                "plans": int(row["plans"]),
+                "hours_per_game": int(row["hours_per_game"]),
+                "shapley_in_core_count": int(row["shapley_in_core_count"]),
+                "nonempty_shapley_out_count": int(
+                    row["nonempty_shapley_out_count"]
+                ),
+                "empty_core_count": int(row["empty_core_count"]),
+            }
+            for row in csv.DictReader(file)
+        ]
+
+
 def _cluster_bootstrap_intervals(
     rows: list[dict[str, object]],
     rng: np.random.Generator,
@@ -823,6 +883,15 @@ def _allocation_analysis(
         [float(row["breakup_loss_wh"]) / 1_000.0 for row in empty],
         dtype=float,
     )
+    relative_total_losses = np.asarray(
+        [
+            100.0
+            * float(row["breakup_loss_wh"])
+            / float(row["grand_savings_wh"])
+            for row in empty
+        ],
+        dtype=float,
+    )
     individual_losses = np.asarray(
         [
             float(row[f"breakup_loss_op{player + 1}_wh"]) / 1_000.0
@@ -865,6 +934,9 @@ def _allocation_analysis(
         },
         "empty_core_hourly_games": len(empty),
         "breakup_total_loss_kwh_per_empty_hour": _quantiles(total_losses),
+        "breakup_total_loss_pct_per_empty_hour": _quantiles(
+            relative_total_losses
+        ),
         "breakup_individual_loss_kwh_per_empty_hour": _quantiles(
             individual_losses
         ),
@@ -1308,12 +1380,8 @@ def _case_outputs(
         frameon=False,
     )
     figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
-    figure_paths = [
-        figures_dir / "representative_allocations.pdf",
-        figures_dir / "representative_allocations.png",
-    ]
+    figure_paths = [figures_dir / "representative_allocations.pdf"]
     figure.savefig(figure_paths[0], bbox_inches="tight")
-    figure.savefig(figure_paths[1], dpi=220, bbox_inches="tight")
     plt.close(figure)
     return (
         [case_path, allocation_path, blocking_path],
@@ -1415,14 +1483,10 @@ def _figure(rows: list[dict[str, object]], output_dir: Path) -> list[Path]:
         fontsize=8,
     )
     figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.89))
-    paths = [
-        output_dir / "coalition_stability.pdf",
-        output_dir / "coalition_stability.png",
-    ]
-    figure.savefig(paths[0], bbox_inches="tight")
-    figure.savefig(paths[1], dpi=220, bbox_inches="tight")
+    path = output_dir / "coalition_stability.pdf"
+    figure.savefig(path, bbox_inches="tight")
     plt.close(figure)
-    return paths
+    return [path]
 
 
 def main() -> None:
@@ -1458,6 +1522,7 @@ def main() -> None:
     args.results_dir.mkdir(parents=True, exist_ok=True)
     rows_path = args.results_dir / "stability_instances.csv"
     summary_path = args.results_dir / "stability_summary.csv"
+    weekly_summary_path = args.results_dir / "weekly_stability_summary.csv"
     analysis_path = args.results_dir / "analysis.json"
     manifest_path = args.results_dir / "manifest.json"
     expected = {
@@ -1512,6 +1577,25 @@ def main() -> None:
     figure_rows = [row for row in rows if is_central_campaign_a(row)] or rows
     summaries = _summary_rows(figure_rows, args.bootstrap_replications)
     analysis = _analysis(figure_rows, summaries, validation)
+    weekly_current = False
+    if current and weekly_summary_path.is_file() and manifest_path.is_file():
+        try:
+            weekly_current = (
+                json.loads(manifest_path.read_text(encoding="utf-8")).get(
+                    "weekly_summary_version"
+                )
+                == WEEKLY_SUMMARY_VERSION
+            )
+        except json.JSONDecodeError:
+            weekly_current = False
+    if weekly_current:
+        weekly_summary = _read_weekly_summary(weekly_summary_path)
+    else:
+        weekly_summary = _weekly_stability_summary(
+            args.calibration_dir, args.num_sites, hours
+        )
+        _write_rows(weekly_summary_path, weekly_summary)
+    analysis["weekly_aggregation"] = weekly_summary
     analysis["grid"] = args.grid
     analysis["instances_all_scenarios"] = len(rows)
     figures = _figure(figure_rows, args.figures_dir)
@@ -1521,9 +1605,11 @@ def main() -> None:
     )
     manifest = {
         "inputs": expected,
+        "weekly_summary_version": WEEKLY_SUMMARY_VERSION,
         "outputs": {
             "instances": portable_path(rows_path),
             "summary": portable_path(summary_path),
+            "weekly_summary": portable_path(weekly_summary_path),
             "analysis": portable_path(analysis_path),
             "figures": [portable_path(path) for path in figures],
         },
