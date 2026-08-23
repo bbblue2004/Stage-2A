@@ -3,7 +3,7 @@
 Each virtual site is built from one empirical reference profile, then four
 operators are obtained by calibrated size factors, convex mixing of real
 normalised shapes, and independently assigned energy coefficients. Capacities
-are counterfactual scenarios, never treated as measurements.
+are simulated scenarios, never treated as measurements.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ CAMPAIGN_A_RATES = (0.80, 0.90, 1.00)
 CENTRAL_RATE = 0.90
 CENTRAL_VOLUME = "moderate"
 CENTRAL_SHAPE = "moderate"
-CENTRAL_EQUIPMENT = "moderate"
+CENTRAL_EQUIPMENT = "close"
 CAMPAIGN_B_REGIMES: tuple[tuple[str, int, float], ...] = (
     ("one_guardian", 1, 0.70),
     ("frontier_12", 2, 0.90),
@@ -365,7 +365,7 @@ def protocol_scenarios(
             specs.append(
                 ScenarioSpec("A", CENTRAL_VOLUME, shape, CENTRAL_EQUIPMENT, capacity_rate=rate)
             )
-        for equipment in ("close", "distant"):
+        for equipment in ("moderate", "distant"):
             specs.append(
                 ScenarioSpec("A", CENTRAL_VOLUME, CENTRAL_SHAPE, equipment, capacity_rate=rate)
             )

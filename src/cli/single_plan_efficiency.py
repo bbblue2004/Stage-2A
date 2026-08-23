@@ -72,6 +72,16 @@ def _build_site(population, n_op: int = 4):
     energy_pool = np.array([i for i in range(n_antennas) if i not in forbidden])
     energy = rng.choice(energy_pool, size=n_op, replace=False)
 
+    # Freeze the close-equipment packet of the same plan after the central
+    # draw, so extending the walkthrough does not alter its published values.
+    forbidden.update(int(v) for v in energy)
+    close_group = int(rng.integers(4))
+    close_pool = np.flatnonzero(population.fixed_power_group == close_group)
+    close_pool = close_pool[
+        np.isin(close_pool, list(forbidden), invert=True)
+    ]
+    energy_close = rng.choice(close_pool, size=n_op, replace=False)
+
     traffic = (mu * alpha[:, None] * shapes[shape_index]).reshape(n_op, n_days, 24)
     return {
         "reference_id": str(population.antenna_ids[reference]),
@@ -81,6 +91,8 @@ def _build_site(population, n_op: int = 4):
         "peaks": traffic.max(axis=(1, 2)),
         "p_fixed": population.p_fixed_w[energy],
         "slope": population.slope_w_per_gb[energy],
+        "p_fixed_close": population.p_fixed_w[energy_close],
+        "slope_close": population.slope_w_per_gb[energy_close],
         "n_days": n_days,
         "n_op": n_op,
     }
@@ -351,7 +363,7 @@ def _figure_capacity(site: dict, result: dict) -> None:
     axis.set_xlabel("heure")
     axis.set_ylabel("demande (Go/h)")
     axis.set_title("(a) chaque $d_i$ reste sous son $q_i$\n"
-                   "(aplat : min--max sur 7 jours)", fontsize=9)
+                   "(zone colorée : min--max sur 7 jours)", fontsize=9)
     axis.legend(fontsize=7, loc="upper left", ncol=2)
     axis.set_ylim(bottom=0.0)
     _style(axis)

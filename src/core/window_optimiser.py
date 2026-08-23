@@ -67,6 +67,7 @@ class CoalitionWindowSolutions:
     persistent_costs_wh: np.ndarray
     hourly_guardian_masks: np.ndarray
     persistent_guardian_masks: np.ndarray
+    hourly_costs_by_hour_wh: np.ndarray
 
 
 def _validate(
@@ -358,6 +359,8 @@ def coalition_window_solutions(
     hourly_costs[0] = persistent_costs[0] = 0.0
     hourly_masks = np.zeros((num_masks, horizon), dtype=np.int64)
     persistent_masks = np.zeros(num_masks, dtype=np.int64)
+    hourly_costs_by_hour = np.full((num_masks, horizon), np.inf, dtype=float)
+    hourly_costs_by_hour[0] = 0.0
 
     for coalition_mask in range(1, num_masks):
         total_demand = total_demands[coalition_mask]
@@ -419,12 +422,14 @@ def coalition_window_solutions(
         if best_persistent_key is None:
             raise ValueError("a coalition cannot serve its complete window demand")
         hourly_costs[coalition_mask] = float(np.sum(best_hourly))
+        hourly_costs_by_hour[coalition_mask] = best_hourly
 
     return CoalitionWindowSolutions(
         hourly_costs,
         persistent_costs,
         hourly_masks,
         persistent_masks,
+        hourly_costs_by_hour,
     )
 
 

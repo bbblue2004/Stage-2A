@@ -5,8 +5,10 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from itertools import combinations
 from math import factorial
 from pathlib import Path
+from time import perf_counter
 
 import matplotlib
 import numpy as np
@@ -16,15 +18,21 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from src.core.game import (
+    allocation_check,
     bondareva_shapley_test,
+    core_allocation,
     least_core_allocation,
     nucleolus_allocation,
+    nucleolus_allocation_fast,
+    shapley_value,
 )
 from src.core.time_window import inclusive_hour_window
 from src.core.window_optimiser import (
+    coalition_window_solutions,
     hourly_coalition_costs,
     optimal_hourly_policy,
 )
+from src.data_processing.antenna_metrics import DEFAULT_ELECTRICITY_PRICE_PER_KWH
 from src.data_processing.data_loader import ROOT
 from src.data_processing.instance_generator import (
     CAMPAIGN_A_RATES,
@@ -53,7 +61,7 @@ DEFAULT_RESULTS_DIR = ROOT / "results" / "coalition_stability"
 DEFAULT_FIGURES_DIR = ROOT / "figures" / "coalition_stability"
 CAPACITY_RATES = CAMPAIGN_A_RATES
 BOOTSTRAP_SEED = 20_260_818
-ALGORITHM_VERSION = 6
+ALGORITHM_VERSION = 10
 NUM_PLAYERS = 4
 NUM_MASKS = 1 << NUM_PLAYERS
 GRAND_MASK = NUM_MASKS - 1
@@ -64,9 +72,9 @@ CATEGORIES = (
     "shapley_in_core",
 )
 CATEGORY_LABELS = {
-    "empty_core": "Cœur vide",
-    "nonempty_shapley_out": "Cœur non vide, Shapley hors du cœur",
-    "shapley_in_core": "Shapley dans le cœur",
+    "empty_core": "Grande coalition instable",
+    "nonempty_shapley_out": "Autre partage stable",
+    "shapley_in_core": "Shapley stable",
 }
 CATEGORY_COLORS = {
     "empty_core": "#C94C4C",
@@ -113,6 +121,8 @@ def _read_rows(path: Path) -> list[dict[str, object]]:
         "equipment_level",
         "category",
         "guardian_target",
+        "selected_rule",
+        "selected_partition",
     }
     integer_columns = {
         "core_nonempty",
@@ -122,6 +132,9 @@ def _read_rows(path: Path) -> list[dict[str, object]]:
         "loo_certificate",
         "blocking_mask",
         "blocking_size",
+        "hour",
+        "grand_nucleolus_computed",
+        "fallback_nucleolus_calls",
     }
     with path.open(newline="", encoding="utf-8") as file:
         return [
@@ -226,6 +239,206 @@ def _as_game_map(values: np.ndarray) -> dict[tuple[int, ...], float]:
     return {MASK_MEMBERS[mask]: float(values[mask]) for mask in range(NUM_MASKS)}
 
 
+def _mask(players: tuple[int, ...]) -> int:
+    return sum(1 << player for player in players)
+
+
+def _game_for_players(
+    savings: np.ndarray, players: tuple[int, ...]
+) -> dict[tuple[int, ...], float]:
+    return {
+        coalition: float(savings[_mask(coalition)])
+        for size in range(len(players) + 1)
+        for coalition in combinations(players, size)
+    }
+
+
+def _stable_allocation(
+    savings: np.ndarray,
+    players: tuple[int, ...],
+    *,
+    core_known_nonempty: bool = False,
+) -> tuple[dict[int, float], str, bool] | None:
+    """Return a stable share, computing the nucleolus only when needed."""
+    game = _game_for_players(savings, players)
+    player_list = list(players)
+    scale = max(1.0, abs(game[players]))
+    tolerance = 1e-8 * scale
+    shapley = shapley_value(player_list, game)
+    if allocation_check(
+        player_list, game, shapley, tolerance=tolerance
+    ).in_core:
+        return shapley, "Shapley", False
+
+    scaled_game = {
+        coalition: value / scale for coalition, value in game.items()
+    }
+    if not core_known_nonempty:
+        core = core_allocation(player_list, scaled_game)
+        if not core.feasible:
+            return None
+
+    result = nucleolus_allocation_fast(player_list, scaled_game)
+    if result.status != "Optimal":
+        raise RuntimeError(
+            f"nucleolus failed on coalition {players}: {result.status}"
+        )
+    allocation = {
+        player: result.allocation[player] * scale for player in player_list
+    }
+    residual = game[players] - sum(allocation.values())
+    allocation[max(allocation, key=allocation.get)] += residual
+    if not allocation_check(
+        player_list, game, allocation, tolerance=tolerance
+    ).in_core:
+        raise RuntimeError(f"nucleolus is not stable on coalition {players}")
+    return allocation, "nucléole", True
+
+
+def _set_partitions(
+    players: tuple[int, ...],
+) -> tuple[tuple[tuple[int, ...], ...], ...]:
+    if not players:
+        return ((),)
+    first = players[0]
+    partitions: set[tuple[tuple[int, ...], ...]] = set()
+    for smaller in _set_partitions(players[1:]):
+        partitions.add(tuple(sorted(((first,), *smaller))))
+        for index, block in enumerate(smaller):
+            joined = tuple(sorted((first, *block)))
+            candidate = list(smaller)
+            candidate[index] = joined
+            partitions.add(tuple(sorted(candidate)))
+    return tuple(sorted(partitions, key=lambda item: (len(item), item)))
+
+
+PROPER_PARTITIONS = tuple(
+    partition
+    for partition in _set_partitions(tuple(range(NUM_PLAYERS)))
+    if partition != (tuple(range(NUM_PLAYERS)),)
+)
+
+
+def _best_stable_partition(
+    savings: np.ndarray,
+) -> tuple[np.ndarray, tuple[tuple[int, ...], ...], float, int]:
+    """Choose the most efficient proper partition with stable blocks."""
+    candidates: list[
+        tuple[float, int, tuple[tuple[int, ...], ...], np.ndarray, int]
+    ] = []
+    block_results: dict[
+        tuple[int, ...], tuple[dict[int, float], str, bool] | None
+    ] = {}
+    for partition in PROPER_PARTITIONS:
+        allocation = np.zeros(NUM_PLAYERS, dtype=float)
+        total = 0.0
+        nucleolus_calls = 0
+        feasible = True
+        for block in partition:
+            if block not in block_results:
+                block_results[block] = _stable_allocation(savings, block)
+            selected = block_results[block]
+            if selected is None:
+                feasible = False
+                break
+            block_allocation, _, used_nucleolus = selected
+            for player, value in block_allocation.items():
+                allocation[player] = value
+            total += float(savings[_mask(block)])
+            nucleolus_calls += int(used_nucleolus)
+        if feasible:
+            candidates.append(
+                (total, -len(partition), partition, allocation, nucleolus_calls)
+            )
+    if not candidates:
+        raise RuntimeError("no internally stable proper partition found")
+    total, _, partition, allocation, nucleolus_calls = max(
+        candidates, key=lambda item: (item[0], item[1], item[2])
+    )
+    return allocation, partition, total, nucleolus_calls
+
+
+def _partition_label(partition: tuple[tuple[int, ...], ...]) -> str:
+    return "|".join(
+        "{" + ",".join(str(player + 1) for player in block) + "}"
+        for block in partition
+    )
+
+
+def _allocation_outcomes(
+    savings: np.ndarray, category: str
+) -> dict[str, object]:
+    """Apply the sharing cascade, including a breakup fallback if needed."""
+    grand_shapley = _shapley_value(savings)
+    nucleolus_ms = 0.0
+    partition_ms = 0.0
+    fallback_nucleolus_calls = 0
+
+    if category == "shapley_in_core":
+        selected = grand_shapley
+        rule = "Shapley"
+        partition = (tuple(range(NUM_PLAYERS)),)
+        realised = float(savings[GRAND_MASK])
+        grand_nucleolus_computed = 0
+    elif category == "nonempty_shapley_out":
+        started = perf_counter()
+        stable = _stable_allocation(
+            savings, tuple(range(NUM_PLAYERS)), core_known_nonempty=True
+        )
+        nucleolus_ms = 1_000.0 * (perf_counter() - started)
+        if stable is None:
+            raise RuntimeError("diagnosed non-empty core has no stable allocation")
+        allocation, rule, used_nucleolus = stable
+        selected = np.asarray(
+            [allocation[player] for player in range(NUM_PLAYERS)], dtype=float
+        )
+        partition = (tuple(range(NUM_PLAYERS)),)
+        realised = float(savings[GRAND_MASK])
+        grand_nucleolus_computed = int(used_nucleolus)
+    elif category == "empty_core":
+        started = perf_counter()
+        selected, partition, realised, fallback_nucleolus_calls = (
+            _best_stable_partition(savings)
+        )
+        partition_ms = 1_000.0 * (perf_counter() - started)
+        rule = "meilleure partition stable"
+        grand_nucleolus_computed = 0
+    else:
+        raise ValueError(f"unknown stability category: {category}")
+
+    breakup_loss = (
+        grand_shapley - selected
+        if category == "empty_core"
+        else np.zeros(NUM_PLAYERS, dtype=float)
+    )
+    total_loss = float(savings[GRAND_MASK] - realised)
+    tolerance = 1e-7 * max(1.0, float(savings[GRAND_MASK]))
+    if abs(float(np.sum(breakup_loss)) - total_loss) > tolerance:
+        raise RuntimeError("individual breakup losses do not recover total loss")
+
+    outcome: dict[str, object] = {
+        "selected_rule": rule,
+        "selected_partition": _partition_label(partition),
+        "grand_nucleolus_computed": grand_nucleolus_computed,
+        "fallback_nucleolus_calls": fallback_nucleolus_calls,
+        "realised_savings_wh": realised,
+        "breakup_loss_wh": total_loss,
+        "nucleolus_allocation_ms": nucleolus_ms,
+        "partition_search_ms": partition_ms,
+    }
+    for player in range(NUM_PLAYERS):
+        outcome[f"grand_shapley_op{player + 1}_wh"] = float(
+            grand_shapley[player]
+        )
+        outcome[f"allocated_savings_op{player + 1}_wh"] = float(
+            selected[player]
+        )
+        outcome[f"breakup_loss_op{player + 1}_wh"] = float(
+            breakup_loss[player]
+        )
+    return outcome
+
+
 def _diagnose(
     costs: np.ndarray,
     savings: np.ndarray,
@@ -235,10 +448,13 @@ def _diagnose(
     grand_value = float(savings[GRAND_MASK])
     scale = max(1.0, grand_value)
     tolerance = 1e-8 * scale
+    shapley_started = perf_counter()
     shapley = _shapley_value(savings)
     shapley_excess, blocking_mask = _max_excess(savings, shapley)
     shapley_in_core = shapley_excess <= tolerance
+    shapley_diagnostic_ms = 1_000.0 * (perf_counter() - shapley_started)
 
+    core_started = perf_counter()
     if shapley_in_core:
         core_nonempty = True
         bondareva_gap = 0.0
@@ -251,6 +467,11 @@ def _diagnose(
         least_core_epsilon, _ = _least_core(savings)
         if least_core_epsilon <= tolerance:
             raise RuntimeError("least-core and Bondareva diagnostics disagree")
+    core_diagnostic_ms = (
+        1_000.0 * (perf_counter() - core_started)
+        if not shapley_in_core
+        else 0.0
+    )
 
     if shapley_in_core:
         category = "shapley_in_core"
@@ -294,6 +515,8 @@ def _diagnose(
         "shapley_max_excess_normalized": shapley_excess / normalizer,
         "blocking_mask": blocking_mask,
         "blocking_size": len(MASK_MEMBERS[blocking_mask]),
+        "shapley_diagnostic_ms": shapley_diagnostic_ms,
+        "core_diagnostic_ms": core_diagnostic_ms,
     }
 
 
@@ -375,60 +598,82 @@ def _run(
     ):
         spec = site.scenario
         for day_index, day in enumerate(population.days):
-            demands = site.traffic_gb[:, day_index][:, hours]
-            capacities = capacities_for_site(site, demands)
-            costs = hourly_coalition_costs(
-                capacities, site.p_fixed_w, site.slope_w_per_gb, demands
-            )
-            savings = _savings_from_costs(costs)
-            diagnostics = _diagnose(costs, savings, capacities, demands)
-            standalone = float(
-                sum(costs[1 << player] for player in range(NUM_PLAYERS))
-            )
-            grand_cost = float(costs[GRAND_MASK])
+            window_demands = site.traffic_gb[:, day_index][:, hours]
+            capacities = capacities_for_site(site, window_demands)
+            hourly_costs = coalition_window_solutions(
+                capacities,
+                site.p_fixed_w,
+                site.slope_w_per_gb,
+                window_demands,
+            ).hourly_costs_by_hour_wh
+            daily_standalone = 0.0
+            daily_grand_cost = 0.0
+            for hour_offset, hour in enumerate(hours):
+                demands = window_demands[:, hour_offset : hour_offset + 1]
+                costs = hourly_costs[:, hour_offset]
+                savings = _savings_from_costs(costs)
+                diagnostics = _diagnose(costs, savings, capacities, demands)
+                outcomes = _allocation_outcomes(
+                    savings, str(diagnostics["category"])
+                )
+                standalone = float(
+                    sum(costs[1 << player] for player in range(NUM_PLAYERS))
+                )
+                grand_cost = float(costs[GRAND_MASK])
+                daily_standalone += standalone
+                daily_grand_cost += grand_cost
+
+                if validated < validation_instances:
+                    bond_diff, least_diff, agrees = _validate_with_independent_solver(
+                        savings, diagnostics
+                    )
+                    max_bondareva_difference = max(
+                        max_bondareva_difference, bond_diff
+                    )
+                    max_least_core_difference = max(
+                        max_least_core_difference, least_diff
+                    )
+                    independent_disagreements += int(not agrees)
+                    validated += 1
+
+                rows.append(
+                    {
+                        "site_id": site.site_id,
+                        "scenario": spec.key,
+                        "campaign": spec.campaign,
+                        "volume_level": spec.volume_level,
+                        "shape_level": spec.shape_level,
+                        "equipment_level": spec.equipment_level,
+                        "day": str(day),
+                        "hour": int(hour),
+                        "capacity_rate": (
+                            spec.capacity_rate
+                            if spec.campaign == "A"
+                            else spec.window_peak_rate
+                        ),
+                        "guardian_target": (
+                            spec.guardian_target if spec.campaign == "B" else ""
+                        ),
+                        "standalone_energy_wh": standalone,
+                        "grand_cost_wh": grand_cost,
+                        "grand_savings_wh": float(savings[GRAND_MASK]),
+                        "savings_pct": (
+                            100.0 * float(savings[GRAND_MASK]) / standalone
+                        ),
+                        **diagnostics,
+                        **outcomes,
+                    }
+                )
+
             key = (site.site_id, spec.key, str(day))
             expected_standalone, expected_grand = operational[key]
             difference = max(
-                abs(standalone - expected_standalone),
-                abs(grand_cost - expected_grand),
+                abs(daily_standalone - expected_standalone),
+                abs(daily_grand_cost - expected_grand),
             )
             max_operational_difference = max(max_operational_difference, difference)
             if difference > 1e-7 * max(1.0, expected_standalone):
                 raise RuntimeError(f"operational cross-check failed for {key}")
-
-            if validated < validation_instances:
-                bond_diff, least_diff, agrees = _validate_with_independent_solver(
-                    savings, diagnostics
-                )
-                max_bondareva_difference = max(max_bondareva_difference, bond_diff)
-                max_least_core_difference = max(max_least_core_difference, least_diff)
-                independent_disagreements += int(not agrees)
-                validated += 1
-
-            rows.append(
-                {
-                    "site_id": site.site_id,
-                    "scenario": spec.key,
-                    "campaign": spec.campaign,
-                    "volume_level": spec.volume_level,
-                    "shape_level": spec.shape_level,
-                    "equipment_level": spec.equipment_level,
-                    "day": str(day),
-                    "capacity_rate": (
-                        spec.capacity_rate
-                        if spec.campaign == "A"
-                        else spec.window_peak_rate
-                    ),
-                    "guardian_target": (
-                        spec.guardian_target if spec.campaign == "B" else ""
-                    ),
-                    "standalone_energy_wh": standalone,
-                    "grand_cost_wh": grand_cost,
-                    "grand_savings_wh": float(savings[GRAND_MASK]),
-                    "savings_pct": 100.0 * float(savings[GRAND_MASK]) / standalone,
-                    **diagnostics,
-                }
-            )
         evaluated += 1
         if evaluated % 100 == 0:
             print(
@@ -503,11 +748,15 @@ def _summary_rows(
 def _quantiles(values: np.ndarray) -> dict[str, float]:
     if values.size == 0:
         return {}
-    q05, median, q95 = np.quantile(values, (0.05, 0.50, 0.95))
+    q05, q25, median, q75, q95 = np.quantile(
+        values, (0.05, 0.25, 0.50, 0.75, 0.95)
+    )
     return {
         "mean": float(np.mean(values)),
         "q05": float(q05),
+        "q25": float(q25),
         "median": float(median),
+        "q75": float(q75),
         "q95": float(q95),
     }
 
@@ -516,6 +765,124 @@ def _finite_quantiles(rows: list[dict[str, object]], column: str) -> dict[str, f
     values = np.asarray([float(row[column]) for row in rows], dtype=float)
     values = values[np.isfinite(values)]
     return _quantiles(values) if values.size else {}
+
+
+def _allocation_analysis(
+    rows: list[dict[str, object]],
+) -> dict[str, object]:
+    reference = [
+        row
+        for row in rows
+        if np.isclose(float(row["capacity_rate"]), 0.90)
+    ]
+    sites = sorted({str(row["site_id"]) for row in reference})
+    days = sorted({str(row["day"]) for row in reference})
+
+    plan_operator_means: list[float] = []
+    plan_operator_loss_means: list[float] = []
+    gains_by_rank: list[list[float]] = [[] for _ in range(NUM_PLAYERS)]
+    for site in sites:
+        operator_means: list[float] = []
+        for player in range(NUM_PLAYERS):
+            daily_gains = []
+            daily_losses = []
+            for day in days:
+                selected = [
+                    row
+                    for row in reference
+                    if str(row["site_id"]) == site
+                    and str(row["day"]) == day
+                ]
+                if not selected:
+                    continue
+                daily_gains.append(
+                    sum(
+                        float(row[f"allocated_savings_op{player + 1}_wh"])
+                        for row in selected
+                    )
+                    / 1_000.0
+                )
+                daily_losses.append(
+                    sum(
+                        float(row[f"breakup_loss_op{player + 1}_wh"])
+                        for row in selected
+                    )
+                    / 1_000.0
+                )
+            operator_means.append(float(np.mean(daily_gains)))
+            plan_operator_loss_means.append(float(np.mean(daily_losses)))
+        operator_means_array = np.asarray(operator_means, dtype=float)
+        plan_operator_means.extend(operator_means)
+        for rank, value in enumerate(np.sort(operator_means_array)):
+            gains_by_rank[rank].append(float(value))
+
+    gain_values = np.asarray(plan_operator_means, dtype=float)
+    euro_values = gain_values * DEFAULT_ELECTRICITY_PRICE_PER_KWH
+    empty = [row for row in reference if row["category"] == "empty_core"]
+    total_losses = np.asarray(
+        [float(row["breakup_loss_wh"]) / 1_000.0 for row in empty],
+        dtype=float,
+    )
+    individual_losses = np.asarray(
+        [
+            float(row[f"breakup_loss_op{player + 1}_wh"]) / 1_000.0
+            for row in empty
+            for player in range(NUM_PLAYERS)
+        ],
+        dtype=float,
+    )
+    nightly_total_losses = np.asarray(
+        [
+            sum(
+                float(row["breakup_loss_wh"])
+                for row in reference
+                if str(row["site_id"]) == site and str(row["day"]) == day
+            )
+            / 1_000.0
+            for site in sites
+            for day in days
+        ],
+        dtype=float,
+    )
+    operator_nightly_losses = np.asarray(
+        plan_operator_loss_means, dtype=float
+    )
+
+    return {
+        "capacity_rate": 0.90,
+        "hourly_games": len(reference),
+        "stable_grand_coalition_games": sum(
+            row["category"] != "empty_core" for row in reference
+        ),
+        "site_nights": len(sites) * len(days),
+        "plan_operator_averages": len(plan_operator_means),
+        "gain_kwh_per_operator_night": _quantiles(gain_values),
+        "gain_eur_per_operator_night": _quantiles(euro_values),
+        "gain_kwh_per_operator_night_by_within_plan_rank": {
+            str(rank + 1): _quantiles(np.asarray(values, dtype=float))
+            for rank, values in enumerate(gains_by_rank)
+            if values
+        },
+        "empty_core_hourly_games": len(empty),
+        "breakup_total_loss_kwh_per_empty_hour": _quantiles(total_losses),
+        "breakup_individual_loss_kwh_per_empty_hour": _quantiles(
+            individual_losses
+        ),
+        "breakup_total_loss_kwh_per_site_night": _quantiles(
+            nightly_total_losses
+        ),
+        "breakup_loss_kwh_per_operator_night": _quantiles(
+            operator_nightly_losses
+        ),
+        "breakup_partitions": {
+            partition: sum(
+                str(row["selected_partition"]) == partition for row in empty
+            )
+            for partition in sorted(
+                {str(row["selected_partition"]) for row in empty}
+            )
+        },
+    }
 
 
 def _analysis(
@@ -533,6 +900,9 @@ def _analysis(
     split = max(1, n_sites // 2)
     first_half = [
         row for row in rows if _site_index(str(row["site_id"])) < split
+    ]
+    second_half = [
+        row for row in rows if _site_index(str(row["site_id"])) >= split
     ]
     savings = np.asarray([float(row["savings_pct"]) for row in rows])
     top_decile_threshold = float(np.quantile(savings, 0.90))
@@ -552,6 +922,7 @@ def _analysis(
 
     full_fractions = fractions(rows)
     half_fractions = fractions(first_half)
+    second_half_fractions = fractions(second_half)
     return {
         "instances": len(rows),
         "sites": len({row["site_id"] for row in rows}),
@@ -570,6 +941,43 @@ def _analysis(
             )
             for category in CATEGORIES
         },
+        "grand_savings_kwh_by_category": {
+            category: _quantiles(
+                np.asarray(
+                    [
+                        float(row["grand_savings_wh"]) / 1_000.0
+                        for row in rows
+                        if row["category"] == category
+                    ]
+                )
+            )
+            for category in CATEGORIES
+        },
+        "cascade": {
+            "shapley_tests": len(rows),
+            "core_nonemptiness_tests": len(shapley_out),
+            "grand_nucleolus_computations": sum(
+                int(row["grand_nucleolus_computed"]) for row in rows
+            ),
+            "proper_partition_searches": len(empty),
+            "shapley_test_seconds": sum(
+                float(row["shapley_diagnostic_ms"]) for row in rows
+            )
+            / 1_000.0,
+            "core_test_seconds": sum(
+                float(row["core_diagnostic_ms"]) for row in rows
+            )
+            / 1_000.0,
+            "nucleolus_seconds": sum(
+                float(row["nucleolus_allocation_ms"]) for row in rows
+            )
+            / 1_000.0,
+            "partition_search_seconds": sum(
+                float(row["partition_search_ms"]) for row in rows
+            )
+            / 1_000.0,
+        },
+        "allocation_and_breakup": _allocation_analysis(rows),
         "diagnostics": {
             "convex_fraction": float(np.mean([row["convex"] for row in rows])),
             "low_traffic_condition_fraction": len(low_traffic) / len(rows),
@@ -605,10 +1013,11 @@ def _analysis(
         },
         "convergence": {
             "category_fractions_first_half_sites": half_fractions,
+            "category_fractions_second_half_sites": second_half_fractions,
             "category_fractions_all_sites": full_fractions,
             "maximum_absolute_difference_pp": 100.0
             * max(
-                abs(half_fractions[category] - full_fractions[category])
+                abs(half_fractions[category] - second_half_fractions[category])
                 for category in CATEGORIES
             ),
         },
@@ -731,7 +1140,7 @@ def _case_outputs(
         )
         shapley = _shapley_value(savings)
         game_scale = max(1.0, float(savings[GRAND_MASK]))
-        nucleolus_result = nucleolus_allocation(
+        nucleolus_result = nucleolus_allocation_fast(
             players, _as_game_map(savings / game_scale)
         )
         if nucleolus_result.status != "Optimal":
@@ -914,11 +1323,16 @@ def _case_outputs(
 
 def _figure(rows: list[dict[str, object]], output_dir: Path) -> list[Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
-    figure, axes = plt.subplots(1, 2, figsize=(8.8, 3.5))
+    figure, axes = plt.subplots(1, 2, figsize=(9.4, 3.7))
 
     x = np.arange(len(CAPACITY_RATES))
     bottom = np.zeros(len(CAPACITY_RATES))
-    for category in CATEGORIES:
+    display_order = (
+        "shapley_in_core",
+        "nonempty_shapley_out",
+        "empty_core",
+    )
+    for category in display_order:
         fractions = np.asarray(
             [
                 np.mean(
@@ -941,44 +1355,66 @@ def _figure(rows: list[dict[str, object]], output_dir: Path) -> list[Path]:
         )
         bottom += fractions
     axes[0].set_xticks(x, [f"{rate:.2f}".replace(".", ",") for rate in CAPACITY_RATES])
-    axes[0].set_xlabel("Taux de charge maximal $r$")
-    axes[0].set_ylabel("Part des instances (%)")
+    axes[0].set_xlabel("Taux de charge maximal")
+    axes[0].set_ylabel("Part des jeux horaires (%)")
     axes[0].set_ylim(0.0, 100.0)
-    axes[0].set_title("(a) Catégories de stabilité")
+    axes[0].set_title("(a) Répartition des diagnostics")
     axes[0].grid(axis="y", alpha=0.22)
 
     values = [
         np.asarray(
-            [float(row["savings_pct"]) for row in rows if row["category"] == category]
+            [
+                float(row["grand_savings_wh"]) / 1_000.0
+                for row in rows
+                if row["category"] == category
+            ]
         )
-        for category in CATEGORIES
+        for category in display_order
+    ]
+    tick_labels = [
+        f"{CATEGORY_LABELS[category]}\n(n = {len(value)})"
+        for category, value in zip(display_order, values, strict=True)
     ]
     box = axes[1].boxplot(
         values,
-        tick_labels=("Cœur\nvide", "Shapley\nhors", "Shapley\ndans"),
+        tick_labels=tick_labels,
         whis=(5, 95),
         showfliers=False,
         patch_artist=True,
     )
-    for patch, category in zip(box["boxes"], CATEGORIES, strict=True):
+    for patch, category in zip(box["boxes"], display_order, strict=True):
         patch.set_facecolor(CATEGORY_COLORS[category])
         patch.set_alpha(0.82)
-    axes[1].set_ylabel("Énergie évitée (%)")
-    axes[1].set_ylim(0.0, 100.0)
-    axes[1].set_title("(b) Efficacité et stabilité")
+    for position, (category, value) in enumerate(
+        zip(display_order, values, strict=True), start=1
+    ):
+        if value.size == 0:
+            axes[1].text(
+                position,
+                0.03,
+                "aucun cas",
+                color=CATEGORY_COLORS[category],
+                ha="center",
+                va="bottom",
+                transform=axes[1].get_xaxis_transform(),
+                fontsize=8,
+            )
+    axes[1].set_ylabel("Énergie économisée pendant l'heure (kWh)")
+    axes[1].set_title("(b) Économie selon le diagnostic")
     axes[1].grid(axis="y", alpha=0.22)
+    axes[1].tick_params(axis="x", labelsize=8)
 
     handles, labels = axes[0].get_legend_handles_labels()
     figure.legend(
         handles,
         labels,
         loc="upper center",
-        bbox_to_anchor=(0.5, 1.04),
+        bbox_to_anchor=(0.5, 1.03),
         ncol=3,
         frameon=False,
         fontsize=8,
     )
-    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.88))
+    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.89))
     paths = [
         output_dir / "coalition_stability.pdf",
         output_dir / "coalition_stability.png",
@@ -999,7 +1435,8 @@ def main() -> None:
     parser.add_argument(
         "--grid",
         choices=("central", "full", "thresholds"),
-        default="full",
+        default="central",
+        help="central evaluates the three capacity rates used in Sections 6.3--6.4",
     )
     parser.add_argument("--hours", nargs=2, type=int, default=(0, 6), metavar=("START", "END"))
     parser.add_argument("--bootstrap-replications", type=int, default=2_000)
@@ -1078,14 +1515,6 @@ def main() -> None:
     analysis["grid"] = args.grid
     analysis["instances_all_scenarios"] = len(rows)
     figures = _figure(figure_rows, args.figures_dir)
-    case_tables, case_figures = _case_outputs(
-        figure_rows,
-        args.calibration_dir,
-        hours,
-        args.results_dir,
-        args.figures_dir,
-    )
-    figures.extend(case_figures)
     _write_rows(summary_path, summaries)
     analysis_path.write_text(
         json.dumps(analysis, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -1097,9 +1526,6 @@ def main() -> None:
             "summary": portable_path(summary_path),
             "analysis": portable_path(analysis_path),
             "figures": [portable_path(path) for path in figures],
-            "representative_tables": [
-                portable_path(path) for path in case_tables
-            ],
         },
     }
     manifest_path.write_text(

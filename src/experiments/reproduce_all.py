@@ -31,6 +31,11 @@ STAGES = (
         "--rebuild",
     ),
     (
+        "threshold mechanisms",
+        "src.experiments.threshold_mechanisms",
+        "--rebuild",
+    ),
+    (
         "parameter sensitivity",
         "src.experiments.parameter_sensitivity",
         "--rebuild",

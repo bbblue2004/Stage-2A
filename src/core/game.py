@@ -6,6 +6,7 @@ from math import factorial, sqrt
 
 import numpy as np
 import pulp
+from scipy.optimize import linprog
 
 from src.core.generate_data import OperatorParams
 from src.core.optimiser import coalition_cost_star
@@ -538,6 +539,168 @@ def nucleolus_allocation(
             coefficients = {i: -1.0 for i in coalition}
             _, minimum = optimise_on_face(epsilon, coefficients, False)
             _, maximum = optimise_on_face(epsilon, coefficients, True)
+            minimum_excess = savings[coalition] + minimum
+            maximum_excess = savings[coalition] + maximum
+            if maximum_excess - minimum_excess <= 20.0 * face_tolerance:
+                newly_fixed[coalition] = 0.5 * (
+                    minimum_excess + maximum_excess
+                )
+
+        if not newly_fixed:
+            return NucleolusResult(
+                allocation,
+                "Numerical failure: no fixed coalition found",
+                stage,
+            )
+        fixed.update(newly_fixed)
+        unresolved.difference_update(newly_fixed)
+
+    return NucleolusResult({}, "Iteration limit reached", len(coalitions) + 1)
+
+
+def nucleolus_allocation_fast(
+    players: list[int],
+    savings: dict[tuple[int, ...], float],
+    tolerance: float = 1e-8,
+) -> NucleolusResult:
+    """Compute the nucleolus with the same LP cascade, using in-process HiGHS."""
+    grand = tuple(players)
+    coalitions = [
+        coalition
+        for coalition in iter_coalition_tuples(players)
+        if coalition != grand
+    ]
+    player_index = {player: index for index, player in enumerate(players)}
+    memberships = {
+        coalition: np.asarray(
+            [float(player in coalition) for player in players], dtype=float
+        )
+        for coalition in coalitions
+    }
+    fixed: dict[tuple[int, ...], float] = {}
+    unresolved = set(coalitions)
+    scale = max(1.0, abs(savings[grand]))
+    face_tolerance = tolerance * scale
+    bounds = [(0.0, None)] * len(players)
+
+    def fixed_equalities() -> tuple[np.ndarray, np.ndarray]:
+        rows = [np.ones(len(players), dtype=float)]
+        values = [float(savings[grand])]
+        for coalition, excess in fixed.items():
+            rows.append(memberships[coalition])
+            values.append(float(savings[coalition] - excess))
+        return np.asarray(rows, dtype=float), np.asarray(values, dtype=float)
+
+    def solve_stage() -> tuple[str, float, dict[int, float]]:
+        objective = np.zeros(len(players) + 1, dtype=float)
+        objective[-1] = 1.0
+        equality, equality_values = fixed_equalities()
+        equality = np.column_stack((equality, np.zeros(equality.shape[0])))
+        inequalities = np.asarray(
+            [
+                np.concatenate((-memberships[coalition], [-1.0]))
+                for coalition in unresolved
+            ],
+            dtype=float,
+        )
+        inequality_values = np.asarray(
+            [-float(savings[coalition]) for coalition in unresolved],
+            dtype=float,
+        )
+        result = linprog(
+            objective,
+            A_ub=inequalities if unresolved else None,
+            b_ub=inequality_values if unresolved else None,
+            A_eq=equality,
+            b_eq=equality_values,
+            bounds=(*bounds, (None, None)),
+            method="highs",
+        )
+        if not result.success:
+            return result.message, float("nan"), {}
+        return (
+            "Optimal",
+            float(result.x[-1]),
+            {
+                player: float(result.x[player_index[player]])
+                for player in players
+            },
+        )
+
+    def optimise_on_face(
+        epsilon: float,
+        coefficients: dict[int, float],
+        maximize: bool,
+    ) -> tuple[str, float]:
+        objective = np.asarray(
+            [coefficients.get(player, 0.0) for player in players],
+            dtype=float,
+        )
+        if maximize:
+            objective = -objective
+        equality, equality_values = fixed_equalities()
+        inequalities = np.asarray(
+            [-memberships[coalition] for coalition in unresolved],
+            dtype=float,
+        )
+        inequality_values = np.asarray(
+            [
+                epsilon
+                + face_tolerance
+                - float(savings[coalition])
+                for coalition in unresolved
+            ],
+            dtype=float,
+        )
+        result = linprog(
+            objective,
+            A_ub=inequalities if unresolved else None,
+            b_ub=inequality_values if unresolved else None,
+            A_eq=equality,
+            b_eq=equality_values,
+            bounds=bounds,
+            method="highs",
+        )
+        if not result.success:
+            return result.message, float("nan")
+        value = sum(
+            coefficients.get(player, 0.0) * result.x[player_index[player]]
+            for player in players
+        )
+        return "Optimal", float(value)
+
+    for stage in range(1, len(coalitions) + 2):
+        status, epsilon, allocation = solve_stage()
+        if status != "Optimal":
+            return NucleolusResult({}, status, stage)
+
+        unique = True
+        for player in players:
+            status_min, minimum = optimise_on_face(
+                epsilon, {player: 1.0}, False
+            )
+            status_max, maximum = optimise_on_face(
+                epsilon, {player: 1.0}, True
+            )
+            if status_min != "Optimal" or status_max != "Optimal":
+                return NucleolusResult({}, status_min, stage)
+            if maximum - minimum > 20.0 * face_tolerance:
+                unique = False
+                break
+        if unique:
+            return NucleolusResult(allocation, "Optimal", stage)
+
+        newly_fixed: dict[tuple[int, ...], float] = {}
+        for coalition in sorted(unresolved):
+            coefficients = {player: -1.0 for player in coalition}
+            status_min, minimum = optimise_on_face(
+                epsilon, coefficients, False
+            )
+            status_max, maximum = optimise_on_face(
+                epsilon, coefficients, True
+            )
+            if status_min != "Optimal" or status_max != "Optimal":
+                return NucleolusResult({}, status_min, stage)
             minimum_excess = savings[coalition] + minimum
             maximum_excess = savings[coalition] + maximum
             if maximum_excess - minimum_excess <= 20.0 * face_tolerance:

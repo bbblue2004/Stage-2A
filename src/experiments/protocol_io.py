@@ -5,6 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.data_processing.instance_generator import (
+    CAMPAIGN_A_RATES,
+    CENTRAL_EQUIPMENT,
+    CENTRAL_SHAPE,
+    CENTRAL_VOLUME,
     ProtocolSpec,
     ScenarioSpec,
     SiteBlueprints,
@@ -16,6 +20,22 @@ from src.data_processing.power_validation import (
     CalibratedPopulation,
     load_calibrated_population,
 )
+
+
+SECTION_63_EQUIPMENT = CENTRAL_EQUIPMENT
+
+
+def _section_63_scenarios() -> tuple[ScenarioSpec, ...]:
+    return tuple(
+        ScenarioSpec(
+            "A",
+            CENTRAL_VOLUME,
+            CENTRAL_SHAPE,
+            SECTION_63_EQUIPMENT,
+            capacity_rate=rate,
+        )
+        for rate in CAMPAIGN_A_RATES
+    )
 
 
 def load_protocol_inputs(
@@ -37,13 +57,14 @@ def load_protocol_inputs(
 
 def scenarios_for_grid(grid: str) -> tuple[ScenarioSpec, ...]:
     if grid == "central":
-        return protocol_scenarios(
-            include_campaign_a_rates=True,
-            include_heterogeneity=False,
-            include_campaign_b=False,
-        )
+        return _section_63_scenarios()
     if grid == "full":
-        return protocol_scenarios()
+        scenarios = list(protocol_scenarios())
+        keys = {spec.key for spec in scenarios}
+        scenarios.extend(
+            spec for spec in _section_63_scenarios() if spec.key not in keys
+        )
+        return tuple(scenarios)
     if grid == "thresholds":
         return protocol_scenarios(
             include_campaign_a_rates=False,
@@ -56,7 +77,7 @@ def scenarios_for_grid(grid: str) -> tuple[ScenarioSpec, ...]:
 def is_central_campaign_a(row: dict[str, object]) -> bool:
     return (
         str(row.get("campaign", "")) == "A"
-        and str(row.get("volume_level", "")) == "moderate"
-        and str(row.get("shape_level", "")) == "moderate"
-        and str(row.get("equipment_level", "")) == "moderate"
+        and str(row.get("volume_level", "")) == CENTRAL_VOLUME
+        and str(row.get("shape_level", "")) == CENTRAL_SHAPE
+        and str(row.get("equipment_level", "")) == SECTION_63_EQUIPMENT
     )

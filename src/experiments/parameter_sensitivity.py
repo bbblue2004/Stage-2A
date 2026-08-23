@@ -1,4 +1,4 @@
-"""Run the structured parameter-sensitivity study reported in Section 6.5."""
+"""Run the parameter-sensitivity study reported in Section 6.6."""
 
 from __future__ import annotations
 
@@ -8,25 +8,17 @@ import json
 import math
 from pathlib import Path
 
-import matplotlib
 import numpy as np
 from scipy.optimize import linprog
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 from src.core.window_optimiser import coalition_window_solutions
 from src.data_processing.data_loader import ROOT
 from src.data_processing.instance_generator import (
-    CAMPAIGN_A_RATES,
+    CENTRAL_EQUIPMENT,
     CENTRAL_RATE,
     DEFAULT_NUM_SITES,
     DEFAULT_SITE_SEED,
     ScenarioSpec,
-    calibrate_protocol,
-    capacities_for_site,
-    generate_site_blueprints,
-    iter_materialized_sites,
     materialize_site,
 )
 from src.data_processing.power_validation import CalibratedPopulation
@@ -41,37 +33,29 @@ from src.experiments.protocol_io import is_central_campaign_a, load_protocol_inp
 
 DEFAULT_CALIBRATION_DIR = ROOT / "results" / "power_calibration"
 DEFAULT_OPERATIONAL_DIR = ROOT / "results" / "operational_efficiency"
-DEFAULT_STABILITY_DIR = ROOT / "results" / "coalition_stability"
 DEFAULT_RESULTS_DIR = ROOT / "results" / "parameter_sensitivity"
-DEFAULT_FIGURES_DIR = ROOT / "figures" / "parameter_sensitivity"
-CAPACITY_RATES = CAMPAIGN_A_RATES
 TRAFFIC_MULTIPLIERS = (0.80, 1.00, 1.20)
 COEFFICIENT_MULTIPLIERS = (0.80, 1.00, 1.20)
 SLEEP_RATES = (0.00, 0.05, 0.10)
 WINDOW_DURATIONS = (5, 7, 9)
-OPERATOR_COUNTS = (2, 3, 4, 5, 6)
 BASELINE_RATE = CENTRAL_RATE
 SITE_SEED = DEFAULT_SITE_SEED
-ALGORITHM_VERSION = 3
+ALGORITHM_VERSION = 6
 FACTOR_LABELS = {
-    "capacity_margin": "Marge de capacité",
     "traffic_level": "Niveau de trafic",
     "fixed_cost": "Coût fixe $F_i$",
     "variable_cost": "Coût variable $\\gamma_i$",
     "sleep_power": "Puissance de veille",
     "window_position": "Position de $H$",
     "window_duration": "Durée de $H$",
-    "operator_count": "Nombre d'opérateurs",
 }
 CENTRAL_SETTINGS = {
-    "capacity_margin": "0.70",
     "traffic_level": "1.00",
     "fixed_cost": "1.00",
     "variable_cost": "1.00",
     "sleep_power": "0.00",
     "window_position": "00-07",
     "window_duration": "7",
-    "operator_count": "4",
 }
 
 
@@ -176,6 +160,22 @@ def _evaluate_instance(
         raise ValueError("sleep_rate must lie in [0, 1)")
     num_operators = capacities.size
     grand_mask = (1 << num_operators) - 1
+    for mask in range(1, grand_mask + 1):
+        members = np.asarray(
+            [bool(mask & (1 << player)) for player in range(num_operators)]
+        )
+        coalition_capacity = float(np.sum(capacities[members]))
+        coalition_demand = np.sum(demands[members], axis=0)
+        tolerance = 1e-10 * max(1.0, coalition_capacity)
+        if np.any(coalition_demand > coalition_capacity + tolerance):
+            return {
+                "savings_pct": float("nan"),
+                "guardians_mean": float("nan"),
+                "persistence_gap_pp": float("nan"),
+                "core_empty": -1,
+                "shapley_stable": -1,
+                "feasible": 0,
+            }
     effective_fixed = (1.0 - sleep_rate) * fixed
     solutions = coalition_window_solutions(
         capacities, effective_fixed, slopes, demands
@@ -205,23 +205,19 @@ def _evaluate_instance(
         ),
         "core_empty": int(not core_nonempty),
         "shapley_stable": int(shapley_in_core),
+        "feasible": 1,
     }
 
 
 def _load_main_metrics(
     operational_path: Path,
-    stability_path: Path,
-) -> dict[tuple[str, str, float], dict[str, float | int]]:
-    stability: dict[tuple[str, str, float], tuple[int, int]] = {}
-    with stability_path.open(newline="", encoding="utf-8") as file:
-        for raw in csv.DictReader(file):
-            if "campaign" in raw and not is_central_campaign_a(raw):
-                continue
-            key = (raw["site_id"], raw["day"], float(raw["capacity_rate"]))
-            stability[key] = (
-                int(raw["category"] == "empty_core"),
-                int(raw["shapley_in_core"]),
-            )
+) -> dict[tuple[str, str, float], dict[str, float]]:
+    """Load the three operational metrics used to cross-check the baseline.
+
+    Stability is deliberately recomputed for the seven-hour game.  Section 6.4
+    stores hourly games, whose stability status cannot be attached to a nightly
+    game by retaining one arbitrary hour.
+    """
     metrics: dict[tuple[str, str, float], dict[str, float | int]] = {}
     with operational_path.open(newline="", encoding="utf-8") as file:
         for raw in csv.DictReader(file):
@@ -231,7 +227,6 @@ def _load_main_metrics(
             standalone = float(raw["standalone_energy_wh"])
             optimum = float(raw["hourly_optimal_energy_wh"])
             persistent = float(raw["persistent_energy_wh"])
-            core_empty, shapley_stable = stability[key]
             metrics[key] = {
                 "savings_pct": 100.0 * (standalone - optimum) / standalone,
                 "guardians_mean": float(
@@ -241,8 +236,6 @@ def _load_main_metrics(
                     0.0,
                     100.0 * (persistent - optimum) / standalone,
                 ),
-                "core_empty": core_empty,
-                "shapley_stable": shapley_stable,
             }
     return metrics
 
@@ -275,7 +268,7 @@ def _result_row(
 def _main_site_rows(
     site,
     population: CalibratedPopulation,
-    main_metrics: dict[tuple[str, str, float], dict[str, float | int]],
+    main_metrics: dict[tuple[str, str, float], dict[str, float]],
 ) -> list[dict[str, object]]:
     fixed = site.p_fixed_w
     slopes = site.slope_w_per_gb
@@ -287,24 +280,16 @@ def _main_site_rows(
     for day_index, day_value in enumerate(population.days):
         day = str(day_value)
         demands = traffic[:, day_index, 0:7]
-        base_by_rate = {
-            rate: main_metrics[(site_id, day, rate)] for rate in CAPACITY_RATES
-        }
-        central = base_by_rate[BASELINE_RATE]
-
-        for rate in CAPACITY_RATES:
-            rows.append(
-                _result_row(
-                    "capacity_margin", f"{rate:.2f}", rate, site_id, day,
-                    base_by_rate[rate], capacity_rate=rate,
+        capacities = peaks / BASELINE_RATE
+        central = _evaluate_instance(capacities, fixed, slopes, demands)
+        expected = main_metrics[(site_id, day, BASELINE_RATE)]
+        for metric in ("savings_pct", "guardians_mean", "persistence_gap_pp"):
+            if not np.isclose(
+                float(central[metric]), float(expected[metric]), rtol=1e-9, atol=1e-9
+            ):
+                raise RuntimeError(
+                    f"baseline mismatch for {site_id}, {day}, {metric}"
                 )
-            )
-            rows.append(
-                _result_row(
-                    "traffic_capacity", f"1.00|{rate:.2f}", rate, site_id,
-                    day, base_by_rate[rate], capacity_rate=rate,
-                )
-            )
 
         for factor, setting in (
             ("traffic_level", "1.00"),
@@ -312,57 +297,32 @@ def _main_site_rows(
             ("variable_cost", "1.00"),
             ("sleep_power", "0.00"),
             ("window_duration", "7"),
-            ("operator_count", "4"),
         ):
-            value = 4.0 if factor == "operator_count" else float(setting)
             rows.append(
                 _result_row(
-                    factor, setting, value, site_id, day, central,
-                    num_operators=4,
+                    factor, setting, float(setting), site_id, day, central,
                 )
             )
 
         for traffic_multiplier in (0.80, 1.20):
-            admissible_rates = (
-                CAPACITY_RATES
-                if traffic_multiplier == 0.80
-                else (0.70, 0.80)
+            metrics = _evaluate_instance(
+                capacities, fixed, slopes, traffic_multiplier * demands
             )
-            for rate in admissible_rates:
-                metrics = _evaluate_instance(
-                    peaks / rate,
-                    fixed,
-                    slopes,
-                    traffic_multiplier * demands,
+            rows.append(
+                _result_row(
+                    "traffic_level",
+                    f"{traffic_multiplier:.2f}",
+                    traffic_multiplier,
+                    site_id,
+                    day,
+                    metrics,
+                    traffic_multiplier=traffic_multiplier,
                 )
-                rows.append(
-                    _result_row(
-                        "traffic_capacity",
-                        f"{traffic_multiplier:.2f}|{rate:.2f}",
-                        rate,
-                        site_id,
-                        day,
-                        metrics,
-                        capacity_rate=rate,
-                        traffic_multiplier=traffic_multiplier,
-                    )
-                )
-                if rate == BASELINE_RATE:
-                    rows.append(
-                        _result_row(
-                            "traffic_level",
-                            f"{traffic_multiplier:.2f}",
-                            traffic_multiplier,
-                            site_id,
-                            day,
-                            metrics,
-                            traffic_multiplier=traffic_multiplier,
-                        )
-                    )
+            )
 
         for multiplier in (0.80, 1.20):
             fixed_metrics = _evaluate_instance(
-                peaks / BASELINE_RATE, multiplier * fixed, slopes, demands
+                capacities, multiplier * fixed, slopes, demands
             )
             rows.append(
                 _result_row(
@@ -371,7 +331,7 @@ def _main_site_rows(
                 )
             )
             variable_metrics = _evaluate_instance(
-                peaks / BASELINE_RATE, fixed, multiplier * slopes, demands
+                capacities, fixed, multiplier * slopes, demands
             )
             rows.append(
                 _result_row(
@@ -382,7 +342,7 @@ def _main_site_rows(
 
         for sleep_rate in (0.05, 0.10):
             metrics = _evaluate_instance(
-                peaks / BASELINE_RATE,
+                capacities,
                 fixed,
                 slopes,
                 demands,
@@ -397,7 +357,7 @@ def _main_site_rows(
 
         for duration in (5, 9):
             metrics = _evaluate_instance(
-                peaks / BASELINE_RATE,
+                capacities,
                 fixed,
                 slopes,
                 traffic[:, day_index, :duration],
@@ -411,7 +371,10 @@ def _main_site_rows(
 
     for start_day in range(len(population.days) - 1):
         comparison_day = str(population.days[start_day + 1])
-        central = main_metrics[(site_id, comparison_day, BASELINE_RATE)]
+        capacities = peaks / BASELINE_RATE
+        central = _evaluate_instance(
+            capacities, fixed, slopes, traffic[:, start_day + 1, 0:7]
+        )
         rows.append(
             _result_row(
                 "window_position", "00-07", 1.0, site_id,
@@ -422,9 +385,7 @@ def _main_site_rows(
             (traffic[:, start_day, 22:24], traffic[:, start_day + 1, 0:5]),
             axis=1,
         )
-        late_metrics = _evaluate_instance(
-            peaks / BASELINE_RATE, fixed, slopes, overnight
-        )
+        late_metrics = _evaluate_instance(capacities, fixed, slopes, overnight)
         rows.append(
             _result_row(
                 "window_position", "22-05", 0.0, site_id,
@@ -432,7 +393,7 @@ def _main_site_rows(
             )
         )
         morning_metrics = _evaluate_instance(
-            peaks / BASELINE_RATE,
+            capacities,
             fixed,
             slopes,
             traffic[:, start_day + 1, 2:9],
@@ -443,64 +404,6 @@ def _main_site_rows(
                 comparison_day, morning_metrics,
             )
         )
-    return rows
-
-
-def _operator_count_rows(
-    population: CalibratedPopulation,
-    num_sites: int,
-) -> list[dict[str, object]]:
-    rows: list[dict[str, object]] = []
-    for num_operators in (2, 3, 5, 6):
-        protocol = calibrate_protocol(
-            population,
-            num_sites=num_sites,
-            seed=SITE_SEED,
-            num_operators=num_operators,
-        )
-        blueprints = generate_site_blueprints(
-            population,
-            num_sites=num_sites,
-            seed=SITE_SEED,
-            num_operators=num_operators,
-        )
-        spec = ScenarioSpec(
-            "A",
-            "moderate",
-            "moderate",
-            "moderate",
-            capacity_rate=BASELINE_RATE,
-        )
-        for site_index, site in enumerate(
-            iter_materialized_sites(
-                blueprints, population, [spec], protocol, num_sites=num_sites
-            )
-        ):
-            for day_index, day_value in enumerate(population.days):
-                demands = site.traffic_gb[:, day_index, 0:7]
-                capacities = capacities_for_site(site, demands)
-                metrics = _evaluate_instance(
-                    capacities,
-                    site.p_fixed_w,
-                    site.slope_w_per_gb,
-                    demands,
-                )
-                rows.append(
-                    _result_row(
-                        "operator_count",
-                        str(num_operators),
-                        float(num_operators),
-                        site.site_id.replace("site_", f"n{num_operators}_site_"),
-                        str(day_value),
-                        metrics,
-                        num_operators=num_operators,
-                    )
-                )
-            if (site_index + 1) % 200 == 0:
-                print(
-                    f">> n={num_operators}: {site_index + 1}/{num_sites} sites",
-                    flush=True,
-                )
     return rows
 
 
@@ -517,7 +420,7 @@ def _write_rows(path: Path, rows: list[dict[str, object]]) -> None:
 def _read_rows(path: Path) -> list[dict[str, object]]:
     string_columns = {"factor", "setting", "site_id", "day"}
     integer_columns = {
-        "num_operators", "core_empty", "shapley_stable"
+        "num_operators", "core_empty", "shapley_stable", "feasible"
     }
     with path.open(newline="", encoding="utf-8") as file:
         return [
@@ -535,31 +438,47 @@ def _read_rows(path: Path) -> list[dict[str, object]]:
         ]
 
 
-def _summaries(rows: list[dict[str, object]]) -> list[dict[str, object]]:
-    groups: dict[tuple[str, str], list[dict[str, object]]] = {}
+def _plan_setting_summaries(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Average repeated days before comparing plans or parameter settings."""
+    groups: dict[tuple[str, str, str], list[dict[str, object]]] = {}
     for row in rows:
-        groups.setdefault((str(row["factor"]), str(row["setting"])), []).append(row)
-    summaries: list[dict[str, object]] = []
-    for (factor, setting), selected in sorted(
-        groups.items(), key=lambda item: (item[0][0], float(item[1][0]["setting_value"]))
+        key = (str(row["site_id"]), str(row["factor"]), str(row["setting"]))
+        groups.setdefault(key, []).append(row)
+    result: list[dict[str, object]] = []
+    for (site_id, factor, setting), all_selected in sorted(
+        groups.items(),
+        key=lambda item: (
+            item[0][0], item[0][1], float(item[1][0]["setting_value"])
+        ),
     ):
-        savings = np.asarray([row["savings_pct"] for row in selected], dtype=float)
-        guardians = np.asarray(
-            [row["guardians_mean"] for row in selected], dtype=float
-        )
-        persistence = np.asarray(
-            [row["persistence_gap_pp"] for row in selected], dtype=float
-        )
-        summaries.append(
+        selected = [
+            row for row in all_selected if int(row.get("feasible", 1)) == 1
+        ]
+        if not selected:
+            raise RuntimeError(
+                f"no feasible day for {site_id}, {factor}, {setting}"
+            )
+        result.append(
             {
+                "site_id": site_id,
                 "factor": factor,
                 "setting": setting,
                 "setting_value": float(selected[0]["setting_value"]),
-                "instances": len(selected),
-                "savings_pct_median": float(np.median(savings)),
-                "guardians_mean": float(np.mean(guardians)),
-                "persistence_gap_pp_median": float(
-                    np.median(persistence)
+                "instances": len(all_selected),
+                "feasible_instances": len(selected),
+                "out_of_domain_pct": 100.0
+                * (len(all_selected) - len(selected))
+                / len(all_selected),
+                "savings_pct": float(
+                    np.mean([row["savings_pct"] for row in selected])
+                ),
+                "guardians_mean": float(
+                    np.mean([row["guardians_mean"] for row in selected])
+                ),
+                "persistence_gap_pp": float(
+                    np.mean([row["persistence_gap_pp"] for row in selected])
                 ),
                 "empty_core_pct": 100.0
                 * float(np.mean([row["core_empty"] for row in selected])),
@@ -567,39 +486,117 @@ def _summaries(rows: list[dict[str, object]]) -> list[dict[str, object]]:
                 * float(np.mean([row["shapley_stable"] for row in selected])),
             }
         )
+    return result
+
+
+def _summaries(
+    rows: list[dict[str, object]],
+    plan_summaries: list[dict[str, object]] | None = None,
+) -> list[dict[str, object]]:
+    if plan_summaries is None:
+        plan_summaries = _plan_setting_summaries(rows)
+    groups: dict[tuple[str, str], list[dict[str, object]]] = {}
+    for row in plan_summaries:
+        groups.setdefault((str(row["factor"]), str(row["setting"])), []).append(row)
+    summaries: list[dict[str, object]] = []
+    raw_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
+    for row in rows:
+        key = (str(row["factor"]), str(row["setting"]))
+        raw_groups.setdefault(key, []).append(row)
+    metrics = (
+        "savings_pct",
+        "guardians_mean",
+        "persistence_gap_pp",
+        "empty_core_pct",
+        "shapley_stable_pct",
+    )
+    for (factor, setting), selected in sorted(
+        groups.items(),
+        key=lambda item: (item[0][0], float(item[1][0]["setting_value"])),
+    ):
+        summary: dict[str, object] = {
+            "factor": factor,
+            "setting": setting,
+            "setting_value": float(selected[0]["setting_value"]),
+            "plans": len(selected),
+            "instances": len(raw_groups[(factor, setting)]),
+        }
+        for metric in metrics:
+            values = np.asarray([row[metric] for row in selected], dtype=float)
+            summary[f"{metric}_median"] = float(np.median(values))
+            summary[f"{metric}_q25"] = float(np.quantile(values, 0.25))
+            summary[f"{metric}_q75"] = float(np.quantile(values, 0.75))
+        raw_selected = [
+            row
+            for row in raw_groups[(factor, setting)]
+            if int(row.get("feasible", 1)) == 1
+        ]
+        all_raw_selected = raw_groups[(factor, setting)]
+        summary["feasible_instances"] = len(raw_selected)
+        summary["out_of_domain_pct_pooled"] = 100.0 * (
+            len(all_raw_selected) - len(raw_selected)
+        ) / len(all_raw_selected)
+        summary["empty_core_pct_pooled"] = 100.0 * float(
+            np.mean([row["core_empty"] for row in raw_selected])
+        )
+        summary["shapley_stable_pct_pooled"] = 100.0 * float(
+            np.mean([row["shapley_stable"] for row in raw_selected])
+        )
+        summaries.append(summary)
     return summaries
 
 
-def _factor_effects(summaries: list[dict[str, object]]) -> list[dict[str, object]]:
+def _factor_effects(
+    summaries: list[dict[str, object]],
+    plan_summaries: list[dict[str, object]],
+) -> list[dict[str, object]]:
     effects: list[dict[str, object]] = []
     for factor in FACTOR_LABELS:
         selected = [row for row in summaries if row["factor"] == factor]
-        central = next(
-            row for row in selected if row["setting"] == CENTRAL_SETTINGS[factor]
-        )
         effect: dict[str, object] = {
             "factor": factor,
             "label": FACTOR_LABELS[factor],
-            "central_setting": central["setting"],
+            "central_setting": CENTRAL_SETTINGS[factor],
         }
         for metric in (
-            "savings_pct_median",
+            "savings_pct",
             "guardians_mean",
-            "persistence_gap_pp_median",
+            "persistence_gap_pp",
             "empty_core_pct",
             "shapley_stable_pct",
         ):
-            values = np.asarray([row[metric] for row in selected], dtype=float)
-            baseline = float(central[metric])
-            effect[f"{metric}_range"] = float(np.max(values) - np.min(values))
-            effect[f"{metric}_min_delta"] = float(np.min(values - baseline))
-            effect[f"{metric}_max_delta"] = float(np.max(values - baseline))
+            ranges = []
+            for site_id in sorted(
+                {str(row["site_id"]) for row in plan_summaries}
+            ):
+                values = np.asarray(
+                    [
+                        row[metric]
+                        for row in plan_summaries
+                        if row["site_id"] == site_id and row["factor"] == factor
+                    ],
+                    dtype=float,
+                )
+                if values.size != 3:
+                    raise RuntimeError(
+                        f"expected three settings for {site_id}, {factor}"
+                    )
+                ranges.append(float(np.max(values) - np.min(values)))
+            range_values = np.asarray(ranges, dtype=float)
+            effect[f"{metric}_complete_plans"] = len(ranges)
+            effect[f"{metric}_range_median"] = float(np.median(range_values))
+            effect[f"{metric}_range_q25"] = float(np.quantile(range_values, 0.25))
+            effect[f"{metric}_range_q75"] = float(np.quantile(range_values, 0.75))
         effect["best_savings_setting"] = max(
             selected, key=lambda row: float(row["savings_pct_median"])
         )["setting"]
         effect["best_stability_setting"] = max(
-            selected, key=lambda row: float(row["shapley_stable_pct"])
+            selected, key=lambda row: float(row["shapley_stable_pct_median"])
         )["setting"]
+        effect["shapley_stable_pct_pooled_range"] = float(
+            max(float(row["shapley_stable_pct_pooled"]) for row in selected)
+            - min(float(row["shapley_stable_pct_pooled"]) for row in selected)
+        )
         effects.append(effect)
     return effects
 
@@ -607,7 +604,6 @@ def _factor_effects(summaries: list[dict[str, object]]) -> list[dict[str, object
 def _analysis(
     summaries: list[dict[str, object]], effects: list[dict[str, object]]
 ) -> dict[str, object]:
-    interaction = [row for row in summaries if row["factor"] == "traffic_capacity"]
     return {
         "factor_summaries": summaries,
         "factor_effects": effects,
@@ -615,7 +611,7 @@ def _analysis(
             row["factor"]
             for row in sorted(
                 effects,
-                key=lambda row: float(row["savings_pct_median_range"]),
+                key=lambda row: float(row["savings_pct_range_median"]),
                 reverse=True,
             )
         ],
@@ -623,111 +619,18 @@ def _analysis(
             row["factor"]
             for row in sorted(
                 effects,
-                key=lambda row: float(row["shapley_stable_pct_range"]),
+                key=lambda row: float(row["shapley_stable_pct_range_median"]),
                 reverse=True,
             )
         ],
-        "traffic_capacity_interaction": interaction,
-        "masked_interaction_cells": ["1.20|0.90", "1.20|1.00"],
     }
-
-
-def _tornado_figure(
-    effects: list[dict[str, object]], output_dir: Path
-) -> list[Path]:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    ordered = sorted(
-        effects,
-        key=lambda row: float(row["shapley_stable_pct_range"]),
-    )
-    labels = [str(row["label"]) for row in ordered]
-    y = np.arange(len(ordered))
-    figure, axes = plt.subplots(1, 2, figsize=(9.0, 4.5), sharey=True)
-    specifications = (
-        ("savings_pct_median", "Économie médiane (points)", "(a) Efficacité"),
-        ("shapley_stable_pct", "Fréquence stable (points)", "(b) Stabilité de Shapley"),
-    )
-    for axis, (metric, xlabel, title) in zip(axes, specifications, strict=True):
-        lower = np.asarray([row[f"{metric}_min_delta"] for row in ordered])
-        upper = np.asarray([row[f"{metric}_max_delta"] for row in ordered])
-        axis.hlines(y, lower, upper, color="#4C78A8", linewidth=5, alpha=0.78)
-        axis.scatter(lower, y, color="#D95F4A", s=25, zorder=3)
-        axis.scatter(upper, y, color="#2F8F5B", s=25, zorder=3)
-        axis.axvline(0.0, color="0.25", linewidth=0.9, linestyle="--")
-        axis.set_xlabel(xlabel)
-        axis.set_title(title)
-        axis.grid(axis="x", alpha=0.22)
-    axes[0].set_yticks(y, labels)
-    figure.suptitle("Variation par rapport au scénario central", y=0.99)
-    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.96))
-    paths = [
-        output_dir / "parameter_sensitivity_tornado.pdf",
-        output_dir / "parameter_sensitivity_tornado.png",
-    ]
-    figure.savefig(paths[0], bbox_inches="tight")
-    figure.savefig(paths[1], dpi=220, bbox_inches="tight")
-    plt.close(figure)
-    return paths
-
-
-def _interaction_figure(
-    summaries: list[dict[str, object]], output_dir: Path
-) -> list[Path]:
-    selected = [row for row in summaries if row["factor"] == "traffic_capacity"]
-    lookup = {str(row["setting"]): row for row in selected}
-    savings = np.full((len(TRAFFIC_MULTIPLIERS), len(CAPACITY_RATES)), np.nan)
-    stability = np.full_like(savings, np.nan)
-    for row_index, multiplier in enumerate(TRAFFIC_MULTIPLIERS):
-        for column_index, rate in enumerate(CAPACITY_RATES):
-            key = f"{multiplier:.2f}|{rate:.2f}"
-            if key in lookup:
-                savings[row_index, column_index] = lookup[key]["savings_pct_median"]
-                stability[row_index, column_index] = lookup[key]["shapley_stable_pct"]
-
-    figure, axes = plt.subplots(1, 2, figsize=(8.8, 3.5))
-    for axis, matrix, title, color_map in (
-        (axes[0], savings, "(a) Économie médiane (%)", "YlGn"),
-        (axes[1], stability, "(b) Shapley dans le cœur (%)", "Blues"),
-    ):
-        masked = np.ma.masked_invalid(matrix)
-        cmap = plt.get_cmap(color_map).copy()
-        cmap.set_bad("#D9D9D9")
-        image = axis.imshow(masked, aspect="auto", cmap=cmap)
-        for row_index in range(matrix.shape[0]):
-            for column_index in range(matrix.shape[1]):
-                value = matrix[row_index, column_index]
-                text = "hors\ndomaine" if np.isnan(value) else f"{value:.1f}".replace(".", ",")
-                axis.text(column_index, row_index, text, ha="center", va="center", fontsize=8)
-        axis.set_xticks(
-            np.arange(len(CAPACITY_RATES)),
-            [f"{rate:.2f}".replace(".", ",") for rate in CAPACITY_RATES],
-        )
-        axis.set_yticks(
-            np.arange(len(TRAFFIC_MULTIPLIERS)),
-            [f"{value:.1f}".replace(".", ",") for value in TRAFFIC_MULTIPLIERS],
-        )
-        axis.set_xlabel("Taux de charge maximal $r$")
-        axis.set_ylabel("Multiplicateur de trafic")
-        axis.set_title(title)
-        figure.colorbar(image, ax=axis, fraction=0.046, pad=0.04)
-    figure.tight_layout()
-    paths = [
-        output_dir / "traffic_capacity_interaction.pdf",
-        output_dir / "traffic_capacity_interaction.png",
-    ]
-    figure.savefig(paths[0], bbox_inches="tight")
-    figure.savefig(paths[1], dpi=220, bbox_inches="tight")
-    plt.close(figure)
-    return paths
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--calibration-dir", type=Path, default=DEFAULT_CALIBRATION_DIR)
     parser.add_argument("--operational-dir", type=Path, default=DEFAULT_OPERATIONAL_DIR)
-    parser.add_argument("--stability-dir", type=Path, default=DEFAULT_STABILITY_DIR)
     parser.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS_DIR)
-    parser.add_argument("--figures-dir", type=Path, default=DEFAULT_FIGURES_DIR)
     parser.add_argument("--num-sites", type=int, default=DEFAULT_NUM_SITES)
     parser.add_argument("--rebuild", action="store_true")
     parser.add_argument("--quiet", action="store_true")
@@ -737,8 +640,7 @@ def main() -> None:
     sites_path = args.calibration_dir / "site_blueprints.csv"
     protocol_path = args.calibration_dir / "protocol_parameters.json"
     operational_path = args.operational_dir / "operational_instances.csv"
-    stability_path = args.stability_dir / "stability_instances.csv"
-    for path in (cache_path, sites_path, protocol_path, operational_path, stability_path):
+    for path in (cache_path, sites_path, protocol_path, operational_path):
         if not path.is_file():
             parser.error(f"missing input: {path}")
     if args.num_sites <= 0:
@@ -746,9 +648,9 @@ def main() -> None:
 
     args.results_dir.mkdir(parents=True, exist_ok=True)
     rows_path = args.results_dir / "sensitivity_instances.csv"
+    plan_summary_path = args.results_dir / "sensitivity_plan_summary.csv"
     summary_path = args.results_dir / "sensitivity_summary.csv"
     analysis_path = args.results_dir / "analysis.json"
-    samples_path = args.results_dir / "operator_count_sites.csv"
     manifest_path = args.results_dir / "manifest.json"
     expected = {
         "algorithm_version": ALGORITHM_VERSION,
@@ -756,14 +658,11 @@ def main() -> None:
         "site_blueprints": file_signature(sites_path),
         "protocol_parameters": file_signature(protocol_path),
         "operational_instances": file_signature(operational_path),
-        "stability_instances": file_signature(stability_path),
         "num_sites": args.num_sites,
-        "capacity_rates": list(CAPACITY_RATES),
         "traffic_multipliers": list(TRAFFIC_MULTIPLIERS),
         "coefficient_multipliers": list(COEFFICIENT_MULTIPLIERS),
         "sleep_rates": list(SLEEP_RATES),
         "window_durations": list(WINDOW_DURATIONS),
-        "operator_counts": list(OPERATOR_COUNTS),
         "site_seed": SITE_SEED,
     }
     current = False
@@ -780,7 +679,6 @@ def main() -> None:
                     "site_blueprints": sites_path,
                     "protocol_parameters": protocol_path,
                     "operational_instances": operational_path,
-                    "stability_instances": stability_path,
                 },
             )
         except (KeyError, ValueError, json.JSONDecodeError):
@@ -795,9 +693,13 @@ def main() -> None:
             parser.error(
                 f"num-sites cannot exceed the frozen list ({blueprints.num_sites})"
             )
-        main_metrics = _load_main_metrics(operational_path, stability_path)
+        main_metrics = _load_main_metrics(operational_path)
         central_spec = ScenarioSpec(
-            "A", "moderate", "moderate", "moderate", capacity_rate=BASELINE_RATE
+            "A",
+            "moderate",
+            "moderate",
+            CENTRAL_EQUIPMENT,
+            capacity_rate=BASELINE_RATE,
         )
         rows: list[dict[str, object]] = []
         for site_index in range(args.num_sites):
@@ -805,26 +707,18 @@ def main() -> None:
                 blueprints, site_index, population, central_spec, protocol
             )
             rows.extend(_main_site_rows(site, population, main_metrics))
-            if (site_index + 1) % 100 == 0:
+            if (site_index + 1) % 5 == 0:
                 print(
                     f">> n=4 sensitivity: {site_index + 1}/{args.num_sites} sites",
                     flush=True,
                 )
-        rows.extend(_operator_count_rows(population, args.num_sites))
-        samples_path.write_text(
-            "num_operators,construction\n"
-            "2-6,same generator as Section 6.1 with n operators\n",
-            encoding="utf-8",
-        )
         _write_rows(rows_path, rows)
 
-    summaries = _summaries(rows)
-    effects = _factor_effects(summaries)
+    plan_summaries = _plan_setting_summaries(rows)
+    summaries = _summaries(rows, plan_summaries)
+    effects = _factor_effects(summaries, plan_summaries)
     analysis = _analysis(summaries, effects)
-    figures = [
-        *_tornado_figure(effects, args.figures_dir),
-        *_interaction_figure(summaries, args.figures_dir),
-    ]
+    _write_rows(plan_summary_path, plan_summaries)
     _write_rows(summary_path, summaries)
     analysis_path.write_text(
         json.dumps(analysis, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -833,10 +727,9 @@ def main() -> None:
         "inputs": expected,
         "outputs": {
             "instances": portable_path(rows_path),
+            "plan_summary": portable_path(plan_summary_path),
             "summary": portable_path(summary_path),
             "analysis": portable_path(analysis_path),
-            "operator_samples": portable_path(samples_path),
-            "figures": [portable_path(path) for path in figures],
         },
     }
     manifest_path.write_text(

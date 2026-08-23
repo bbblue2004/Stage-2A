@@ -13,15 +13,15 @@ l'aperçu Markdown.
 
 ### 1.1 Données et calibration
 
-- Période : **7 jours**, lundi 20 au dimanche 26 mars 2023, soit **168 heures**
+- Période : **7 jours**, lundi 20 au dimanche 26 mars 2023, soit
+**24 x 7 = 168 heures**
 par antenne, 3 825 identifiants.
 - **Ajustement unique sur les 7 jours**, utilisé partout. La relation
-puissance–trafic est une propriété du matériel ; seul le niveau de trafic
-change le week-end.
+puissance–trafic et les profils horaires ne présentent pas de différence
+exploitable entre les cinq premiers et les deux derniers jours.
 - Pas de jeu de validation hors échantillon. Robustesse établie en une ligne :
 écart médian entre estimations à 5 jours et à 7 jours.
-- Les **résultats de simulation** sont séparés **semaine / week-end**. C'est un
-découpage des mêmes instances, sans campagne supplémentaire.
+- Les **résultats de simulation** traitent toujours les sept jours ensemble.
 
 Conséquences à traiter dans le code :
 
@@ -30,22 +30,21 @@ Conséquences à traiter dans le code :
 | ------------------------------- | -------- | -------------------------------- |
 | Jours utilisés                  | 5 ouvrés | **7**                            |
 | Heures par antenne              | 120      | **168**                          |
-| Nuits par site                  | 5        | **7** (5 ouvrées, 2 de week-end) |
+| Nuits par site                  | 5        | **7**                            |
 | Profils normalisés `s_j`        | 120 h    | 168 h                            |
 | Échelle `mu_a`                  | 120 h    | 168 h                            |
 | Pic `max_t d_i(t)` fixant `q_i` | 120 h    | 168 h                            |
 
 
 Le cache de calibration doit être invalidé et le CSV relu. Toutes les
-statistiques figées dans `protocol_parameters.json` sont à recalculer. Chaque
-instance porte un indicateur semaine / week-end.
+statistiques figées dans `protocol_parameters.json` sont à recalculer.
 
 ### 1.2 Générateur d'instances
 
 ```
-s_j(t)   = d_j(t) / moyenne(d_j)                    profil normalisé, moyenne 1
-s~_i(t)  = (1 - lambda) * s_a(t) + lambda * s_ji(t) mélange convexe, sans bruit
-d_i(t)   = mu_a * alpha_i * s~_i(t)                 demande en Go
+phi_j(t) = d_j(t) / moyenne(d_j)                        profil normalisé, moyenne 1
+phi_i(t) = (1 - lambda) * phi_a(t) + lambda * phi_ji(t) combinaison sans bruit
+d_i(t)   = mu_a * alpha_i * phi_i(t)                    demande en Go
 mu_a     = moyenne(d_a)                             échelle de la référence
 ```
 
@@ -57,15 +56,18 @@ que soit le niveau d'hétérogénéité : changer de niveau **redistribue** le
 volume sans changer le total.
 - Trafic, forme et énergie proviennent d'**antennes disjointes** au sein d'un
 site.
+- Cette séparation identifie l'effet propre du trafic et celui de
+l'équipement. Elle ne prétend pas reproduire la loi jointe réelle ; chaque
+profil et chaque couple énergétique reste toutefois issu d'une antenne
+admissible, et les capacités garantissent la faisabilité.
 - Trois paquets énergétiques tirés une fois par site : `close` (même quartile
 de puissance fixe `P_fixe`), `moderate` (tirage global), `distant` (une
-antenne par quartile). Niveau `coupled` optionnel, reproduisant la
-corrélation empirique entre volume et `P_fixe`, comme contrôle de
-robustesse.
+antenne par quartile).
 - Graine unique ; comparaisons **appariées** sur les mêmes plans.
 - Le générateur reste paramétré par le nombre de plans. Le **mode à un seul
-plan** est le cas particulier, utilisé pour la mise au point et pour la
-figure 6.1.2. Aucune constante figée à 1.
+plan** est le cas particulier utilisé pour la mise au point. La figure de
+protocole emploie le premier plan de la liste gelée. Aucune constante figée à
+1.
 
 ### 1.3 Capacités
 
@@ -100,20 +102,20 @@ max_h k_h < arrondi_sup(n * r)   dès qu'il y a de l'hétérogénéité
   `max_h k_h` sur 168 heures :
 
 ```
-   volume      forme     r=0.70  r=0.80  r=0.90  r=1.00
-  proches    proches          3       4       4       4
-  proches    modérés          3       3       3       4
-  proches   distants          2       3       3       3
-  modérés    proches          3       3       4       4
-  modérés    modérés          2       2       3       3
-  modérés   distants          2       2       3       3
- distants    proches          2       2       3       4
- distants    modérés          2       2       2       3
- distants   distants          1       2       2       3
+   volume      forme     r=0.80  r=0.90  r=1.00
+  proches    proches          4       4       4
+  proches    modérés          3       3       4
+  proches   distants          3       3       3
+  modérés    proches          3       4       4
+  modérés    modérés          2       3       3
+  modérés   distants          2       3       3
+ distants    proches          2       3       4
+ distants    modérés          2       2       3
+ distants   distants          2       2       3
 ```
 
 - `r` ne change pas le trafic : `d_i(t)/q_i = r * d_i(t)/max_t d_i(t)`. La
-génération se fait une fois, seule l'optimisation est répétée sur les quatre
+génération se fait une fois, seule l'optimisation est répétée sur les trois
 valeurs, et les heures dont les ensembles faisables ne changent pas peuvent
 être mises en cache.
 
@@ -189,16 +191,16 @@ seulement deux ou trois chiffres rapatriés en prose.
 Formulation à employer : *les capacités des antennes admissibles ne sont pas
 fournies*.
 
-**6.1.2 Un plan déroulé pas à pas.** Pièce maîtresse, **seule figure du corps
-pour 6.1**. Quatre panneaux qui suivent le pipeline, à partir d'une antenne
-tirée au hasard :
+**6.1.2 Un plan déroulé pas à pas.** Une figure en six panneaux sur le premier
+plan de la liste gelée :
 
-- (a) l'entrée réelle : série de 168 heures de l'antenne de référence, en Go ;
-- (b) les ingrédients de forme : le profil normalisé de la référence et deux
-profils donneurs, tous de moyenne 1, superposés ;
+- (a1)--(a3) les quatre profils normalisés dans les cas proches,
+  intermédiaires et différents ;
+- (b) l'entrée réelle : série de 168 heures de l'antenne de référence, en Go ;
 - (c) la sortie : les `n` séries de demande `d_i(t)` en Go, facteurs de taille
 `alpha_i` annotés ;
-- (d) les capacités `q_i` en lignes horizontales, pour `r = 0,7` et `r = 1`.
+- (d) la demande rapportée au pic et les capacités pour `r` dans
+  `{0,80 ; 0,90 ; 1}`.
 
 Une **antenne donneuse** est une antenne réelle dont on emprunte uniquement la
 forme temporelle, jamais l'échelle ni l'énergie. Sans elle, les profils des
@@ -215,24 +217,26 @@ et sur le fait qu'elle n'en joue jamais deux à la fois dans un même site :
 
 | Rôle        | Ce qu'elle fournit                                           |
 | ----------- | ------------------------------------------------------------ |
-| Référence   | l'échelle `mu_a` en Go et la forme commune du site           |
-| Donneuse    | de la forme seulement, pour écarter les opérateurs entre eux |
+| Référence   | l'échelle `mu_a` et la composante commune des profils        |
+| Donneuse    | la composante propre du profil d'un opérateur                 |
 | Énergétique | la puissance fixe et la pente, donc `F_i` et `gamma_i`       |
 
 
 Justification à écrire : dans les données, trafic moyen et puissance fixe sont
 corrélés à 0,52. Si une même antenne fournissait volume et énergie, cette
 liaison se propagerait et l'on ne pourrait plus faire varier le volume sans
-faire varier l'équipement. Le découplage rend les deux axes indépendants ; le
-niveau `coupled` rétablit la liaison en contrôle de robustesse.
+faire varier l'équipement. La séparation rend les deux axes indépendants. La
+configuration de référence limite le risque d'associations extrêmes en tirant
+les quatre équipements dans le même quartile de puissance fixe.
 
 **6.1.3 Axes d'hétérogénéité.** Cinq axes : volume (`alpha`, 4 niveaux), forme
-(`lambda`, 3), équipement (paquets, 3), capacité (`r`, 4), nombre d'opérateurs
+(`lambda`, 3), équipement (paquets, 3), capacité (`r`, 3), nombre d'opérateurs
 (`n`, 2). Tableau des axes et de leurs niveaux.
 
 Le factoriel complet ferait 4 × 3 × 3 × 3 × 2 = 216 scénarios par plan.
-Grille **en étoile** à la place : on fixe un scénario central — volumes
-modérés, formes modérées, équipements modérés, `r = 0,90`, quatre opérateurs —
+Grille **en étoile** à la place : on fixe une configuration de référence — volumes
+modérés, formes modérées, équipements du même quartile de puissance fixe,
+`r = 0,90`, quatre opérateurs —
 puis on parcourt chaque axe en laissant les quatre autres au centre, soit
 1 + 3 + 2 + 2 + 2 + 1 = 11 scénarios, plus les deux extrêmes « tout proche » et
 « tout distant » pour borner. **13 scénarios par plan**, tous appariés.
@@ -251,7 +255,7 @@ tiré une fois par site et ce qui varie par scénario.
 
 Le **contrôle demi-échantillon** répond à la question « le nombre de plans
 est-il suffisant ? ». On coupe l'échantillon de plans en deux moitiés et on
-recalcule les agrégats sur chacune : si la fréquence de cœur vide vaut par
+recalcule les résultats sur chacune : si la fréquence de cœur vide vaut par
 exemple 12,3 % contre 12,1 %, c'est réglé en une ligne de texte. Déjà
 implémenté dans `coalition_stability.py`, clé `category_fractions_first_half_sites`.
 Pas de tableau.
@@ -300,8 +304,7 @@ puissance positive forment un palier horizontal au niveau de la puissance
 fixe, conforme au modèle. L'antenne médiane observe des trafics descendant
 jusqu'à 1,9 % de son pic, donc l'ordonnée à l'origine n'est pas extrapolée loin
 du support observé. Figure : nuage puissance contre trafic d'une antenne
-représentative avec la droite ajustée, semaine et week-end distingués par la
-couleur, plus les résidus tracés contre le trafic.
+représentative avec la droite ajustée ; les sept jours sont présentés ensemble.
 
 **6.2.3 Robustesse.** Une ligne : écart médian entre estimations à 5 et
 7 jours.
@@ -314,17 +317,19 @@ commun de l'électricité.
 
 **6.3.1 Profil horaire sur 24 heures.** Pour chaque heure : économie relative,
 soit `v_h(N)` divisé par la somme des coûts autonomes `C*_h({i})` ; économie
-absolue ; nombre de gardiens actifs ; seuil `k_h` ; et fréquence de la
-condition `d^h(N) <= min_i q_i`. **Figure centrale de l'article.** Courbes
-séparées semaine et week-end.
+absolue ; nombre de gardiens retenus par l'optimum. Le seuil `k_h` et la
+condition `d^h(N) <= min_i q_i` sont réservés à 6.5. **Figure centrale de
+l'article.** Regrouper
+les sept jours et utiliser des équipements tirés dans le même quartile de
+puissance fixe.
 
 **6.3.2 Choix de la fenêtre.** `H = [0 h, 7 h)`. Écrire explicitement que la
 fenêtre n'est pas choisie sur le niveau d'économie observé, pour écarter tout
 biais de sélection.
 
 **6.3.3 Économies sur la fenêtre.** Absolues et relatives, par scénario de
-capacité, semaine et week-end séparés, avec intervalles obtenus par
-rééchantillonnage des plans.
+capacité, sur les sept jours regroupés. Rapporter la médiane et la moitié
+centrale des plans directement, sans rééchantillonnage.
 
 **6.3.4 Effet du nombre d'opérateurs.** `n = 3` contre `n = 4`, sur plans
 appariés. Cadre de lecture : la borne structurelle `(n - 1) / n`.
@@ -338,7 +343,7 @@ horaire sur la fenêtre retenue, et nombre de changements de gardiens entre
 heures consécutives.
 
 **6.3.7 Ordre de grandeur annuel.** Énergie évitée par site et par nuit,
-extrapolée avec une pondération de 5/7 en jours ouvrés et 2/7 en week-end.
+obtenue par moyenne directe des sept jours puis multipliée par 365.
 Avertissement explicite : la **saisonnalité n'est pas observée**, il ne s'agit
 que d'un ordre de grandeur.
 
@@ -350,41 +355,53 @@ par heure lorsque `n = 4`.
 ### 6.4 Stabilité et répartition des économies
 
 **6.4.1 Cascade de diagnostic.** Fraction des instances résolue et temps
-consommé à chaque étage.
+consommé à chaque étage. Arrêter dès que Shapley appartient au cœur ; ne
+calculer le nucléole que si Shapley est exclue d'un cœur non vide.
 
 **6.4.2 Cœur vide, Shapley dans le cœur.** Les trois catégories exclusives,
 par scénario de capacité et par nombre d'opérateurs. Fréquence de convexité.
 Taux de détection du certificat « laisser un opérateur de côté » parmi les
 cœurs vides, et finesse de la borne inférieure qu'il fournit sur `epsilon*`.
+Conserver le tableau de répartition des trois cas. Classer aussi les instances
+selon `v_h(N)` par boîtes à moustaches, en signalant en rouge le cœur vide,
+donc la grande coalition instable.
 
 **6.4.3 Amplitude de l'instabilité.** Rapport `epsilon* / v_H(N)` quand le cœur
 est vide ; rapport `E_Sh,H(N) / v_H(N)` quand la valeur de Shapley est exclue ;
 taille et composition des coalitions bloquantes.
 
-**6.4.4 Shapley, nucléole, transferts.** Distance entre les deux règles ; qui
-gagne et qui perd au basculement de l'une à l'autre ; distributions des parts
-et des transferts ; vérification que la somme des transferts est nulle ; et la
-question industrielle : le gros opérateur subventionne-t-il systématiquement
-les petits ?
+**6.4.4 Partage et rupture.** Gain moyen par opérateur et par jour sous la
+règle stable retenue : Shapley si elle appartient au cœur, nucléole seulement
+si le cœur est non vide et Shapley en est exclue. Si le cœur est vide, faire
+éclater la grande coalition selon un contrefactuel explicite et mesurer la
+perte totale et individuelle. Ne pas conserver, dans la campagne multi-plans,
+un tableau fondé sur l'identité des quatre opérateurs d'un seul plan ;
+rapporter des distributions ou des rangs comparables entre plans.
 
-### 6.5 Seuils de capacité et mécanisme
+### 6.5 Nombre minimal de gardiens et mécanisme
 
 **6.5.1 Régime de très faible trafic.** Fréquence, heure par heure sur
 24 heures, de la condition `d^h(N) <= min_i q_i`. Vérifier que le cœur est
 toujours non vide quand la condition s'applique — c'est un test du théorème,
-pas une observation. La condition locale plus faible de la Section 4 est
-mentionnée **en remarque**.
+pas une observation. Comparer `n = 3` et `n = 4`, en donnant pour chacun le
+nombre de jeux horaires, la fréquence globale et les heures favorables. La
+condition locale plus faible de la Section 4 est mentionnée **en remarque**.
 
-**6.5.2 Franchissement des seuils.** Tableau central : instances ventilées par
-valeur de `k_h` dans `{1, 2, 3, 4}`, avec pour chaque strate la fréquence de
-cœur vide, la fréquence de Shapley dans le cœur, l'`epsilon*` normalisé et la
-taille des coalitions bloquantes. La journée fournit naturellement les quatre
-strates.
+**6.5.2 Nombre minimal de gardiens.** Définir `k_h` comme le plus petit nombre
+des équipements les plus capacitaires dont la capacité cumulée couvre le
+trafic total. Tableau central : jeux ventilés par `n` et par `k_h`, avec les
+effectifs, la fréquence conditionnelle de cœur vide et celle de Shapley dans
+le cœur. Distinguer systématiquement fréquence conditionnelle et fréquence
+globale, signaler les petits effectifs et ne pas attribuer à `k_h` un effet
+causal. Expliquer les cœurs vides par les revendications incompatibles des
+coalitions qui se recouvrent, en lien avec le contre-exemple théorique.
 
 **6.5.3 Effet de l'homogénéité des coûts.** Variante à coûts identiques, tous
 les `F_i` égaux et tous les `gamma_i` égaux : vérifier que le corollaire de
 stabilité de Shapley sous homogénéité est satisfait à 100 %, puis mesurer à
-quelle vitesse l'hétérogénéité le détruit.
+quelle vitesse l'hétérogénéité le détruit. Hors du point homogène, présenter
+une fréquence de 100 % comme une observation sur l'échantillon, non comme une
+garantie qui contredirait le contre-exemple théorique.
 
 **6.5.4 Cas représentatifs.** Deux ou trois instances détaillées : une stable,
 une où Shapley est exclue, une à cœur vide si elle existe. Déplaçable en
@@ -407,7 +424,7 @@ plutôt sous-estimés, ce qui suffit pour un premier jeu de résultats.
 
 Un paragraphe. Les instances ne permettent pas d'estimer la distribution réelle
 des gains d'un accord entre MNO colocalisés. Les capacités sont
-contrefactuelles. Une semaine, une saison, une région, un opérateur. Pas de
+simulées. Une semaine, une saison, une région, un opérateur. Pas de
 coût de commutation, pas de qualité de service au-delà de l'écoulement intégral
 du trafic, pas de coûts de transaction ni de contraintes réglementaires.
 

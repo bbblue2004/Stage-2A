@@ -9,6 +9,7 @@ from src.core.game import (
     core_allocation,
     least_core_allocation,
     nucleolus_allocation,
+    nucleolus_allocation_fast,
     shapley_value,
 )
 from src.core.generate_data import OperatorParams, Scenario
@@ -16,6 +17,49 @@ from src.core.simulation import evaluate_period
 
 
 class AllocationProcedureTests(unittest.TestCase):
+    def test_fast_nucleolus_matches_reference_lp_cascade(self) -> None:
+        players = [0, 1, 2, 3]
+        games = (
+            {
+                coalition: float(len(coalition) ** 2)
+                for coalition in [
+                    (), (0,), (1,), (2,), (3,), (0, 1), (0, 2),
+                    (0, 3), (1, 2), (1, 3), (2, 3), (0, 1, 2),
+                    (0, 1, 3), (0, 2, 3), (1, 2, 3), (0, 1, 2, 3),
+                ]
+            },
+            {
+                (): 0.0,
+                (0,): 0.0,
+                (1,): 0.0,
+                (2,): 0.0,
+                (3,): 0.0,
+                (0, 1): 2.0,
+                (0, 2): 1.0,
+                (0, 3): 3.0,
+                (1, 2): 2.5,
+                (1, 3): 1.5,
+                (2, 3): 2.0,
+                (0, 1, 2): 4.0,
+                (0, 1, 3): 4.5,
+                (0, 2, 3): 4.0,
+                (1, 2, 3): 3.5,
+                (0, 1, 2, 3): 5.0,
+            },
+        )
+        for game in games:
+            with self.subTest(grand_value=game[tuple(players)]):
+                reference = nucleolus_allocation(players, game)
+                fast = nucleolus_allocation_fast(players, game)
+                self.assertEqual(reference.status, "Optimal")
+                self.assertEqual(fast.status, "Optimal")
+                for player in players:
+                    self.assertAlmostEqual(
+                        reference.allocation[player],
+                        fast.allocation[player],
+                        places=6,
+                    )
+
     def test_stable_shapley_is_the_default_selected_rule(self) -> None:
         scenario = Scenario(
             operators=[

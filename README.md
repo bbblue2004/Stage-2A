@@ -81,7 +81,10 @@ The individual stages are:
 # Section 6.4: coalition stability
 .venv\Scripts\python.exe -m src.experiments.coalition_stability
 
-# Section 6.5: parameter sensitivity
+# Section 6.5: hourly capacity thresholds and cost homogeneity
+.venv\Scripts\python.exe -m src.experiments.threshold_mechanisms
+
+# Section 6.6: parameter sensitivity
 .venv\Scripts\python.exe -m src.experiments.parameter_sensitivity
 ```
 

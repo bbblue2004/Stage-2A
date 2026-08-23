@@ -508,10 +508,11 @@ Le nucléole appartient toujours au coeur lorsque celui-ci est non vide ;
 Shapley doit être testée au moyen de \eqref{eq:test_shapley_coeur}.
 
 Dans ce travail, Shapley est retenue lorsqu'elle appartient au coeur : elle
-combine alors équité contributive et stabilité coalitionnelle. Sinon, nous
-retenons le nucléole. Si le coeur est non vide, celui-ci fournit une allocation
-stable ; si le coeur est vide, aucune allocation parfaitement stable n'existe
-et le nucléole minimise les objections au meilleur niveau réalisable.
+combine alors équité contributive et stabilité coalitionnelle. Si le coeur
+est non vide mais exclut Shapley, nous retenons le nucléole, qui fournit une
+allocation stable. Si le coeur est vide, le nucléole reste défini et minimise
+les objections, mais il n'est pas interprété comme une prédiction de la
+coalition qui se formera ; l'évaluation traite la rupture séparément.
 
 \subsubsection{Coûts nets et transferts internes}
 

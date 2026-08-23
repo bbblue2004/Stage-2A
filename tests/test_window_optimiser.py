@@ -141,6 +141,24 @@ class WindowOptimiserTests(unittest.TestCase):
             hourly.guardian_masks,
         )
         self.assertEqual(
+            observed.hourly_costs_by_hour_wh.shape,
+            (1 << self.capacities.size, self.demands.shape[1]),
+        )
+        np.testing.assert_allclose(
+            np.sum(observed.hourly_costs_by_hour_wh, axis=1),
+            observed.hourly_costs_wh,
+        )
+        for hour in range(self.demands.shape[1]):
+            np.testing.assert_allclose(
+                observed.hourly_costs_by_hour_wh[:, hour],
+                hourly_coalition_costs(
+                    self.capacities,
+                    self.fixed,
+                    self.slopes,
+                    self.demands[:, hour : hour + 1],
+                ),
+            )
+        self.assertEqual(
             int(observed.persistent_guardian_masks[grand_mask]).bit_count(),
             persistent.num_guardians,
         )
