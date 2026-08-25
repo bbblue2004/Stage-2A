@@ -20,7 +20,6 @@ figures/diagnostics/
 figures/**/*.png
 
 # LaTeX generated files
-paper/main.pdf
 paper/build/
 *.aux
 *.fdb_latexmk
