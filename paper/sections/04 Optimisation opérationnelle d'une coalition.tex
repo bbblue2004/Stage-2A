@@ -41,7 +41,8 @@ r\in\{1,\dots,p\}\ \middle|\
 \sum_{\ell=1}^{r}q_{i_\ell}\geqslant d(S)
 \right\}.
 \]
-La répartition gloutonne \(\mathbf t^g(S,G)\) sature les gardiens précédant
+La répartition gloutonne
+\(\mathbf t^g(S,G)\in\mathbb R_+^N\) sature les gardiens précédant
 le pivot, affecte le trafic résiduel au pivot et laisse nul le trafic des
 gardiens suivants :
 \[
@@ -92,9 +93,13 @@ les \(\gamma_i\) sont distincts, la répartition optimale est unique ; en
 présence d'ex æquo, la règle de départage sélectionne un représentant sans
 modifier le coût.
 
-Une fois les gardiens ordonnés, la répartition est calculée en \(O(|G|)\).
-Le tri initial coûte \(O(|G|\log|G|)\). Ainsi, lorsque l'ensemble des gardiens
-est connu, sa meilleure répartition du trafic est obtenue rapidement et de
+Une fois les gardiens ordonnés, un unique parcours suffit : on cumule leurs
+capacités jusqu'au premier indice \(k\) qui couvre \(d(S)\), puis on affecte
+le reliquat au pivot. Ce parcours visite au plus deux fois chacun des
+\(|G|\) gardiens et coûte donc \(O(|G|)\). Le tri comparatif initial des
+\(\gamma_i\) coûte \(O(|G|\log|G|)\), ce qui domine le parcours ; si cet ordre
+est précalculé, chaque allocation ultérieure reste en \(O(|G|)\). Ainsi,
+lorsque l'ensemble des gardiens est connu, sa meilleure répartition du trafic est obtenue rapidement et de
 manière explicite.
 
 
@@ -266,7 +271,7 @@ et toutes les inégalités de sous-additivité sont des égalités.
 La sous-additivité n'est donc pas toujours stricte. Dans le régime nocturne
 qui nous intéresse, une condition simple garantit au contraire un gain à
 chaque fusion.
-\begin{proposition}[Sous-additivité stricte en régime de faible trafic]
+\begin{proposition}[Sous-additivité stricte en régime de très faible charge]
 \label{cor:sousadd_stricte_faible_trafic}
 Si
 \[
@@ -293,7 +298,7 @@ l'inégalité stricte.
 
 \begin{remarque}[Condition locale plus générale]
 \label{prop:sousadd_stricte_locale}
-La condition de faible trafic est suffisante, mais plus forte que nécessaire.
+La condition de très faible charge est suffisante, mais plus forte que nécessaire.
 Pour deux coalitions disjointes \(A,B\), il suffit qu'à chaque heure il existe
 \[
     \alpha_h\in
@@ -327,7 +332,7 @@ réunie à toutes les heures. Si ce gardien est noté \(\alpha\), alors
 \setminus\{\alpha\}}F_i>0.
 \end{aligned}
 \]
-En particulier, la condition de faible trafic de la proposition précédente rend
+En particulier, la condition de très faible charge de la proposition précédente rend
 également \(C_{H,\mathrm{pers}}^*\) strictement sous-additive.
 \end{remarque}
 
@@ -373,7 +378,7 @@ pour tout \(i\in N\) et \(S\in\mathcal S\). Il est superadditif : pour tous
 \[
     v_H(A\cup B)\geqslant v_H(A)+v_H(B).
 \]
-Sous l'hypothèse du
+Sous l'hypothèse de la
 Proposition~\ref{cor:sousadd_stricte_faible_trafic}, l'inégalité est stricte
 pour \(A,B\in\mathcal S\).
 \end{proposition}
@@ -390,7 +395,7 @@ v_H(A\cup B)-v_H(A)-v_H(B)
 \end{aligned}
 \]
 où la dernière inégalité est précisément la sous-additivité de \(C_H^*\).
-Sous l'hypothèse de faible trafic, cette sous-additivité est stricte.
+Sous l'hypothèse de très faible charge, cette sous-additivité est stricte.
 \end{proof}
 
 \begin{corollaire}[Efficacité globale de la grande coalition]
@@ -399,13 +404,13 @@ Pour toute partition \(\mathcal P\) de \(N\),
 \[
     v_H(N)\geqslant\sum_{S\in\mathcal P}v_H(S).
 \]
-Sous l'hypothèse de faible trafic, l'inégalité est stricte dès que
+Sous l'hypothèse de très faible charge, l'inégalité est stricte dès que
 \(\mathcal P\neq\{N\}\).
 \end{corollaire}
 
 \begin{proof}
 La superadditivité s'applique successivement aux blocs de la partition. Sous
-l'hypothèse de faible trafic, chaque fusion est stricte.
+l'hypothèse de très faible charge, chaque fusion est stricte.
 \end{proof}
 
 La grande coalition crée donc collectivement au moins autant d'économies que

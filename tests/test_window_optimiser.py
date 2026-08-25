@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import unittest
+from itertools import combinations
 
 import numpy as np
 
-from src.core.generate_data import OperatorParams
-from src.core.optimiser import coalition_cost_star
 from src.core.window_optimiser import (
     coalition_window_solutions,
     descending_capacity_hourly_policy,
@@ -16,6 +15,38 @@ from src.core.window_optimiser import (
     proportional_hourly_policy,
     standalone_energy,
 )
+
+
+def _exact_single_hour(
+    capacities: np.ndarray,
+    fixed: np.ndarray,
+    slopes: np.ndarray,
+    demands: np.ndarray,
+    members: list[int],
+) -> tuple[float, tuple[int, ...]]:
+    """Oracle simple, indépendant de l'optimiseur vectorisé testé."""
+    total_demand = float(np.sum(demands[members]))
+    best = (float("inf"), tuple())
+    for size in range(1, len(members) + 1):
+        for guardians in combinations(members, size):
+            if float(np.sum(capacities[list(guardians)])) < total_demand - 1e-9:
+                continue
+            remaining = total_demand
+            variable_cost = 0.0
+            for guardian in sorted(guardians, key=lambda i: (slopes[i], i)):
+                allocation = min(float(capacities[guardian]), remaining)
+                variable_cost += float(slopes[guardian]) * allocation
+                remaining -= allocation
+            candidate = float(np.sum(fixed[list(guardians)])) + variable_cost
+            if (candidate, len(guardians), guardians) < (
+                best[0],
+                len(best[1]),
+                best[1],
+            ):
+                best = (candidate, guardians)
+    if not best[1]:
+        raise ValueError("No feasible guardian set")
+    return best
 
 
 class WindowOptimiserTests(unittest.TestCase):
@@ -67,18 +98,12 @@ class WindowOptimiserTests(unittest.TestCase):
 
     def test_single_hour_matches_existing_exact_optimiser(self) -> None:
         demands = self.demands[:, :1]
-        expected_cost, expected_guardians, _ = coalition_cost_star(
+        expected_cost, expected_guardians = _exact_single_hour(
+            self.capacities,
+            self.fixed,
+            self.slopes,
+            demands[:, 0],
             [0, 1, 2, 3],
-            [
-                OperatorParams(
-                    str(index),
-                    self.capacities[index],
-                    self.fixed[index],
-                    self.slopes[index],
-                )
-                for index in range(4)
-            ],
-            {index: float(demands[index, 0]) for index in range(4)},
         )
         observed = optimal_hourly_policy(
             self.capacities, self.fixed, self.slopes, demands
@@ -95,28 +120,18 @@ class WindowOptimiserTests(unittest.TestCase):
         )
         self.assertEqual(observed.shape, (16,))
         self.assertEqual(observed[0], 0.0)
-        operators = [
-            OperatorParams(
-                str(index),
-                self.capacities[index],
-                self.fixed[index],
-                self.slopes[index],
-            )
-            for index in range(4)
-        ]
         for mask in range(1, 16):
             coalition = [
                 index for index in range(4) if mask & (1 << index)
             ]
             expected = 0.0
             for hour in range(self.demands.shape[1]):
-                expected += coalition_cost_star(
+                expected += _exact_single_hour(
+                    self.capacities,
+                    self.fixed,
+                    self.slopes,
+                    self.demands[:, hour],
                     coalition,
-                    operators,
-                    {
-                        index: float(self.demands[index, hour])
-                        for index in range(4)
-                    },
                 )[0]
             self.assertAlmostEqual(observed[mask], expected)
 

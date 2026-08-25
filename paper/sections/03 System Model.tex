@@ -58,12 +58,13 @@ associées sont introduites dans les sous-sections suivantes.
     \item \textbf{États opérationnels binaires.}
     Chaque équipement est soit actif et susceptible d'acheminer du
     trafic, soit en veille et n'en achemine aucun. Les délais et coûts de
-    transition entre ces états sont négligés, ce qui correspond à une
-    heure de décision suffisamment longue devant les temps de
+    transition entre ces états sont négligés, ce qui correspond à un
+    créneau de décision suffisamment long par rapport aux temps de
     commutation. Seuls les coûts opérationnels évitables sont modélisés ;
     les coûts structurels supportés indépendamment de l'état de
-    l'équipement sont exclus. Dans cette étude, l'état de veille est supposé
-    consommer \(0\ \mathrm{W}\).
+    l'équipement sont exclus. Dans le modèle de référence, l'état de veille
+    est supposé consommer \(0\ \mathrm{W}\) ; cette hypothèse est relâchée dans
+    l'analyse de sensibilité.
 
     \item \textbf{Coût opérationnel affine en taux de charge.}
     Lorsqu'un équipement est actif, son coût opérationnel évitable est
@@ -243,18 +244,21 @@ gardiens faisable vérifie \(|G|\geqslant k(S)\) ; en particulier l'ensemble de
 coût minimal en compte au moins autant, et généralement davantage lorsqu'il
 est avantageux d'allumer un équipement supplémentaire peu coûteux. Sur la
 fenêtre, on note \(k_h(S)\) la valeur de \(k(S)\) à l'heure \(h\), et l'on
-abrège \(k_h:=k_h(N)\). Le cas \(k_h=1\) signifie qu'un seul équipement peut
-absorber toute la demande du site, situation dont la
-Section~\ref{sec:jeu_cooperatif} montre qu'elle est particulièrement favorable
-à la stabilité.
+abrège \(k_h:=k_h(N)\). Le cas \(k_h=1\) signifie qu'au moins un équipement
+peut absorber toute la demande du site. Il ne doit pas être confondu avec la
+condition plus forte \(\rho_{\max}^h(N)\leqslant1\), définie ci-dessous, qui
+exige que chacun des équipements puisse l'absorber seul.
 
 
 \begin{definition}[Vecteur de répartition du trafic admissible]
-Soit $(S,G)\in\mathcal E$. Un \textit{vecteur de répartition du trafic}
-est un vecteur $\mathbf t=(t_i)_{i\in N}\in\mathbb R_+^N$, où
-$t_i$ désigne le volume de trafic, exprimé en \(\mathrm{Go}\), acheminé par
-l'équipement de l'opérateur $i$. L'ensemble des répartitions admissibles
-pour $(S,G)$ est
+Soit $(S,G)\in\mathcal E$. Un \textit{vecteur de répartition du trafic de
+la coalition \(S\)} est un vecteur
+$\mathbf t=\mathbf t^S=(t_i^S)_{i\in N}\in\mathbb R_+^N$, où
+$t_i^S$ désigne le volume de la demande totale \(d(S)\) acheminé par
+l'équipement de l'opérateur $i$. L'indice \(i\) identifie ici
+l'équipement porteur, et non l'origine du trafic. Dans la définition
+ci-dessous et dans la suite, l'exposant \(S\) est omis pour alléger les
+notations. L'ensemble des répartitions admissibles pour $(S,G)$ est
 \[
 \mathcal T(S,G):=
 \left\{
@@ -268,6 +272,13 @@ pour $(S,G)$ est
 \]
 \end{definition}
 
+Le vecteur est indexé par \(N\) uniquement pour conserver une dimension
+commune à toutes les coalitions. La contrainte \(t_i^S=0\) pour \(i\notin G\)
+signifie que l'équipement \(i\) n'achemine aucun trafic de \(S\). Elle ne
+pose pas \(d_i=0\) pour \(i\in N\setminus S\) : les demandes de ces
+opérateurs n'appartiennent simplement pas au problème opérationnel de \(S\)
+et sont traitées indépendamment.
+
 Pour toute répartition \(\mathbf t\in\mathcal T(S,G)\), le vecteur des
 \textbf{taux de charge} est \(\boldsymbol\rho(\mathbf t)\in[0,1]^N\), avec
 \[
@@ -275,6 +286,23 @@ Pour toute répartition \(\mathbf t\in\mathcal T(S,G)\), le vecteur des
 \]
 En particulier, \(\rho_i(\mathbf t)=0\) pour \(i\notin G\), tandis que
 \(\rho_i(\mathbf t)=1\) caractérise un équipement saturé.
+
+Pour qualifier rigoureusement le régime de charge, on pose en outre, à
+l'heure arbitraire considérée,
+\[
+    \rho_{\max}(S)
+    :=\max_{i\in S}\frac{d(S)}{q_i}
+    =\frac{d(S)}{\min_{i\in S}q_i}.
+\]
+Cette grandeur mesure la charge que subirait l'équipement le moins
+capacitaire de \(S\) s'il devait servir seul toute la coalition. Nous parlons
+d'\textbf{heure de très faible charge} pour \(S\) lorsque
+\(\rho_{\max}(S)\leqslant1\), c'est-à-dire lorsque chacun de ses
+équipements peut absorber seul \(d(S)\). Dans le cas contraire, nous
+parlons seulement d'heure hors de ce régime ; le terme « heure pleine » ne
+signifierait pas que tous les équipements sont saturés. Cette définition,
+fondée sur la charge plutôt que sur l'heure civile, sera distinguée de la
+fenêtre nocturne \(H\) choisie pour l'évaluation.
 
 
 \subsection{Coût opérationnel et solution optimale}
@@ -295,7 +323,7 @@ C(S,G , \mathbf{t})
 \begin{definition}[Coût minimal d'une coalition]
 Soit $S\in \mathcal S$. On définit le coût minimal de $S$ par
 \[
-C^{*}(S)=\min_{G \in\mathcal{G}(S)}\min_{\mathbf{t}\in\mathcal T(S, G)}C(S, G, \mathbf{t}).
+C^{*}(S):=\min_{G \in\mathcal{G}(S)}\min_{\mathbf{t}\in\mathcal T(S, G)}C(S, G, \mathbf{t}).
 \]
 Il s'agit du plus faible coût opérationnel que la coalition \(S\) puisse
 atteindre en choisissant des gardiens et une répartition du trafic admissibles.
@@ -324,6 +352,8 @@ Pour tout \(h\in H\) et tout \(S\in\mathcal S\), posons
 \[
     d^h(S):=\sum_{i\in S}d_i^h.
 \]
+Le critère horaire correspondant est noté
+\(\rho_{\max}^h(S):=d^h(S)/\min_{i\in S}q_i\).
 La demande cumulée sur la fenêtre est notée
 \[
     D_i:=\sum_{h\in H}d_i^h,

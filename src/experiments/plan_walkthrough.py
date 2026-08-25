@@ -78,8 +78,25 @@ def _plot_walkthrough(
     reference = int(blueprints.reference_index[site_index])
     peaks = site.peak_traffic_gb
 
+    day_ticks = 12 + 24 * np.arange(n_days)
+    day_labels = [f"jour {day + 1}" for day in range(n_days)]
+
     figure, axes = plt.subplots(2, 3, figsize=(14.5, 7.0))
-    for column, (level, title) in enumerate(SHAPE_LEVELS):
+    axes[0, 0].plot(
+        slots,
+        population.traffic_gb[reference].reshape(-1),
+        color=COLOURS[0],
+        linewidth=1.0,
+    )
+    axes[0, 0].set_title("(a) trafic mesuré de la référence", fontsize=10.0)
+    axes[0, 0].set_ylabel("trafic (Go)")
+    axes[0, 0].set_xlabel("jour observé")
+    axes[0, 0].set_xticks(day_ticks, day_labels, rotation=45, ha="right", fontsize=7)
+
+    shape_axes = (axes[0, 1], axes[0, 2], axes[1, 0])
+    for panel_index, ((level, title), axis) in enumerate(
+        zip(SHAPE_LEVELS, shape_axes, strict=True), start=1
+    ):
         level_site = materialize_site(
             blueprints,
             site_index,
@@ -89,29 +106,19 @@ def _plot_walkthrough(
         )
         shapes = _operator_shapes(level_site)
         for operator, colour in enumerate(COLOURS):
-            axes[0, column].plot(
+            axis.plot(
                 clock,
                 _daily_mean(shapes[operator]),
                 color=colour,
                 linewidth=1.35,
                 label=f"opérateur {operator + 1}",
             )
-        panel = "abc"[column]
-        axes[0, column].set_title(f"({panel}) {title}", fontsize=10.0)
-        axes[0, column].set_xlabel("heure de la journée")
-        axes[0, column].set_xticks((0, 6, 12, 18, 23))
-    axes[0, 0].set_ylabel("trafic normalisé (moyenne 1)")
-    axes[0, 0].legend(fontsize=7.0, loc="upper left")
-
-    axes[1, 0].plot(
-        slots,
-        population.traffic_gb[reference].reshape(-1),
-        color=COLOURS[0],
-        linewidth=1.0,
-    )
-    axes[1, 0].set_title("(d) trafic mesuré de la référence", fontsize=10.0)
-    axes[1, 0].set_ylabel("trafic (Go/h)")
-    axes[1, 0].set_xlabel("créneau depuis le début")
+        panel = "bcd"[panel_index - 1]
+        axis.set_title(f"({panel}) {title}", fontsize=10.0)
+        axis.set_xlabel("heure de la journée")
+        axis.set_xticks((0, 6, 12, 18, 23))
+        axis.set_ylabel("trafic normalisé (moyenne 1)")
+    axes[0, 1].legend(fontsize=7.0, loc="upper left")
 
     for operator, colour in enumerate(COLOURS):
         axes[1, 1].plot(
@@ -122,8 +129,9 @@ def _plot_walkthrough(
             label=f"opérateur {operator + 1}",
         )
     axes[1, 1].set_title("(e) demandes construites", fontsize=10.0)
-    axes[1, 1].set_ylabel("trafic (Go/h)")
-    axes[1, 1].set_xlabel("créneau depuis le début")
+    axes[1, 1].set_ylabel("trafic (Go)")
+    axes[1, 1].set_xlabel("jour observé")
+    axes[1, 1].set_xticks(day_ticks, day_labels, rotation=45, ha="right", fontsize=7)
 
     for operator, colour in enumerate(COLOURS):
         relative = site.traffic_gb[operator] / peaks[operator]
@@ -174,7 +182,7 @@ def _print_values(site, population, blueprints, site_index: int, rate: float) ->
     capacities = campaign_a_capacities(site.peak_traffic_gb, rate)
     print(f"plan: {site.site_id}")
     print(f"référence: {site.reference_id}")
-    print(f"trafic moyen de référence: {site.mu_gb:.4f} Go/h")
+    print(f"trafic moyen de référence: {site.mu_gb:.4f} Go")
     print("donneuses: " + ", ".join(site.donor_ids))
     print("équipements: " + ", ".join(site.energy_ids))
     for operator in range(site.alpha.size):
@@ -183,9 +191,9 @@ def _print_values(site, population, blueprints, site_index: int, rate: float) ->
             f"corrélation={correlations[operator]:.3f}, "
             f"P_fixe={site.p_fixed_w[operator]:.1f} W, "
             f"pente={site.slope_w_per_gb[operator]:.2f} W/Go, "
-            f"moyenne={site.traffic_gb[operator].mean():.2f} Go/h, "
-            f"pic={site.peak_traffic_gb[operator]:.2f} Go/h, "
-            f"capacité={capacities[operator]:.2f} Go/h"
+            f"moyenne={site.traffic_gb[operator].mean():.2f} Go, "
+            f"pic={site.peak_traffic_gb[operator]:.2f} Go, "
+            f"capacité={capacities[operator]:.2f} Go"
         )
 
 

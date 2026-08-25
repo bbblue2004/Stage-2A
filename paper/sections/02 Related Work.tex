@@ -11,7 +11,7 @@ trafic sur l'infrastructure restée active \cite{marsan2011}. Ces travaux
 stabilité de l'accord entre opérateurs concurrents.
 
 La quantification de ces économies dépend du modèle de puissance des stations
-de base. Les modèles au niveau équipement distinguent une composante statique,
+de base. Les modèles à l'échelle de l'équipement distinguent une composante statique,
 présente dès que la station est active, et une composante dynamique dépendant
 de sa charge. Arnold et al. relient ces composantes à l'amplification de
 puissance, au traitement du signal, à l'alimentation et au refroidissement
@@ -77,16 +77,15 @@ cœur du jeu à utilité transférable associé à la grande coalition.
 
 Koutitas et al. sont les plus proches du présent travail : ils associent
 capacités, décisions de mise en veille, coûts énergétiques et jeu coopératif
-d'économies \cite{koutitas2016}. Pour une station active \(n\), ils écrivent
-la puissance comme une
-fonction affine \(a_n U_n(t)+b_n\) du nombre d'utilisateurs servis, où \(b_n\)
-est la consommation à vide et \(a_n\) le coût marginal d'un utilisateur. Sous
+d'économies \cite{koutitas2016}. Pour une station active \(j\), ils écrivent
+la puissance comme une fonction affine \(a_j U_j(t)+b_j\) du nombre
+d'utilisateurs servis, où \(b_j\) est la consommation à vide et \(a_j\) le
+coût marginal d'un utilisateur. Sous
 l'hypothèse d'un trafic moyen identique par utilisateur, le trafic est
 proportionnel au nombre d'utilisateurs, ce qui rend cette puissance affine en
 trafic. L'agrégation des stations d'un opérateur produit alors un coût fixe
-d'ouverture et un coût
-linéaire de service, qui conduisent à une formulation de type
-\emph{facility location}. Nous conservons cette structure à coût fixe, mais
+d'ouverture et un coût linéaire de service, qui conduisent à une formulation
+de localisation d'installations (\emph{facility location}). Nous conservons cette structure à coût fixe, mais
 estimons ses coefficients équipement par équipement à partir de couples de
 trafic et de puissance mesurés sur un réseau opérationnel, sans reconstruire
 un nombre synthétique d'utilisateurs. Dans leur traitement, Koutitas et al.
@@ -95,8 +94,8 @@ valeur de Shapley. Leur algorithme autorise toutefois l'ouverture d'une
 infrastructure pendant une fraction du créneau. Cette divisibilité lisse le
 coût d'ouverture, tandis que notre modèle impose une activation binaire et
 indivisible à chaque heure ; l'engagement commun des gardiens sur plusieurs
-heures est analysé comme une extension plus contrainte.
-Le franchissement d'un seuil de capacité peut alors imposer instantanément le
+heures est analysé comme une extension plus contrainte. Le franchissement
+d'un seuil de capacité peut alors imposer instantanément le
 coût fixe d'un gardien supplémentaire. Oikonomakou et al.
 étudient également le partage des coûts de mise en veille, d'abord comme un
 jeu de faillite \cite{oikonomakou2015}, puis au moyen de la valeur de Shapley
@@ -112,8 +111,8 @@ qu'une règle peut être équitable, ou qu'une coalition peut être stable sous
 un modèle donné. Ils ne permettent pas d'inférer que tout problème de mise en
 veille multi-opérateur produit un jeu équilibré. Notre apport porte sur cette
 limite précise : avec des activations binaires, des capacités contraignantes
-et des gardiens reconfigurables à chaque heure, les économies demeurent superadditives
-mais peuvent ne soutenir aucune allocation dans le cœur. Le contraste avec le
+et des gardiens reconfigurables à chaque heure, les économies demeurent
+superadditives mais peuvent ne soutenir aucune allocation dans le cœur. Le contraste avec le
 cadre divisible de Koutitas et al. tient donc à un mécanisme opérationnel
 précis : l'activation indivisible transforme les seuils de capacité en coûts
 fixes discontinus et en économies par paliers. Nous déterminons les effets de

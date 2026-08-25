@@ -31,6 +31,18 @@ contributions marginales moyennes des opérateurs
 \left[v_H(A\cup\{i\})-v_H(A)\right].
 \]
 
+Ce choix ne suppose pas que Shapley soit l'unique conception possible de la
+justice. Sa justification normative est précise : c'est l'unique valeur qui
+combine efficacité, symétrie entre joueurs équivalents, nullité de la part
+d'un joueur sans contribution marginale et additivité des jeux
+\cite{shapley1953value}. Ces axiomes conduisent à une équité
+\emph{contributive}, fondée sur les contributions marginales moyennes. Une
+répartition égale, proportionnelle au trafic ou issue d'une négociation
+exprimerait d'autres critères légitimes. Le cœur, de son côté, est un critère
+de stabilité et non une définition de la justice. Nous testons donc Shapley
+comme règle contributive de référence, sans l'identifier à une notion
+universelle de partage juste.
+
 Une condition classique suffit à relier cette règle à la stabilité.
 
 \begin{definition}[Jeu convexe]
@@ -45,8 +57,8 @@ v_H(A\cup B)+v_H(A\cap B).
 
 \begin{proposition}[Convexité et stabilité de Shapley]
 \label{prop:shapley_coeur_convexe}
-Si le jeu $v_H$ est convexe, alors son coeur est non vide et sa valeur de
-Shapley appartient au coeur \cite{shapley1971convex}.
+Si le jeu $v_H$ est convexe, alors son cœur est non vide et sa valeur de
+Shapley appartient au cœur \cite{shapley1971convex}.
 \end{proposition}
 
 On a ainsi la hiérarchie
@@ -60,7 +72,7 @@ v_H\ \text{convexe}
 Les deux résultats suivants montrent que le modèle ne bénéficie en général
 d'aucune de ces garanties, bien que son jeu soit superadditif.
 
-\subsubsection{Un coeur peut être vide}
+\subsubsection{Un cœur peut être vide}
 
 \begin{proposition}[Superadditivité sans stabilité]
 \label{prop:contre_exemple_coeur_vide}
@@ -74,7 +86,7 @@ et les demandes
     (d_1,d_2,d_3,d_4)=(1,3,4,5).
 \]
 Le jeu $v_H$ est superadditif, mais il n'est pas convexe et son
-coeur est vide.
+cœur est vide.
 \end{proposition}
 
 \begin{proof}
@@ -108,7 +120,7 @@ donnerait
     \sum_{i\in N}z(N\setminus\{i\})
     \geqslant4,
 \]
-alors que l'efficacité impose \(3z(N)=3\). Le coeur est donc vide.
+alors que l'efficacité impose \(3z(N)=3\). Le cœur est donc vide.
 \end{proof}
 
 Le mécanisme est le suivant. Les activations indivisibles font varier les
@@ -118,7 +130,7 @@ revendications se recouvrent et excèdent ensemble le surplus disponible. La
 superadditivité garantit donc l'efficacité de la grande coalition, mais pas
 l'existence d'une répartition stable de sa valeur.
 
-\subsubsection{Un coeur non vide peut exclure Shapley}
+\subsubsection{Un cœur non vide peut exclure Shapley}
 
 \begin{proposition}[Non-stabilité possible de Shapley]
 \label{prop:shapley_hors_coeur_semi_homogene}
@@ -156,26 +168,26 @@ Soit \(z\in\mathcal C(N,v_H)\). Les contraintes de \(N\) et de
 \qquad z_2\geqslant1.
 \]
 Comme \(z(N)=2\) et \(z_i\geqslant0\), on obtient nécessairement
-\(z=(1,1,0,0)\), qui satisfait toutes les contraintes du coeur. Ainsi,
+\(z=(1,1,0,0)\), qui satisfait toutes les contraintes du cœur. Ainsi,
 \(\mathcal C(N,v_H)=\{(1,1,0,0)\}\).
 
 L'application directe de la formule de Shapley aux valeurs précédentes donne
 \[
     \phi(v_H)=\left(\frac23,\frac23,\frac12,\frac16\right).
 \]
-Ce vecteur étant distinct de \((1,1,0,0)\), il n'appartient pas au coeur.
+Ce vecteur étant distinct de \((1,1,0,0)\), il n'appartient pas au cœur.
 \end{proof}
 
 Ces deux exemples distinguent les questions étudiées dans la suite. La
 première est l'existence même d'une allocation stable ; la seconde est
-l'appartenance au coeur d'une allocation particulière.
+l'appartenance au cœur d'une allocation particulière.
 
 \subsection{Diagnostic exact de la stabilité}
 \label{subsubsec:bondareva_shapley}
 
-\subsubsection{Existence du coeur}
+\subsubsection{Existence du cœur}
 
-La caractérisation nécessaire et suffisante de la non-vacuité du coeur
+La caractérisation nécessaire et suffisante de la non-vacuité du cœur
 repose sur les familles équilibrées
 \cite{bondareva1963,shapley1967balanced}.
 
@@ -193,7 +205,7 @@ Une famille de poids \((\lambda_Q)_{Q\in\mathcal S}\) est dite équilibrée si
 
 \begin{theorem}[Bondareva--Shapley]
 \label{thm:bondareva_shapley}
-Le coeur $\mathcal C(N,v_H)$ est non vide si et seulement si, pour toute
+Le cœur $\mathcal C(N,v_H)$ est non vide si et seulement si, pour toute
 famille équilibrée $(\lambda_Q)$,
 \[
     \sum_{Q\in\mathcal S}\lambda_Qv_H(Q)
@@ -201,7 +213,7 @@ famille équilibrée $(\lambda_Q)$,
 \]
 \end{theorem}
 
-L'existence d'une allocation du coeur peut être testée directement par le
+L'existence d'une allocation du cœur peut être testée directement par le
 programme linéaire de faisabilité
 \begin{equation}
 \label{eq:lp_faisabilite_coeur}
@@ -217,7 +229,7 @@ programme linéaire de faisabilité
 Les contraintes des singletons imposent directement
 \(z_i\geqslant v_H(\{i\})=0\).
 
-\begin{remarque}[Complexité du test exact du coeur]
+\begin{remarque}[Complexité du test exact du cœur]
 Une fois la table des valeurs \(v_H(S)\) calculée, le programme
 \eqref{eq:lp_faisabilite_coeur} comporte \(n\) variables, une contrainte
 d'efficacité et \(2^n-2\) contraintes coalitionnelles. Sa résolution est
@@ -225,9 +237,9 @@ polynomiale dans la taille de cette représentation explicite du jeu, mais pas
 en \(n\), puisque cette représentation est exponentielle. Le calcul préalable
 des valeurs de toutes les coalitions par énumération requiert
 \(O(|H|n3^n)\) opérations, d'après la
-Proposition~\ref{prop:complexite_enumeration}. Pour les instances principales
-à quatre opérateurs et l'extension jusqu'à six opérateurs, le test comporte au
-plus \(62\) contraintes coalitionnelles et reste de taille modeste.
+Proposition~\ref{prop:complexite_enumeration}. Pour les instances étudiées à
+trois ou quatre opérateurs, le test comporte au plus \(14\) contraintes
+coalitionnelles et reste de taille modeste.
 \end{remarque}
 
 La formulation équilibrée équivalente est
@@ -253,12 +265,12 @@ Théorème~\ref{thm:bondareva_shapley} donne alors
     \quad\Longleftrightarrow\quad
     B_H(N)=v_H(N).
 \]
-Ainsi, \(B_H(N)>v_H(N)\) certifie directement que le coeur est vide.
+Ainsi, \(B_H(N)>v_H(N)\) certifie directement que le cœur est vide.
 
 La famille équilibrée formée des coalitions auxquelles manque un seul
 opérateur donne un certificat particulièrement simple.
 
-\begin{proposition}[Certificat leave-one-out]
+\begin{proposition}[Certificat par retrait d'un opérateur]
 \label{prop:certificat_leave_one_out}
 Supposons $n\geqslant3$ et posons
 \begin{equation}
@@ -295,7 +307,7 @@ On a exactement
     \quad\Longleftrightarrow\quad
     E_{\mathrm{Sh},H}(N)\leqslant0.
 \end{equation}
-Le test du coeur et le test de Shapley répondent donc à deux questions
+Le test du cœur et le test de Shapley répondent donc à deux questions
 successives : une allocation stable existe-t-elle, puis Shapley en est-elle
 une ?
 \subsection{Conditions structurelles de stabilité}
@@ -305,7 +317,7 @@ coalitions. Nous considérons maintenant des restrictions motivées par le
 modèle opérationnel afin d'isoler les mécanismes qui favorisent ou empêchent
 la stabilité.
 
-\subsubsection{Très faible trafic}
+\subsubsection{Très faible charge}
 \label{subsec:shapley_tres_faible_trafic}
 
 La Proposition~\ref{cor:sousadd_stricte_faible_trafic} montre déjà que la
@@ -323,18 +335,18 @@ opérateurs à chaque heure :
     \forall h\in H,\qquad
     d^h(N)\leqslant \min_{i\in N}q_i.
 \]
-Alors le coeur du jeu \((N,v_H)\) est non vide.
+Alors le cœur du jeu \((N,v_H)\) est non vide.
 \end{theorem}
 
 \emph{Démonstration : voir l'Annexe~\ref{app:preuve_capacite_fenetre}.}
 
-La réduction à un gardien garantit donc la non-vacuité du coeur, mais pas à
+La réduction à un gardien garantit donc la non-vacuité du cœur, mais pas à
 elle seule la stabilité de toute règle de partage. Sous homogénéité des coûts,
 elle donne toutefois une conclusion explicite pour Shapley.
 
 \begin{remarque}[Absence de garantie pour Shapley sans homogénéité]
 Sans homogénéité des coûts, la condition du théorème ne garantit pas que
-Shapley appartienne au coeur. Considérons la fenêtre
+Shapley appartienne au cœur. Considérons la fenêtre
 \(H=\{h\}\), \(N=\{1,2,3\}\), et
 \[
 \forall i\in N,\qquad d_i=1,\qquad q_i=3,\qquad \gamma_i=1,
@@ -346,7 +358,7 @@ La condition du théorème est satisfaite. Un calcul direct donne
 \qquad
 \phi_1(v_H)+\phi_3(v_H)=\frac{23}{6}<4=v_H(\{1,3\}).
 \]
-La valeur de Shapley n'appartient donc pas au coeur.
+La valeur de Shapley n'appartient donc pas au cœur.
 \end{remarque}
 
 \begin{corollaire}[Stabilité de Shapley sous homogénéité des coûts]
@@ -372,7 +384,7 @@ Lorsque les capacités et les coûts sont communs, le coût variable s'annule
 dans les économies de coopération : celles-ci dépendent uniquement du nombre
 entier de gardiens requis. Si les demandes sont elles aussi homogènes, ce
 nombre ne dépend plus que de la taille de la coalition, ce qui fournit une
-caractérisation exacte du coeur.
+caractérisation exacte du cœur.
 
 \begin{proposition}[Caractérisation du cas parfaitement homogène]
 \label{prop:coeur_cas_homogene}
@@ -388,7 +400,7 @@ Supposons \(q_i=q\), \(F_i=F>0\) et \(\gamma_i=\gamma\) pour tout
     \qquad s=1,\ldots,n-1.
 \]
 La valeur de Shapley et le nucléole attribuent tous deux \(v_{H,n}/n\) à
-chaque opérateur. Cette allocation appartient au coeur exactement lorsque les
+chaque opérateur. Cette allocation appartient au cœur exactement lorsque les
 inégalités précédentes sont satisfaites.
 \end{proposition}
 
@@ -413,14 +425,14 @@ Les résultats précédents conduisent à distinguer le diagnostic de stabilité
 du choix de la répartition. Shapley sert de règle de référence parce qu'elle
 attribue les économies selon les contributions marginales moyennes et traite
 symétriquement les opérateurs équivalents \cite{shapley1953value}. Elle est
-retenue lorsqu'elle satisfait les contraintes du coeur. Dans les autres cas,
-le moindre coeur mesure l'instabilité inévitable et le nucléole fournit une
+retenue lorsqu'elle satisfait les contraintes du cœur. Dans les autres cas,
+le moindre cœur mesure l'instabilité inévitable et le nucléole fournit une
 règle de partage définie dans tous les régimes.
 
-\subsubsection{Moindre coeur et nucléole}
+\subsubsection{Moindre cœur et nucléole}
 \label{subsubsec:nucleole}
 
-Le moindre coeur mesure la plus faible relaxation uniforme des contraintes de
+Le moindre cœur mesure la plus faible relaxation uniforme des contraintes de
 stabilité. Le nucléole affine ce critère en départageant les allocations selon
 l'ensemble de leurs objections coalitionnelles \cite{schmeidler1969}. Ces
 outils sont appliqués ici sans modification méthodologique.
@@ -434,7 +446,7 @@ Pour une allocation $z\in\mathcal A(N,v_H)$ et
 \end{definition}
 
 Un excès positif signifie que la coalition $Q$ pourrait obtenir davantage
-en quittant la grande coalition. Une allocation appartient au coeur si et
+en quittant la grande coalition. Une allocation appartient au cœur si et
 seulement si tous ses excès sont négatifs ou nuls.
 
 La plus petite valeur uniforme permettant de satisfaire les coalitions est
@@ -459,10 +471,10 @@ Si $\varepsilon^*$ désigne sa valeur optimale, alors
 \quad\Longleftrightarrow\quad
 \varepsilon^*\leqslant0.
 \]
-Lorsque $\varepsilon^*>0$, le coeur est vide et $\varepsilon^*$ mesure la
+Lorsque $\varepsilon^*>0$, le cœur est vide et $\varepsilon^*$ mesure la
 plus petite violation maximale inévitable des contraintes coalitionnelles.
 
-\begin{corollaire}[Borne leave-one-out du moindre coeur]
+\begin{corollaire}[Borne du moindre cœur par retrait d'un opérateur]
 \label{cor:borne_leave_one_out}
 Sous les hypothèses de la
 Proposition~\ref{prop:certificat_leave_one_out},
@@ -475,7 +487,7 @@ Proposition~\ref{prop:certificat_leave_one_out},
 
 \emph{Démonstration : voir l'Annexe~\ref{app:preuve_borne_leave_one_out}.}
 
-Le moindre coeur contrôle uniquement la plus grande objection et peut donc
+Le moindre cœur contrôle uniquement la plus grande objection et peut donc
 contenir plusieurs allocations. Le nucléole lève cette indétermination : une
 fois la plus grande objection minimisée, il minimise successivement les
 suivantes.
@@ -491,9 +503,9 @@ lexicographique \cite{schmeidler1969}.
 
 \begin{proposition}[Propriétés du nucléole]
 \label{prop:proprietes_nucleole}
-Le nucléole existe et est unique. Si le coeur du jeu est non vide, le
-nucléole lui appartient. Si le coeur est vide, le nucléole appartient au
-moindre coeur et fournit la répartition qui minimise lexicographiquement les
+Le nucléole existe et est unique. Si le cœur du jeu est non vide, le
+nucléole lui appartient. Si le cœur est vide, le nucléole appartient au
+moindre cœur et fournit la répartition qui minimise lexicographiquement les
 objections des coalitions, sans rétablir une stabilité exacte devenue
 impossible \cite{schmeidler1969}.
 \end{proposition}
@@ -504,13 +516,14 @@ impossible \cite{schmeidler1969}.
 La valeur de Shapley et le nucléole répondent à deux objectifs distincts :
 Shapley répartit la valeur selon les contributions marginales moyennes, tandis
 que le nucléole minimise lexicographiquement les objections coalitionnelles.
-Le nucléole appartient toujours au coeur lorsque celui-ci est non vide ;
+Le nucléole appartient toujours au cœur lorsque celui-ci est non vide ;
 Shapley doit être testée au moyen de \eqref{eq:test_shapley_coeur}.
 
-Dans ce travail, Shapley est retenue lorsqu'elle appartient au coeur : elle
-combine alors équité contributive et stabilité coalitionnelle. Si le coeur
+Dans ce travail, Shapley est retenue lorsqu'elle appartient au cœur : elle
+combine alors le critère contributif retenu et la stabilité coalitionnelle,
+sans que ce choix exclue d'autres conventions de justice. Si le cœur
 est non vide mais exclut Shapley, nous retenons le nucléole, qui fournit une
-allocation stable. Si le coeur est vide, le nucléole reste défini et minimise
+allocation stable. Si le cœur est vide, le nucléole reste défini et minimise
 les objections, mais il n'est pas interprété comme une prédiction de la
 coalition qui se formera ; l'évaluation traite la rupture séparément.
 

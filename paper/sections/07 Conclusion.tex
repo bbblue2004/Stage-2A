@@ -16,23 +16,28 @@ demande assure un cœur non vide, tandis que la stabilité de Shapley requiert
 coûts dans ce régime.
 
 Sur les instances semi-empiriques construites à partir de mesures de réseau,
-l'optimum horaire évite une médiane de \(73{,}7\,\%\) de l'énergie autonome.
-Imposer les mêmes gardiens sur toute la nuit coûte une médiane de \(3{,}2\)
-points d'économie. Parmi \(58\,800\) jeux horaires, Shapley est stable dans
-\(86{,}8\,\%\) des cas et le cœur est vide dans \(5{,}7\,\%\). Sur les jeux
-agrégés de la sensibilité, cette dernière fréquence tombe à \(0{,}17\,\%\),
-car les gains de différentes heures peuvent compenser leurs contraintes.
-Parmi les facteurs testés, la position de la fenêtre influe le plus sur
-l'économie, devant la consommation des équipements inactifs ; la stabilité
-nocturne de Shapley varie moins. Ces résultats ne constituent pas une observation
-directe d'accords multi-opérateurs réels, mais montrent que la distinction
-entre efficacité, flexibilité temporelle et stabilité reste quantitativement
-pertinente.
+l'optimum horaire évite environ les trois quarts de l'énergie autonome dans
+la configuration de référence. Une allocation du trafic proportionnelle aux
+capacités des gardiens optimaux reproduit presque cette performance : dans la
+plupart des heures nocturnes, un seul gardien suffit et le choix des
+équipements actifs importe alors davantage que le détail de la répartition.
+En revanche, imposer les mêmes gardiens sur toute la nuit réduit sensiblement
+le gain lorsque la charge varie. L'analyse coalitionnelle confirme que
+Shapley fournit le plus souvent un partage stable, sans que cette stabilité
+soit universelle. Agréger les règlements sur une nuit ou une semaine rend les
+cœurs vides beaucoup plus rares, car les contraintes issues de différentes
+heures peuvent se compenser.
 
-Le partage du RAN doit ainsi être évalué à la fois par l'énergie qu'il
-économise et par la possibilité de répartir cette économie de manière stable.
+Les capacités restent simulées et ces résultats ne constituent pas une
+observation directe d'accords multi-opérateurs réels. Ils montrent néanmoins
+que l'efficacité énergétique,
+la flexibilité temporelle et la stabilité du partage doivent être évaluées
+conjointement. La position de la fenêtre de décision et la consommation
+résiduelle en veille figurent notamment parmi les facteurs les plus influents
+dans les scénarios testés.
+
 L'extension à l'incertitude du trafic, aux coûts de transition et aux
-interactions multisites constitue une suite naturelle de ce travail. Une autre
-piste consiste à étudier des horizons de règlement plus longs : ils pourraient
-favoriser la stabilité de Shapley par agrégation, au prix d'une exposition
-temporaire accrue des opérateurs fréquemment gardiens.
+interactions multisites constitue une suite naturelle de ce travail. Des
+horizons de règlement plus longs méritent également d'être étudiés : ils
+pourraient favoriser la stabilité de Shapley par agrégation, au prix d'une
+exposition temporaire accrue des opérateurs fréquemment gardiens.

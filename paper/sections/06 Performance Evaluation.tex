@@ -1,5 +1,4 @@
-% TODO titre trop long : viser « Simulations et résultats ».
-\section{Évaluation semi-empirique de l'efficacité et de la stabilité}
+\section{Évaluation semi-empirique}
 \label{sec:simulations_numeriques}
 
 Cette section évalue la portée quantitative du mécanisme théorique sur des
@@ -38,7 +37,7 @@ effectives \(q_i\), les coûts fixes \(F_i\) et les coûts variables unitaires
 ci-dessous précise, pour chacune, si elle est observée, estimée à partir des
 mesures, ou construite.
 
-\paragraph{Ce qui est observé, calibré, synthétique.}
+\paragraph{Ce qui est observé, calibré ou synthétique.}
 Les données associent, pour chaque identifiant radio Orange d'Île-de-France,
 un trafic descendant horaire, exprimé en Go, et une puissance moyenne,
 exprimée en watts. Elles couvrent \(3\,825\) identifiants du lundi 20 au
@@ -63,7 +62,7 @@ traités ensemble dans toute la suite.
 \hline
 Statut & Grandeur & Origine \\
 \hline
-Observé & trafic et puissance horaires & mesure directe, 168 h, \(3\,825\) antennes \\
+Observé & trafic et puissance horaires & mesure directe, \(168\) h, \(3\,825\) antennes \\
 Calibré & \(P_i^{\mathrm{fixe}}\), \(s_i\), donc \(F_i\) et \(\gamma_i\) &
 régression affine par antenne, Section~\ref{subsec:adequation_modele_affine} \\
 Synthétique & association de \(n\) opérateurs sur un site & aucun site
@@ -149,7 +148,7 @@ niveaux de profils temporels sont construits par
 Avec \(\lambda_\ell=0{,}15\), les quatre profils sont proches mais non
 identiques ; avec \(0{,}35\), ils diffèrent davantage ; avec \(1\), chacun
 reprend exactement le profil mesuré de sa donneuse. Les panneaux
-(a)--(c) de la Figure~\ref{fig:plan_deroule} montrent ces trois cas sur le
+(b)--(d) de la Figure~\ref{fig:plan_deroule} montrent ces trois cas sur le
 même plan.
 
 La demande de l'opérateur \(i\) est alors
@@ -167,14 +166,15 @@ moyen des quatre opérateurs, et \(\alpha_i=1{,}5\) à un volume supérieur de
 \(n\mu_a\).
 
 La série \(d_i(t)\) contient bien 168 valeurs. Pour le jour \(j\), la grandeur
-notée \(d_i^h\) dans les Sections 3 à 5 est la valeur de cette série au
+notée \(d_i^h\) dans les Sections~\ref{sec:modele_systeme}
+à~\ref{sec:jeu_cooperatif} est la valeur de cette série au
 créneau correspondant à l'heure \(h\) de ce jour. Le calcul journalier utilise
 donc 24 valeurs et il est répété pour chacun des sept jours ; la fenêtre
 nocturne \(H\) en sélectionne sept par jour.
 
 Les sources du trafic et les sources des paramètres énergétiques sont
-tirées séparément. Ce choix est volontaire : dans les données, le trafic
-moyen et la puissance fixe sont corrélés à \(0{,}52\), si bien qu'un tirage
+tirées séparément. Ce choix est volontaire : dans les données, le coefficient
+de corrélation entre le trafic moyen et la puissance fixe vaut \(0{,}54\), si bien qu'un tirage
 commun empêcherait de distinguer l'effet du volume de celui de l'équipement.
 Il ne garantit pas que chaque association virtuelle existe réellement. Il
 reste néanmoins contrôlé : chaque profil et chaque couple de paramètres
@@ -194,11 +194,13 @@ antennes utilisées afin que cet exemple puisse être reproduit.
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.98\textwidth]{../figures/protocol/plan_walkthrough.pdf}
-    \caption{Construction d'un site virtuel. (a)--(c)~Profils proches,
+    \caption{Construction d'un site virtuel. (a)~Série réelle de l'antenne
+    de référence, repérée du jour 1 au jour 7.
+    (b)--(d)~Profils proches,
     intermédiaires et différents, moyennés par heure de la journée ; les
     antennes sources et les volumes ne changent pas entre les trois panneaux.
-    (d)~Série réelle de l'antenne de référence sur 168 heures.
-    (e)~Les quatre demandes de la configuration intermédiaire construites
+    (e)~Les quatre demandes de la configuration intermédiaire, également
+    repérées du jour 1 au jour 7, construites
     par~\eqref{eq:demande_synthetique}.
     (f)~Demande rapportée au pic de chaque opérateur, plage des sept jours en
     zone colorée, et capacités correspondant aux trois valeurs de \(r\).}
@@ -219,15 +221,15 @@ Facteur \(\alpha_i\) & \(1{,}087\) & \(0{,}797\) & \(0{,}555\) & \(1{,}562\) \\
 Antenne d'énergie & \texttt{00000058W3} & \texttt{00000240U8} & \texttt{00083218W3} & \texttt{00000042U6} \\
 \(P_i^{\mathrm{fixe}}\) (W) & \(1\,660{,}9\) & \(1\,758{,}7\) & \(1\,352{,}5\) & \(1\,563{,}7\) \\
 Pente (W/Go) & \(41{,}85\) & \(28{,}86\) & \(26{,}62\) & \(24{,}51\) \\
-Demande moyenne (Go/h) & \(9{,}96\) & \(7{,}30\) & \(5{,}08\) & \(14{,}31\) \\
-Pic \(\max_t d_i(t)\) (Go/h) & \(24{,}90\) & \(13{,}97\) & \(10{,}73\) & \(27{,}70\) \\
-\(q_i\) à \(r=0{,}90\) (Go/h) & \(27{,}66\) & \(15{,}52\) & \(11{,}92\) & \(30{,}78\) \\
+Demande moyenne (Go) & \(9{,}96\) & \(7{,}30\) & \(5{,}08\) & \(14{,}31\) \\
+Pic \(\max_t d_i(t)\) (Go) & \(24{,}90\) & \(13{,}97\) & \(10{,}73\) & \(27{,}70\) \\
+\(q_i\) à \(r=0{,}90\) (Go) & \(27{,}66\) & \(15{,}52\) & \(11{,}92\) & \(30{,}78\) \\
 \hline
 \end{tabular}
 \caption{Exemple de paramètres d'un site virtuel construit à partir de la
 référence
-\texttt{00083151W1}, d'échelle \(\mu_a=9{,}16\ \mathrm{Go/h}\). La somme des
-demandes moyennes vaut \(36{,}65\ \mathrm{Go/h}\), soit exactement
+\texttt{00083151W1}, d'échelle \(\mu_a=9{,}16\ \mathrm{Go}\). La somme des
+demandes moyennes vaut \(36{,}65\ \mathrm{Go}\), soit exactement
 \(4\mu_a\). Les chaînes alphanumériques sont les identifiants anonymisés des
 antennes sources, et non des valeurs numériques.}
 \label{tab:plan_deroule}
@@ -262,8 +264,9 @@ occupe une fraction \(r\) de la capacité,
 \end{equation}
 Ainsi \(r=1\) pose \(q_i\) exactement au pic, et \(r<1\) laisse de la
 marge. Changer \(r\) ne reconstruit pas les courbes de trafic : les trois
-valeurs partagent les mêmes demandes, et seule la sélection des gardiens
---- quels équipements restent allumés --- peut changer. Par construction,
+valeurs partagent les mêmes demandes. Seules les capacités changent, ce qui
+peut modifier la faisabilité et la sélection des gardiens, ainsi que la
+répartition du trafic entre eux. Par construction,
 \(d_i(t)\leqslant r\,q_i\leqslant q_i\), donc aucune heure n'est
 individuellement infaisable. Selon les réglages, le nombre minimal de
 gardiens observé va de un à quatre ; la
@@ -275,7 +278,7 @@ La fenêtre centrale est
 \[
     H=\{0\,\mathrm{h},1\,\mathrm{h},\ldots,6\,\mathrm{h}\},
 \]
-soit \([0\,\mathrm{h},7\,\mathrm{h})\), ses bornes étant un paramètre de
+soit \(\left[0\,\mathrm{h},7\,\mathrm{h}\right[\), ses bornes étant un paramètre de
 l'analyse de sensibilité. Conformément à~\eqref{eq:cout_horaire_principal},
 les gardiens et l'allocation sont recalculés à chaque heure ; l'engagement
 persistant de la Section~\ref{subsec:extension_persistante} est traité comme
@@ -333,21 +336,28 @@ si \(P^{\mathrm{fixe}}\) ou \(s\) n'est pas strictement positif. Il reste
 \(3\,623\) antennes sur \(3\,825\).
 
 L'erreur d'ajustement, rapportée à la puissance moyenne, vaut \(8{,}5\,\%\)
-en médiane et reste sous \(15\,\%\) pour \(90\,\%\) des antennes. La part
-fixe \(P^{\mathrm{fixe}}/(P^{\mathrm{fixe}}+s\,\bar d)\) vaut \(72\,\%\)
-en médiane et dépasse la moitié pour \(93\,\%\) des antennes : éteindre un
-équipement économise plus que le report de trafic n'en coûte.
+en médiane et reste sous \(15\,\%\) pour \(90\,\%\) des antennes. Le rapport
+entre la composante fixe estimée et la puissance moyenne des heures actives
+vaut \(71{,}3\,\%\) en médiane et dépasse la moitié pour \(92{,}3\,\%\) des
+antennes. La composante fixe domine donc généralement la contribution liée à
+la charge moyenne observée, ce qui rend le mécanisme d'extinction pertinent
+sans déterminer, à lui seul, le coût du report vers un autre équipement.
 
-La Figure~\ref{fig:ajustement_puissance} montre trois antennes distinctes,
-aux quantiles \(25\,\%\), \(50\,\%\) et \(90\,\%\) de cette erreur :
-(a)~bon, (b)~médian, (c)~médiocre. Rouge : \(0\,\mathrm{h}\)--\(6\,\mathrm{h}\) ;
-bleu : reste de la journée.
+La Figure~\ref{fig:ajustement_puissance} montre trois antennes distinctes.
+Comme chaque observation couvre exactement une heure, la puissance moyenne
+mesurée est divisée par \(1000\) et représentée comme l'énergie consommée
+sur le créneau, en kWh. Les antennes correspondent
+aux quantiles \(25\,\%\), \(50\,\%\) et \(90\,\%\) de l'erreur :
+(a)~bon, (b)~médian, (c)~médiocre. Rouge :
+\(\left[0\,\mathrm h,7\,\mathrm h\right[\) ; bleu :
+\(\left[7\,\mathrm h,24\,\mathrm h\right[\).
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{../figures/power_calibration/representative_power_fit.pdf}
-    \caption{Trois antennes distinctes, une par panneau. Droite : ajustement
-    affine. Pointillé : \(P^{\mathrm{fixe}}\).}
+    \caption{Énergie consommée pendant un créneau horaire pour trois
+    antennes distinctes, une par panneau. Droite : ajustement affine.
+    Pointillé : composante fixe active, exprimée en kWh par créneau.}
     \label{fig:ajustement_puissance}
 \end{figure}
 
@@ -360,21 +370,25 @@ contiennent donc des points au voisinage immédiat de l'origine.
 
 \paragraph{Deux régimes lorsque l'équipement est actif.}
 Le panneau (c), à droite, présente deux groupes de points. Pour un même
-niveau de trafic, la puissance mesurée entre 0 h et 6 h est plus faible que
-celle mesurée entre 7 h et 23 h ; le rapport entre la seconde et la première
+niveau de trafic, la puissance mesurée sur
+\(\left[0\,\mathrm h,7\,\mathrm h\right[\) est plus faible que celle mesurée
+sur \(\left[7\,\mathrm h,24\,\mathrm h\right[\) ; le rapport entre la seconde et la première
 vaut \(1{,}43\) en médiane. Aucune des deux n'est
 \(P^{\mathrm{fixe}}\) : ce sont des puissances mesurées pendant que
 l'équipement transporte du trafic, tandis que \(P^{\mathrm{fixe}}\) est
 l'ordonnée à l'origine de la droite pointillée. Environ \(80\,\%\) des
 antennes présentent ce changement de niveau selon l'heure. Le modèle des
-Sections 3 à 5 ne distingue qu'un état actif et un état sans trafic ; nous
+Sections~\ref{sec:modele_systeme} à~\ref{sec:jeu_cooperatif} ne distingue
+qu'un état actif et un état sans trafic ; nous
 conservons donc une seule droite par antenne, ajustée sur les 168 heures.
 
 \paragraph{Passage aux coûts.}
-On pose \(F_i=\pi P_i^{\mathrm{fixe}}\) et \(\gamma_i=\pi s_i\), avec
-\(\pi\) le prix de l'électricité, identique pour tous. Un facteur commun
-ne change ni les gardiens ni les économies relatives : on rapporte les
-résultats en énergie.
+En notant \(\pi\) le prix de l'électricité en euros par kilowattheure, on pose
+\(F_i=\pi P_i^{\mathrm{fixe}}/1000\) et \(\gamma_i=\pi s_i/1000\). Le facteur
+\(1/1000\) convertit l'énergie d'un créneau horaire de Wh en kWh. Comme
+\(\pi/1000\) est commun à tous les équipements, il ne change ni les gardiens
+ni les économies relatives ; les résultats sont donc rapportés directement
+en énergie.
 
 \subsection{Efficacité opérationnelle}
 \label{subsec:efficacite_operationnelle}
@@ -391,15 +405,15 @@ Nous réutilisons directement le jeu défini en~\eqref{eq:jeu_principal} :
 fonctionnement autonome, et
 \(v_h(N)/\sum_i C_h^*(\{i\})\) est la part économisée. Il n'y a donc pas de
 nouveau point de comparaison : le dénominateur reste le coût autonome défini
-en Section~\ref{sec:jeu_cooperatif}. Chaque résultat est d'abord
+en Section~\ref{sec:modele_systeme}. Chaque résultat est d'abord
 moyenné sur les sept jours d'un plan, puis résumé sur les 400 plans. Dans
 les tableaux, les crochets contiennent directement la moitié centrale des
 plans, du premier au troisième quartile ; aucun rééchantillonnage ni intervalle
 de confiance n'est utilisé.
 
 \paragraph{Profil horaire et choix de \(H\).}
-La Figure~\ref{fig:efficacite_operationnelle} suit simultanément la part et
-la quantité économisée et le nombre de gardiens effectivement retenus par
+La Figure~\ref{fig:efficacite_operationnelle} suit simultanément la part
+économisée, la quantité économisée et le nombre de gardiens effectivement retenus par
 l'optimum, \(|G_h^*(N)|\). Les volumes et les profils sont au niveau modéré de
 la grille ; les quatre équipements sont tirés dans le même quartile de
 \(P^{\mathrm{fixe}}\), avec \(n=4\) et \(r=0{,}90\). Les sept jours sont
@@ -410,11 +424,11 @@ stabilité sont étudiés séparément en
 Section~\ref{subsec:seuils_capacite_mecanisme}.
 
 La part économisée médiane vaut \(67{,}6\,\%\) à minuit,
-\(76{,}0\,\%\) à 5 h et \(43{,}3\,\%\) à 18 h. L'énergie économisée varie
+\(76{,}0\,\%\) à \(5\,\mathrm h\) et \(43{,}3\,\%\) à \(18\,\mathrm h\). L'énergie économisée varie
 moins, de \(2{,}22\) à \(3{,}00\,\mathrm{kWh}\) par heure : en journée, le
 trafic accroît à la fois le coût du fonctionnement autonome et le nombre de
 gardiens retenus par l'optimum.
-Le nombre moyen proche de deux vers 18 h signifie seulement que, dans ces
+Le nombre moyen proche de deux vers \(18\,\mathrm h\) signifie seulement que, dans ces
 sites virtuels, les capacités simulées de deux équipements suffisent le plus
 souvent à servir la demande totale. Il ne s'agit pas d'une mesure du nombre
 d'équipements nécessaires sur un site réel.
@@ -430,8 +444,16 @@ d'équipements nécessaires sur un site réel.
     \label{fig:efficacite_operationnelle}
 \end{figure}
 
-La fenêtre \(H=\{0,\ldots,6\}\), représentée en gris, a été fixée avant ces
-résultats et non choisie en fonction du niveau d'économie observé.
+La fenêtre \(H=\{0,\ldots,6\}\), soit les sept créneaux de
+\(\left[0\,\mathrm h,7\,\mathrm h\right[\), représentée en gris, a été fixée avant ces
+résultats et non choisie en fonction du niveau d'économie observé. Nous ne
+qualifions donc pas automatiquement ces sept créneaux d'heures creuses. Une
+heure est dite de très faible charge selon le critère
+\(\rho_{\max}^h(N)\leqslant1\) défini en
+Section~\ref{sec:modele_systeme}. Dans la configuration de référence, ce
+critère est satisfait dans \(67{,}8\,\%\) des observations de \(H\), contre
+\(27{,}2\,\%\) sur les 24 heures : la fenêtre est donc bien enrichie en
+faibles charges, sans que l'heure civile serve elle-même de définition.
 
 \paragraph{Fenêtre et capacité.}
 Le Tableau~\ref{tab:plan_quatre_r} compare les mêmes demandes pour les trois
@@ -511,13 +533,22 @@ et variables peut sélectionner des équipements dont la consommation dépasse
 la référence autonome. Ces quatre extrêmes sont conservés dans les calculs,
 mais pas dans l'échelle des moustaches de la figure.
 
-La politique proportionnelle conserve, à chaque heure, exactement les gardiens trouvés par l'optimum, puis
-répartit seulement le trafic entre eux au prorata de leur capacité. Or
-\(|G_h^*(N)|=1\) dans \(93{,}4\,\%\) des heures nocturnes : la répartition est
-alors imposée et les deux politiques coïncident. Sur les autres heures, la
-perte médiane de la répartition proportionnelle vaut \(1{,}14\) point. Son bon
-résultat global vient donc surtout du choix préalable des gardiens optimaux,
-et non d'une optimalité générale de la règle proportionnelle.
+Le résultat le plus marquant de cette comparaison est que la politique
+proportionnelle est ici presque aussi performante que l'optimum : elle
+économise \(73{,}6\,\%\) de l'énergie autonome, contre \(73{,}7\,\%\), et sa
+perte appariée médiane n'est que de \(0{,}002\) point. La raison est
+structurelle. Cette politique conserve, à chaque heure, exactement les
+gardiens trouvés par l'optimum : elle supporte donc les mêmes coûts fixes et
+ne peut perdre que sur le terme variable
+\(\sum_{i\in G}\gamma_i t_i\). Or ce degré de liberté disparaît lorsque
+\(|G_h^*(N)|=1\), ce qui arrive dans \(93{,}4\,\%\) des heures nocturnes ; les
+deux politiques coïncident alors exactement. Sur les seules heures à
+plusieurs gardiens, la perte médiane est bien plus visible, \(1{,}14\) point,
+mais elle pèse peu dans l'agrégat ; de plus, le terme fixe représente
+\(88{,}6\,\%\) de l'énergie autonome. Cette quasi-égalité montre donc que,
+dans le régime étudié, choisir les bons gardiens importe beaucoup plus que
+raffiner la répartition entre eux. Elle ne constitue pas une optimalité
+générale de la règle proportionnelle.
 
 \begin{figure}[htbp]
     \centering
@@ -570,7 +601,7 @@ Répétée 365 fois, elle donne \(7{,}3\,\mathrm{MWh}\) par site et par an,
 avec une moitié centrale de \(4{,}3\) à \(10{,}8\,\mathrm{MWh}\). La
 saisonnalité n'étant pas observée,
 il s'agit seulement d'un ordre de grandeur.
-Sur la machine de calcul, un site-jour complet --- profil 24 h, trois
+Sur la machine de calcul, un site-jour complet --- profil \(24\,\mathrm h\), trois
 politiques et persistance sur \(H\) --- prend environ \(11\,\mathrm{ms}\) pour
 \(n=3\) et \(14\,\mathrm{ms}\) pour \(n=4\) ; les \(8\,400\) simulations
 journalières sont résolues en environ \(171\,\mathrm{s}\), hors chargement et tracé. Les
@@ -591,7 +622,8 @@ gains de différentes heures de compenser leurs contraintes coalitionnelles.
 Les deux diagnostics répondent donc à des questions différentes.
 Une solution pratique consiste à régler les transferts sur une période plus
 longue. Lorsque les 49 heures nocturnes des sept jours sont réunies dans un
-seul jeu par plan, aucun des \(400\times3=1\,200\) cœurs n'est vide. À
+jeu hebdomadaire nocturne par plan, aucun des \(400\times3=1\,200\) cœurs
+n'est vide. À
 \(r=0{,}90\), Shapley appartient au cœur pour 378 plans et un autre partage
 stable existe pour les 22 autres. L'instabilité horaire ne persiste donc pas
 nécessairement lorsque les comptes sont faits en fin de semaine.
@@ -600,8 +632,8 @@ nécessairement lorsque les comptes sont faits en fin de semaine.
 Le test d'appartenance de Shapley au cœur conclut directement pour \(51\,046\)
 jeux, soit \(86{,}8\,\%\). Les
 \(7\,754\) autres passent au test de non-vacuité du cœur : \(4\,419\) ont un
-cœur non vide et \(3\,335\) un cœur vide. Le nucléole n'est calculé que dans
-les \(4\,419\) premiers cas, afin d'obtenir le partage stable retenu ; il ne
+cœur non vide et \(3\,335\) un cœur vide. Le nucléole de la grande coalition
+n'est calculé que dans les \(4\,419\) premiers cas, afin d'obtenir le partage stable retenu ; il ne
 l'est jamais si Shapley convient déjà. Lorsque le cœur est vide, l'analyse de
 la rupture est séparée et le nucléole n'est pas utilisé comme prédiction de
 coalition. Sur l'ensemble des 400 plans, le test de Shapley prend \(7{,}3\)
@@ -656,12 +688,15 @@ leur somme dépasse ce que la grande coalition peut distribuer, le cœur est
 nécessairement vide. Ce test détecte \(65{,}7\,\%\) des cœurs vides, sans faux
 positif.
 
-\paragraph{Gains distribués et benchmark de rupture.}
+\paragraph{Gains distribués et scénario de rupture.}
 À \(r=0{,}90\), nous additionnons, pour chaque opérateur, les gains qui lui
-sont attribués aux sept heures de la nuit. Sur
+sont attribués aux sept heures de la nuit. La règle appliquée est Shapley
+lorsqu'elle est stable, le nucléole lorsque le cœur est non vide mais exclut
+Shapley, et la meilleure partition à blocs stables définie ci-dessous lorsque le cœur
+est vide. Sur
 les \(1\,600\) couples plan--opérateur, le gain moyen est
 \(5{,}06\,\mathrm{kWh}\) par nuit, soit \(0{,}76\) euro par opérateur au prix
-de \(0{,}15\) euro/kWh, ou \(3{,}04\) euros pour les quatre opérateurs du site.
+de \(0{,}15\) euro par kilowattheure, ou \(3{,}04\) euros pour les quatre opérateurs du site.
 La médiane est \(5{,}20\,\mathrm{kWh}\) et la moitié
 centrale va de \(2{,}90\) à \(7{,}25\,\mathrm{kWh}\). Les numéros
 d'opérateur n'étant pas comparables d'un plan à l'autre, nous ne donnons pas
@@ -670,10 +705,11 @@ le plus faible et le plus élevé valent respectivement \(4{,}49\) et
 \(5{,}89\,\mathrm{kWh}\) par nuit.
 
 Lorsque le cœur est vide, le jeu ne prédit pas à lui seul la coalition qui se
-formera. Comme benchmark, nous énumérons toutes les partitions propres des
-quatre opérateurs, vérifions la stabilité du partage au sein de chaque groupe,
-puis retenons la partition stable qui conserve le plus d'économies. Ce
-scénario de meilleure partition stable quantifie une perte potentielle ; ce
+formera. Comme point de comparaison, nous énumérons toutes les partitions
+propres des quatre opérateurs, vérifions que chaque bloc admet un partage
+interne stable, puis retenons la partition à blocs stables qui conserve le
+plus d'économies. Cette construction n'exclut pas une déviation réunissant des
+opérateurs de blocs différents. Le scénario obtenu quantifie une perte potentielle ; ce
 n'est pas un modèle de formation des coalitions. La perte est mesurée par
 rapport au partage de Shapley, hypothétique, de la grande coalition. À
 \(r=0{,}90\), les \(1\,109\) cœurs vides sur \(19\,600\) jeux perdent en moyenne
@@ -736,7 +772,7 @@ le coût variable malgré un coût fixe supplémentaire. Ce classement décrit l
 régime de charge observé ; il ne constitue pas, à lui seul, une preuve que le
 changement de \(k_h\) cause l'instabilité.
 
-\paragraph{Très faible trafic.}
+\paragraph{Très faible charge.}
 La condition suffisante
 \(d^h(N)\leqslant\min_i q_i\) du
 Théorème~\ref{thm:capacite_coeur_non_vide} s'applique à
@@ -745,9 +781,10 @@ trois opérateurs (\(43{,}0\,\%\)). Aucun de ces \(311\,554\) jeux n'a un cœur
 vide. Ces pourcentages portent sur les \(403\,200\) observations horaires de
 chaque taille de coalition, et non sur 400 plans ou sur des nuits entières.
 Dans la configuration de
-référence, l'heure la plus favorable est 4 h : la condition est satisfaite
+référence, l'heure la plus favorable est \(4\,\mathrm h\) : la condition est satisfaite
 pour \(93{,}4\,\%\) des \(8\,400\) combinaisons plan--jour--\(r\) lorsque \(n=4\),
-et pour \(98{,}2\,\%\) lorsque \(n=3\). Les heures 2--6 h sont les plus
+et pour \(98{,}2\,\%\) lorsque \(n=3\). Les heures comprises entre
+\(2\,\mathrm h\) et \(6\,\mathrm h\) sont les plus
 favorables dans les deux cas. La condition locale de la
 Remarque~\ref{prop:sousadd_stricte_locale}, plus faible, n'est pas comptée ici.
 
@@ -758,14 +795,14 @@ Remarque~\ref{prop:sousadd_stricte_locale}, plus faible, n'est pas comptée ici.
 Opérateurs & Gardiens minimaux & Jeux horaires & Cœur vide &
 Shapley dans le cœur \\
 \hline
-3 & 1 & 255\,104 & 2,1\,\% & 94,1\,\% \\
-3 & 2 & 128\,992 & 36,0\,\% & 43,5\,\% \\
-3 & 3 & 19\,104 & 0,0\,\% & 84,0\,\% \\
+3 & 1 & 255\,104 & \(2{,}1\,\%\) & \(94{,}1\,\%\) \\
+3 & 2 & 128\,992 & \(36{,}0\,\%\) & \(43{,}5\,\%\) \\
+3 & 3 & 19\,104 & \(0{,}0\,\%\) & \(84{,}0\,\%\) \\
 \hline
-4 & 1 & 219\,194 & 5,5\,\% & 86,1\,\% \\
-4 & 2 & 122\,802 & 38,9\,\% & 15,4\,\% \\
-4 & 3 & 53\,505 & 59,0\,\% & 20,4\,\% \\
-4 & 4 & 7\,699 & 0,0\,\% & 64,1\,\% \\
+4 & 1 & 219\,194 & \(5{,}5\,\%\) & \(86{,}1\,\%\) \\
+4 & 2 & 122\,802 & \(38{,}9\,\%\) & \(15{,}4\,\%\) \\
+4 & 3 & 53\,505 & \(59{,}0\,\%\) & \(20{,}4\,\%\) \\
+4 & 4 & 7\,699 & \(0{,}0\,\%\) & \(64{,}1\,\%\) \\
 \hline
 \end{tabular}
 \caption{Diagnostic des 400 plans selon le nombre minimal de gardiens. Chaque
@@ -796,7 +833,7 @@ contestée, la coalition qui présente l'objection maximale est une paire dans
 une impossibilité de partager les gains de manière stable, non une
 infaisabilité technique du service.
 
-Avec trois opérateurs, la condition de très faible trafic est effectivement
+Avec trois opérateurs, la condition de très faible charge est effectivement
 plus fréquente et Shapley est stable dans \(77{,}4\,\%\) des jeux, contre
 \(55{,}4\,\%\) avec quatre ; le cœur est non vide dans \(87{,}1\,\%\) des
 cas, contre \(77{,}3\,\%\). Le gain collectif moyen est en revanche plus
@@ -808,19 +845,20 @@ n'établit pas d'effet causal du nombre minimal de gardiens.
 
 \paragraph{Homogénéité des coûts.}
 Nous remplaçons, dans chaque jeu à quatre opérateurs, tous les \(F_i\) par leur
-moyenne et tous les \(\gamma_i\) par leur moyenne, puis réintroduisons 25, 50,
-75 et 100\,\% des écarts aux moyennes. Le niveau 0\,\% donne donc quatre
-opérateurs aux coûts identiques, et 100\,\% restitue les coûts initiaux. Sous
-la condition de très faible
-trafic, Shapley appartient au cœur dans 100\,\% des jeux à coûts identiques,
+moyenne et tous les \(\gamma_i\) par leur moyenne, puis réintroduisons
+\(25\,\%\), \(50\,\%\), \(75\,\%\) et \(100\,\%\) des écarts aux moyennes. Le
+niveau \(0\,\%\) donne donc quatre opérateurs aux coûts identiques, et
+\(100\,\%\) restitue les coûts initiaux. Sous la condition de très faible
+charge, Shapley appartient au cœur dans \(100\,\%\) des jeux à coûts identiques,
 comme le garantit le
 Corollaire~\ref{cor:shapley_coeur_tres_faible_trafic_homogene}. Cette fréquence
-reste supérieure à 99\,\% à 25 et 50\,\% de dispersion, puis tombe à 98,2 et
-96,4\,\%. Dès que les coûts diffèrent, le corollaire ne fournit plus de
+reste supérieure à \(99\,\%\) à \(25\,\%\) et \(50\,\%\) de dispersion,
+puis tombe à \(98{,}2\,\%\) et \(96{,}4\,\%\). Dès que les coûts diffèrent, le corollaire ne fournit plus de
 garantie ; le contre-exemple théorique montre précisément qu'une exception
 est alors possible. Sur
-toutes les heures, sa fréquence passe de 73,5\,\% à coûts identiques à
-60,6\,\% dès le premier quart de dispersion, puis atteint 55,4\,\% avec la
+toutes les heures, sa fréquence passe de \(73{,}5\,\%\) à coûts identiques à
+\(60{,}6\,\%\) dès le premier quart de dispersion, puis atteint
+\(55{,}4\,\%\) avec la
 dispersion complète.
 
 \begin{figure}[htbp]
@@ -828,14 +866,14 @@ dispersion complète.
     \includegraphics[width=\textwidth]{../figures/coalition_stability/threshold_mechanisms.pdf}
     \caption{Charge et stabilité sur les 400 plans. (a)~Part des \(8\,400\)
     combinaisons plan--jour--\(r\) qui satisfont la condition de très faible
-    trafic dans la configuration de référence, selon l'heure et le nombre
+    charge dans la configuration de référence, selon l'heure et le nombre
     d'opérateurs ; la zone grise indique la fenêtre nocturne.
     (b)~Pour chaque nombre minimal d'équipements nécessaires, part des jeux
     de cette catégorie dont le cœur est vide ; les effectifs sont donnés dans le
     Tableau~\ref{tab:seuils_capacite}.
     (c)~Part des jeux où Shapley appartient au cœur quand les coûts passent
     d'identiques (0\,\%) aux coûts initiaux (100\,\%). La courbe verte porte seulement
-    sur les \(138\,200\) jeux de très faible trafic ; seule sa valeur au point
+    sur les \(138\,200\) jeux de très faible charge ; seule sa valeur au point
     homogène est garantie par le corollaire.}
     \label{fig:seuils_mecanisme}
 \end{figure}
@@ -845,82 +883,145 @@ dispersion complète.
 \subsection{Sensibilité}
 \label{subsec:sensibilite_mecanismes}
 
-L'analyse revient à la configuration de référence des 400 plans,
-avec \(r=0{,}90\), et fait varier un facteur à la fois. Chaque réglage porte
-sur \(400\times7=2\,800\) plan--jours ; la position de la fenêtre est comparée sur
-les \(400\times6=2\,400\) nuits pour lesquelles
-\([22\,\mathrm{h},5\,\mathrm{h})\) est entièrement observée. Avec le trafic
-multiplié par 1,2 et les capacités inchangées, 18 plan--jours sur \(2\,800\)
-sont hors domaine parce qu'au moins une coalition ne peut plus servir sa
-demande. Ils sont signalés comme tels et exclus des statistiques de ce
-réglage. Le facteur « veille inactive » modifie la consommation d'un
-équipement éteint : elle vaut \(xF_i\), avec \(x\in\{0;0{,}05;0{,}10\}\),
-contre zéro dans le modèle de référence. Lorsqu'il est actif, son terme fixe
-reste \(F_i\).
+\paragraph{Question posée.}
+Cette analyse vérifie si les conclusions précédentes résistent à des choix
+différents de fenêtre et de paramètres. Elle repart de la configuration de
+référence des 400 plans, avec \(r=0{,}90\), puis modifie un seul facteur à la
+fois. Il ne s'agit pas d'estimer une incertitude statistique, mais de comparer
+des scénarios contrôlés.
 
-Pour chaque plan et chaque réglage, nous moyennons d'abord les jours. Pour un
-facteur donné, son \emph{amplitude} sur ce plan est ensuite l'écart entre la
-plus grande et la plus petite des trois moyennes. Le
-Tableau~\ref{tab:plan_sensibilite} donne la médiane de ces 400 amplitudes. Il
-ne donne donc pas le résultat de l'un des trois réglages. Par exemple, \(8{,}10\)
-dans la première ligne signifie que, pour chaque plan, on calcule l'écart entre
-ses économies sur 22--05, 00--07 et 02--09, puis qu'on prend la médiane des 400
-écarts. Une amplitude mesure l'importance du facteur sur la plage testée, mais
-ne dit pas à elle seule quel réglage est préférable ; les directions sont
-données après le tableau.
+\paragraph{Réglages comparés.}
+Chaque facteur prend trois valeurs :
+\begin{itemize}
+    \item la \textbf{position de la fenêtre} compare trois fenêtres de sept
+    heures :
+    \(\left[22\,\mathrm h,5\,\mathrm h\right[\), qui traverse minuit,
+    \(\left[0\,\mathrm h,7\,\mathrm h\right[\), fenêtre principale du rapport, et
+    \(\left[2\,\mathrm h,9\,\mathrm h\right[\) ;
+    \item la \textbf{durée} compare les fenêtres
+    \(\left[0\,\mathrm h,5\,\mathrm h\right[\),
+    \(\left[0\,\mathrm h,7\,\mathrm h\right[\) et
+    \(\left[0\,\mathrm h,9\,\mathrm h\right[\) ;
+    \item le \textbf{niveau de trafic}, le coût fixe \(F_i\) et le coût
+    variable \(\gamma_i\) sont multipliés séparément par
+    \(0{,}8\), \(1\) ou \(1{,}2\) ;
+    \item la \textbf{consommation en veille} d'un équipement éteint vaut
+    \(0\), \(0{,}05F_i\) ou \(0{,}10F_i\) par heure. Son terme fixe reste
+    \(F_i\) lorsqu'il est actif.
+\end{itemize}
+
+Pour chaque réglage, les résultats opérationnels sont d'abord moyennés sur
+les sept jours de chaque plan, puis résumés par la médiane des 400 plans. La
+comparaison de la position de \(H\) utilise seulement les six nuits par plan
+pour lesquelles la fenêtre traversant minuit est entièrement observée, soit
+\(2\,400\) plan--nuits. Lorsque le trafic est multiplié par \(1{,}2\), 18 des
+\(2\,800\) plan--jours deviennent infaisables à capacités inchangées et sont
+exclus de ce seul réglage.
+
+\paragraph{Grandeurs présentées.}
+La \emph{part économisée} compare l'optimum horaire au fonctionnement
+autonome. Les \emph{gardiens moyens} donnent le nombre d'équipements actifs
+par heure. La \emph{pénalité de persistance} est la perte de part économisée
+quand le même ensemble de gardiens doit être conservé pendant toute la
+fenêtre, par rapport à la reconfiguration horaire. Enfin, la fréquence de
+stabilité de Shapley est calculée directement sur l'ensemble des jeux
+nocturnes réalisables du réglage.
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{p{3.1cm}p{3.3cm}rrrr}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccccc}
 \hline
-Facteur & Valeurs testées & \shortstack{Écart\\d'économie} &
-\shortstack{Écart de\\gardiens} & \shortstack{Écart de\\persistance} &
-\shortstack{Écart de\\stabilité} \\
+Facteur & Réglages, dans l'ordre &
+\shortstack{Part\\économisée\\(\%)} &
+\shortstack{Gardiens\\moyens} &
+\shortstack{Pénalité de\\persistance\\(points)} &
+\shortstack{Shapley\\stable\\(\%)} \\
 \hline
-Position de \(H\) & 22--05, 00--07, 02--09 & 8,10 & 0,24 & 7,22 & 0,00 \\
-Veille inactive & 0, 5, 10\,\% de \(F_i\) & 6,85 & 0,00 & 0,24 & 0,00 \\
-Durée de \(H\), début à minuit & 5, 7, 9 h & 3,15 & 0,07 & 3,23 & 0,00 \\
-Niveau de trafic & multiplicateur 0,8, 1, 1,2 & 2,76 & 0,04 & 2,79 & 0,00 \\
-Coût fixe \(F_i\) & multiplicateur 0,8, 1, 1,2 & 1,07 & 0,00 & 0,21 & 0,00 \\
-Coût variable \(\gamma_i\) & multiplicateur 0,8, 1, 1,2 & 1,05 & 0,00 & 0,20 & 0,00 \\
+Position de \(H\) &
+\shortstack{22--05\\00--07\\02--09} &
+\shortstack{67,2\\73,8\\70,3} &
+\shortstack{1,21\\1,02\\1,10} &
+\shortstack{10,36\\3,31\\8,86} &
+\shortstack{91,7\\93,5\\93,3} \\[2pt]
+\shortstack[l]{Veille d'un équipement\\éteint} &
+\shortstack{\(0\)\\\(0{,}05F_i\)\\\(0{,}10F_i\)} &
+\shortstack{73,7\\70,6\\67,1} &
+\shortstack{1,02\\1,02\\1,02} &
+\shortstack{3,17\\3,05\\2,93} &
+\shortstack{93,6\\93,5\\93,3} \\[2pt]
+\shortstack[l]{Durée de \(H\),\\début à minuit} &
+\shortstack{5~h\\7~h\\9~h} &
+\shortstack{73,6\\73,7\\70,1} &
+\shortstack{1,03\\1,02\\1,11} &
+\shortstack{2,68\\3,17\\10,78} &
+\shortstack{92,1\\93,6\\93,0} \\[2pt]
+Niveau de trafic &
+\shortstack{\(\times0{,}8\)\\\(\times1\)\\\(\times1{,}2\)} &
+\shortstack{75,1\\73,7\\72,5} &
+\shortstack{1,00\\1,02\\1,04} &
+\shortstack{1,10\\3,17\\6,02} &
+\shortstack{94,9\\93,6\\92,3} \\[2pt]
+Coût fixe \(F_i\) &
+\shortstack{\(\times0{,}8\)\\\(\times1\)\\\(\times1{,}2\)} &
+\shortstack{73,3\\73,7\\74,2} &
+\shortstack{1,02\\1,02\\1,02} &
+\shortstack{3,23\\3,17\\3,20} &
+\shortstack{92,7\\93,6\\93,9} \\[2pt]
+Coût variable \(\gamma_i\) &
+\shortstack{\(\times0{,}8\)\\\(\times1\)\\\(\times1{,}2\)} &
+\shortstack{74,4\\73,7\\73,4} &
+\shortstack{1,02\\1,02\\1,02} &
+\shortstack{3,16\\3,17\\3,25} &
+\shortstack{94,1\\93,6\\92,9} \\
 \hline
 \end{tabular}
-\caption{Médiane, sur les 400 plans, de l'amplitude entre les trois réglages.
-L'économie et la persistance sont en points de pourcentage, les gardiens en
-nombre moyen, et la stabilité en points de fréquence des nuits où Shapley
-appartient au cœur. Une valeur 0,00 en stabilité signifie qu'au moins la
-moitié des plans gardent la même fréquence sur les trois réglages ; elle ne
-signifie pas que le facteur n'a aucun effet sur aucun plan.}
+\caption{Résultats de sensibilité. Dans chaque cellule, les trois valeurs se
+lisent de haut en bas dans le même ordre que les trois réglages de la deuxième
+colonne. La part économisée, le nombre de gardiens et la pénalité de
+persistance sont les médianes des 400 moyennes par plan. La stabilité est la
+fréquence calculée sur tous les jeux nocturnes réalisables du réglage.}
 \label{tab:plan_sensibilite}
 \end{table}
 
-La position de \(H\) a la plus grande amplitude énergétique. La médiane des
-moyennes par plan vaut 73,8\,\% sur 00--07, 70,3\,\% sur 02--09 et 67,2\,\%
-sur 22--05 : commencer à minuit est donc préférable sur cet échantillon. La
-durée compte également, surtout lorsque la fenêtre atteint 9 h : l'économie
-médiane vaut 73,6\,\% sur cinq heures, 73,7\,\% sur sept et 70,1\,\% sur neuf.
-La définition de \(H\), position et durée, est ainsi le principal choix de la
-campagne de sensibilité.
+\paragraph{Effet du choix de \(H\).}
+La position et la durée de la fenêtre ont les effets opérationnels les plus
+visibles. Parmi les trois fenêtres de sept heures,
+\(\left[0\,\mathrm h,7\,\mathrm h\right[\) donne la plus grande économie
+médiane, \(73{,}8\,\%\), contre \(67{,}2\,\%\) pour
+\(\left[22\,\mathrm h,5\,\mathrm h\right[\). Cette dernière inclut
+des heures de soirée plus chargées : elle requiert davantage de gardiens
+\((1{,}21\) contre \(1{,}02)\) et rend leur persistance beaucoup plus coûteuse
+\((10{,}36\) contre \(3{,}31\) points). Allonger la fenêtre de sept à neuf
+heures produit un effet comparable : la part économisée tombe de
+\(73{,}7\,\%\) à \(70{,}1\,\%\) et la pénalité de persistance passe de
+\(3{,}17\) à \(10{,}78\) points.
 
-La consommation des équipements inactifs vient juste après : passer de zéro
-à 10\,\% de \(F_i\) abaisse l'économie médiane de 73,7 à 67,1\,\%. Le trafic
-la fait passer de 75,1\,\% avec le multiplicateur 0,8 à 72,5\,\% avec 1,2,
-sur les jeux réalisables. Les multiplicateurs uniformes des coûts fixes et
-variables ont chacun une amplitude médiane proche d'un point sur les plages
-testées.
+\paragraph{Effet des paramètres énergétiques et du trafic.}
+Une consommation résiduelle en veille réduit directement le bénéfice des
+extinctions : la part économisée passe de \(73{,}7\,\%\) lorsque la veille est
+nulle à \(67{,}1\,\%\) lorsqu'elle vaut \(10\,\%\) de \(F_i\). Une hausse de
+trafic produit davantage de gardiens et accroît surtout le coût de les garder
+fixes : entre les multiplicateurs \(0{,}8\) et \(1{,}2\), la pénalité de
+persistance passe de \(1{,}10\) à \(6{,}02\) points. Les variations uniformes
+de \(F_i\) et de \(\gamma_i\) modifient moins les résultats sur les plages
+testées. Augmenter \(F_i\) relève légèrement la part relative économisée,
+car la coopération évite précisément plusieurs coûts fixes ; augmenter
+\(\gamma_i\) produit l'effet inverse.
 
 Parmi les \(49\,182\) évaluations de jeux nocturnes réalisables, 85 ont un cœur
 vide, soit \(0{,}17\,\%\), et Shapley est stable dans \(93{,}3\,\%\) des cas.
 Sur les \(2\,800\) jeux du réglage central, le cœur est vide cinq fois et
 Shapley est stable dans \(93{,}6\,\%\) des cas. Le trafic fait varier cette
-dernière fréquence de 94,9 à 92,3\,\%, et la position de la fenêtre de 91,7 à
-93,5\,\%. La médiane des amplitudes par plan reste néanmoins nulle pour tous
-les facteurs : au moins la moitié des plans ne changent pas de diagnostic
-quand un facteur varie. Contrairement à la Section~\ref{subsec:stabilite_grande_coalition},
-ces diagnostics portent sur le jeu nocturne \(v_H\) ; la compensation entre
-heures explique que les cœurs vides y soient beaucoup plus rares. Dans ces
-plages, l'efficacité opérationnelle est donc nettement plus sensible que la
-stabilité de Shapley.
+dernière fréquence de \(94{,}9\,\%\) à \(92{,}3\,\%\), et la position de la
+fenêtre de \(91{,}7\,\%\) à \(93{,}5\,\%\). Ces variations restent plus faibles que celles de l'économie ou de
+la pénalité de persistance. Contrairement à la
+Section~\ref{subsec:stabilite_grande_coalition}, ces diagnostics portent sur
+le jeu nocturne agrégé \(v_H\) : les gains des différentes heures peuvent
+compenser leurs contraintes coalitionnelles. Dans les plages testées,
+l'efficacité opérationnelle est donc plus sensible que la stabilité de
+Shapley.
 
 \subsection{Limites}
 \label{subsec:limites_evaluation}

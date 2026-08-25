@@ -81,7 +81,7 @@ ensemble sont évaluées en \(O(s)\). En sommant sur les coalitions, on obtient
 \]
 \end{proof}
 
-\subsection{Certificat leave-one-out}
+\subsection{Certificat par retrait d'un opérateur}
 \label{app:preuve_leave_one_out}
 
 \begin{proof}[Démonstration de la Proposition~\ref{prop:certificat_leave_one_out}]
@@ -199,7 +199,7 @@ v_H(S)=F\bigl(|H|s-K_{H,s}\bigr).
 \]
 Cette quantité ne dépend que de \(s\) et définit donc \(v_{H,s}\).
 
-Si \(z\in\mathcal C(N,v_H)\), la somme des contraintes du coeur sur toutes les
+Si \(z\in\mathcal C(N,v_H)\), la somme des contraintes du cœur sur toutes les
 coalitions de taille \(s\) donne
 \[
 \binom{n-1}{s-1}v_{H,n}
@@ -209,17 +209,17 @@ coalitions de taille \(s\) donne
 \binom{n}{s}v_{H,s},
 \]
 soit \(v_{H,s}/s\leqslant v_{H,n}/n\). Réciproquement, sous ces inégalités,
-l'allocation \(z_i=v_{H,n}/n\) satisfait toutes les contraintes du coeur.
+l'allocation \(z_i=v_{H,n}/n\) satisfait toutes les contraintes du cœur.
 La symétrie et l'efficacité donnent les expressions de Shapley et du
 nucléole.
 \end{proof}
 
-\subsection{Borne leave-one-out du moindre coeur}
+\subsection{Borne du moindre cœur par retrait d'un opérateur}
 \label{app:preuve_borne_leave_one_out}
 
 \begin{proof}[Démonstration du Corollaire~\ref{cor:borne_leave_one_out}]
-Considérons toute solution \((z,\varepsilon)\) du programme
-\eqref{eq:lp_moindre_coeur}. En sommant ses contraintes pour les \(n\)
+Soit \((z,\varepsilon)\) une solution du
+programme~\eqref{eq:lp_moindre_coeur}. En sommant ses contraintes pour les \(n\)
 coalitions \(N\setminus\{i\}\), il vient
 \[
     (n-1)v_H(N)
@@ -338,6 +338,44 @@ population d'antennes admissibles.
     surreprésentée.
 \end{itemize}
 
+Le Tableau~\ref{tab:diagnostics_instances} résume les comparaisons principales
+pour la configuration de référence. Les ordres de grandeur énergétiques et la
+régularité temporelle sont proches de ceux des antennes admissibles. Les
+profils des opérateurs virtuels sont, en revanche, volontairement plus
+corrélés entre eux que deux profils empiriques pris sans construction commune :
+c'est l'effet attendu du mélange~\eqref{eq:forme_synthetique}, et non une
+propriété estimée de sites multi-opérateurs réels.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrr}
+\hline
+Médiane & Antennes admissibles & Configuration de référence \\
+\hline
+Trafic moyen (Go) & \(12{,}86\) & \(11{,}47\) \\
+Pic de trafic (Go) & \(36{,}43\) & \(28{,}95\) \\
+Puissance fixe (W) & \(906{,}75\) & \(885{,}73\) \\
+Pente (W/Go) & \(25{,}95\) & \(25{,}26\) \\
+Autocorrélation de décalage un & \(0{,}822\) & \(0{,}846\) \\
+Corrélation entre profils & \(0{,}568\) & \(0{,}937\) \\
+\hline
+\end{tabular}
+\caption{Diagnostics des instances. Les colonnes donnent les médianes de la
+population empirique admissible et de la configuration de référence. La
+corrélation entre profils porte sur des paires d'antennes dans la première
+colonne et sur les opérateurs d'un même site virtuel dans la seconde.}
+\label{tab:diagnostics_instances}
+\end{table}
+
+La séparation des sources remplit également son objectif : la corrélation
+entre trafic moyen et puissance fixe est voisine de zéro dans la configuration
+de référence, contre \(0{,}54\) dans la population empirique. Les 400 plans
+mobilisent \(3\,092\) antennes distinctes ; une antenne intervient dans deux
+plans en médiane et dans sept au maximum, et \(65{,}9\,\%\) d'entre elles sont
+utilisées au plus deux fois. Enfin, aucune heure n'est infaisable dans la
+grille principale de scénarios.
+
 \subsection{Contrôles croisés de l'implémentation}
 
 Chaque quantité optimale est recalculée par deux méthodes indépendantes, sur
@@ -361,5 +399,7 @@ certaines réponses sont connues analytiquement.
     et~\ref{prop:shapley_hors_coeur_semi_homogene}.
 \end{itemize}
 
-Ces contrôles donnent les vérifications de reproductibilité sur lesquelles
-reposent les résultats de la Section~\ref{sec:simulations_numeriques}.
+La suite automatisée exécute 50 tests, ainsi que deux sous-tests paramétrés,
+sans échec. Ces contrôles fournissent les vérifications de reproductibilité
+sur lesquelles reposent les résultats de la
+Section~\ref{sec:simulations_numeriques}.

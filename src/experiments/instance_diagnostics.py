@@ -335,7 +335,7 @@ def _figures(payload: dict[str, object], output_dir: Path) -> list[Path]:
         color="#D95F4A",
         label="Opérateurs synthétiques",
     )
-    axes[1, 0].set_xlabel("Trafic moyen (Go/h)")
+    axes[1, 0].set_xlabel("Trafic moyen (Go)")
     axes[1, 0].set_ylabel(r"$P^{\mathrm{fixe}}$ (W)")
     axes[1, 0].set_title("(c) Volume et puissance fixe")
     axes[1, 0].legend(frameon=False, fontsize=8)

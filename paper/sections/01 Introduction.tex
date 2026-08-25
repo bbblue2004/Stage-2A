@@ -1,6 +1,6 @@
 \section{Introduction}
 
-Les réseaux d'accès radio sont dimensionnés pour absorber les pointes de
+Les réseaux d'accès radio (RAN) sont dimensionnés pour absorber les pointes de
 trafic, alors que leur charge varie fortement au cours de la journée. Une
 station de base faiblement chargée conserve pourtant une consommation
 importante, ce qui motive sa mise en veille lorsque la couverture et la
@@ -75,12 +75,15 @@ Les contributions de l'article sont les suivantes :
     capacité créent des économies par paliers. Nous distinguons l'existence
     du cœur de la stabilité de Shapley. Nous donnons une garantie sous capacité
     individuelle suffisante, précisons l'hypothèse d'homogénéité des coûts qui
-    stabilise alors Shapley et caractérisons exactement le benchmark
+    stabilise alors Shapley et caractérisons exactement le cas de référence
     parfaitement homogène.
     \item \textbf{Évaluation semi-empirique.} À partir de mesures réelles de
     trafic et de puissance, nous calibrons des profils élémentaires et
     construisons de façon contrôlée des instances multi-opérateurs. Nous y
-    quantifions simultanément les économies, le coût de la persistance et la
+    quantifions simultanément les économies, montrons qu'une allocation du
+    trafic proportionnelle aux capacités des gardiens optimaux est presque
+    aussi performante que l'allocation optimale, mesurons le coût de la
+    persistance et la
     stabilité, puis étudions les facteurs associés au passage d'un régime
     stable à un régime instable, notamment la fenêtre et le nombre
     d'opérateurs.

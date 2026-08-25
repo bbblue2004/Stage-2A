@@ -40,19 +40,25 @@ def generate_representative_fit_figure(
 
     for axis, index, label in zip(axes, indices, labels, strict=True):
         traffic = population.traffic_gb[index]
-        power = population.power_w[index]
-        active = np.isfinite(traffic) & np.isfinite(power) & (power > 0.0)
+        # Chaque observation couvre exactement une heure : la puissance
+        # moyenne divisée par 1000 est donc l'énergie du créneau en kWh.
+        energy_kwh = population.power_w[index] / 1000.0
+        active = (
+            np.isfinite(traffic)
+            & np.isfinite(energy_kwh)
+            & (energy_kwh > 0.0)
+        )
         night = np.broadcast_to(
             np.arange(traffic.shape[1]) < 7,
             traffic.shape,
         )
         for mask, color, name in (
-            (active & night, "#C94C4C", "0 h--6 h"),
-            (active & ~night, "#3677B8", "7 h--23 h"),
+            (active & night, "#C94C4C", "[0 h, 7 h["),
+            (active & ~night, "#3677B8", "[7 h, 24 h["),
         ):
             axis.scatter(
                 traffic[mask],
-                power[mask],
+                energy_kwh[mask],
                 s=10,
                 alpha=0.42,
                 color=color,
@@ -69,17 +75,17 @@ def generate_representative_fit_figure(
         prediction = (
             population.p_fixed_w[index]
             + population.slope_w_per_gb[index] * grid
-        )
+        ) / 1000.0
         axis.plot(grid, prediction, color="black", linewidth=1.5)
         axis.axhline(
-            population.p_fixed_w[index],
+            population.p_fixed_w[index] / 1000.0,
             color="black",
             linewidth=1.0,
             linestyle="--",
             label=r"$P^{\mathrm{fixe}}$",
         )
         axis.set_title(label, fontsize=9)
-        axis.set_xlabel("Trafic (Go/h)")
+        axis.set_xlabel("Trafic (Go)")
         axis.grid(alpha=0.22)
         axis.text(
             0.04,
@@ -90,7 +96,7 @@ def generate_representative_fit_figure(
             fontsize=7.5,
         )
 
-    axes[0].set_ylabel("Puissance moyenne (W)")
+    axes[0].set_ylabel("Énergie sur le créneau horaire (kWh)")
     handles, legend_labels = axes[0].get_legend_handles_labels()
     figure.legend(
         handles,

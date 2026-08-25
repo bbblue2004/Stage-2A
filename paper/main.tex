@@ -4,6 +4,7 @@
 % Packages nécessaires pour le support des caractères spéciaux et des mathématiques
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage[french]{babel}
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts, amsthm}
 \usepackage{dsfont}
@@ -39,7 +40,7 @@
 
 \begin{document}
 
-% Titre provisoire de l'article
+% Titre de l'article
 \title{Partage du RAN : efficacité énergétique et stabilité coalitionnelle}
 
 % Auteurs
@@ -48,7 +49,7 @@ Axel Hovasse\\
 École polytechnique -- Orange
 }
 
-\date{Eté 2026}
+\date{Été 2026}
 
 \maketitle
 
@@ -59,18 +60,21 @@ puissent être répartis de façon stable. Nous formulons exactement la sélecti
 des équipements et l'allocation du trafic avec capacités, coûts fixes et coûts
 variables, puis construisons le jeu coopératif des économies. Ce jeu est
 superadditif, mais son cœur peut être vide ; une capacité individuelle
-suffisante garantit toutefois sa non-vacuité. Sur 400 plans semi-empiriques
-issus de mesures Orange, l'économie médiane atteint \(73{,}7\,\%\) sur la
-fenêtre nocturne. Parmi \(58\,800\) jeux horaires, Shapley est stable dans
+suffisante garantit toutefois sa non-vacuité. Sur les 400 plans de la
+configuration de référence construits à partir de mesures Orange, l'économie
+médiane atteint
+\(73{,}7\,\%\) sur la fenêtre nocturne ; avec les mêmes gardiens, une allocation du trafic
+proportionnelle aux capacités atteint \(73{,}6\,\%\), soit une perte appariée
+médiane de seulement \(0{,}002\) point. Parmi \(58\,800\) jeux horaires,
+Shapley est stable dans
 \(86{,}8\,\%\) des cas et le cœur est vide dans \(5{,}7\,\%\). Les capacités
-restent simulées et les instances ne sont pas des accords multi-opérateurs
+restent simulées et ces plans ne décrivent pas des accords multi-opérateurs
 observés.
 \end{abstract}
 
-% % Mots-clés
-% \noindent\textbf{Mots-clés---}Partage du RAN, efficacité énergétique,
-% mise en veille des stations de base, jeux coopératifs, cœur, stabilité
-% coalitionnelle.
+\noindent\textbf{Mots-clés :} partage du RAN, efficacité énergétique,
+mise en veille des stations de base, jeux coopératifs, cœur, stabilité
+coalitionnelle.
 
 \input{sections/01 Introduction}
 
@@ -86,6 +90,7 @@ observés.
 
 \input{sections/07 Conclusion}
 
+\clearpage
 \appendix
 
 \input{sections/A Demonstrations techniques}

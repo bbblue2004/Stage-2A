@@ -8,10 +8,6 @@ import numpy as np
 import pulp
 from scipy.optimize import linprog
 
-from src.core.generate_data import OperatorParams
-from src.core.optimiser import coalition_cost_star
-
-
 def iter_coalition_tuples(
     players: list[int],
     include_empty: bool = False,
@@ -22,62 +18,6 @@ def iter_coalition_tuples(
         for size in range(start, len(players) + 1)
         for coalition in combinations(sorted(players), size)
     ]
-
-
-def build_cost_map(
-    operators: list[OperatorParams],
-    demands: dict[int, float],
-    players: list[int],
-) -> dict[tuple[int, ...], float]:
-    costs = {(): 0.0}
-    for coalition in iter_coalition_tuples(players):
-        costs[coalition] = coalition_cost_star(
-            list(coalition), operators, demands
-        )[0]
-    return costs
-
-
-def build_savings_game(
-    costs: dict[tuple[int, ...], float],
-    players: list[int],
-) -> dict[tuple[int, ...], float]:
-    savings = {(): 0.0}
-    for coalition in iter_coalition_tuples(players):
-        value = sum(costs[(i,)] for i in coalition) - costs[coalition]
-        savings[coalition] = 0.0 if abs(value) < 1e-12 else value
-    return savings
-
-
-def physical_costs(
-    players: list[int],
-    guardians: list[int],
-    allocation: dict[int, float],
-    operators: list[OperatorParams],
-) -> dict[int, float]:
-    return {
-        i: operators[i].F + operators[i].gamma * allocation.get(i, 0.0)
-        if i in guardians
-        else 0.0
-        for i in players
-    }
-
-
-@dataclass(frozen=True)
-class Settlement:
-    net_costs: dict[int, float]
-    transfers: dict[int, float]
-    budget_residual: float
-
-
-def build_settlement(
-    players: list[int],
-    standalone: dict[int, float],
-    physical: dict[int, float],
-    savings: dict[int, float],
-) -> Settlement:
-    net = {i: standalone[i] - savings[i] for i in players}
-    transfers = {i: physical[i] - net[i] for i in players}
-    return Settlement(net, transfers, sum(transfers.values()))
 
 
 @dataclass(frozen=True)
